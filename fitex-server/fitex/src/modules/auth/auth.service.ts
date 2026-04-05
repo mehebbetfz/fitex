@@ -121,6 +121,34 @@ export class AuthService {
 		}
 	}
 
+	async validateDemoUser(password: string): Promise<UserDocument> {
+		const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'FitExDemo2024!'
+		if (password !== DEMO_PASSWORD) {
+			throw new UnauthorizedException('Invalid demo credentials')
+		}
+
+		const DEMO_EMAIL = 'reviewer@fitex.app'
+		let user = await this.userModel.findOne({ email: DEMO_EMAIL, provider: 'demo' })
+
+		if (!user) {
+			const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+			user = new this.userModel({
+				email: DEMO_EMAIL,
+				provider: 'demo',
+				providerId: 'demo-reviewer-account',
+				firstName: 'Demo',
+				lastName: 'User',
+				isPremium: true,
+				trialStartedAt: new Date(),
+				trialEndsAt: thirtyDaysFromNow,
+				isNewUser: false,
+			})
+			await user.save()
+		}
+
+		return user
+	}
+
 	login(user: UserDocument) {
 		const payload = {
 			sub: user._id,

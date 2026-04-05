@@ -24,6 +24,7 @@ interface AuthContextType {
 	isLoading: boolean
 	signInWithGoogle: () => Promise<void>
 	signInWithApple: () => Promise<void>
+	signInDemo: () => Promise<void>
 	resetAuth: () => Promise<void>
 	signOut: () => Promise<void>
 	updateUser: (user: Partial<User>) => void
@@ -182,6 +183,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		}
 	}
 
+	const signInDemo = async () => {
+		try {
+			const response = await api.post('/auth/demo', { password: 'FitExDemo2024!' })
+			const { access_token, user } = response.data
+			await saveUser(user, access_token)
+		} catch (error: any) {
+			console.error('[Demo] Sign in error:', error.message)
+			throw error
+		}
+	}
+
 	const signOut = async () => {
 		console.log('[Auth] Starting sign out...')
 		try {
@@ -209,9 +221,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			value={{
 				user,
 				isLoading,
-				signInWithGoogle,
-				signInWithApple,
-				resetAuth,
+			signInWithGoogle,
+			signInWithApple,
+			signInDemo,
+			resetAuth,
 				signOut,
 				updateUser,
 				startTrial,

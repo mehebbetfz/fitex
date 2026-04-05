@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
+import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Post, UnauthorizedException } from '@nestjs/common'
 import { AuthService } from './auth.service'
 
 @Controller('auth')
@@ -9,6 +9,14 @@ export class AuthController {
 	@HttpCode(HttpStatus.OK)
 	async googleAuth(@Body('idToken') idToken: string) {
 		const user = await this.authService.validateGoogleUser(idToken)
+		return this.authService.login(user)
+	}
+
+	@Post('demo')
+	@HttpCode(HttpStatus.OK)
+	async demoAuth(@Body('password') password: string) {
+		if (!password) throw new BadRequestException('password is required')
+		const user = await this.authService.validateDemoUser(password)
 		return this.authService.login(user)
 	}
 

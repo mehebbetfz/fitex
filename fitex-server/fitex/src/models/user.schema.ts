@@ -17,7 +17,7 @@ export class User {
 	@Prop()
 	avatarUrl?: string
 
-	@Prop({ enum: ['apple', 'google'], required: true })
+	@Prop({ enum: ['apple', 'google', 'demo'], required: true })
 	provider: string
 
 	@Prop({ required: true })

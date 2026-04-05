@@ -29,9 +29,9 @@ const COLORS = {
 } as const
 
 export default function LoginScreen() {
-	const { signInWithGoogle, signInWithApple } = useAuth()
+	const { signInWithGoogle, signInWithApple, signInDemo } = useAuth()
 	const { t } = useLanguage()
-	const [loading, setLoading] = useState<'google' | 'apple' | null>(null)
+	const [loading, setLoading] = useState<'google' | 'apple' | 'demo' | null>(null)
 
 	const handleGoogle = async () => {
 		setLoading('google')
@@ -48,6 +48,17 @@ export default function LoginScreen() {
 		setLoading('apple')
 		try {
 			await signInWithApple()
+		} catch (error: any) {
+			Alert.alert(t('common', 'error'), error.message)
+		} finally {
+			setLoading(null)
+		}
+	}
+
+	const handleDemo = async () => {
+		setLoading('demo')
+		try {
+			await signInDemo()
 		} catch (error: any) {
 			Alert.alert(t('common', 'error'), error.message)
 		} finally {
@@ -112,10 +123,24 @@ export default function LoginScreen() {
 				)}
 			</View>
 
-			{/* Нижний текст с условиями */}
-			<Text style={styles.termsText}>{t('login', 'terms')}</Text>
-		</SafeAreaView>
-	)
+		{/* Нижний текст с условиями */}
+		<Text style={styles.termsText}>{t('login', 'terms')}</Text>
+
+		{/* Demo account for App Store reviewers */}
+		<TouchableOpacity
+			onPress={handleDemo}
+			disabled={loading !== null}
+			style={styles.demoButton}
+			activeOpacity={0.6}
+		>
+			{loading === 'demo' ? (
+				<ActivityIndicator size='small' color={COLORS.textSecondary} />
+			) : (
+				<Text style={styles.demoText}>Demo Account</Text>
+			)}
+		</TouchableOpacity>
+	</SafeAreaView>
+)
 }
 
 const styles = StyleSheet.create({
@@ -229,5 +254,16 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		marginTop: 30,
 		paddingHorizontal: 20,
+	},
+	demoButton: {
+		marginTop: 16,
+		paddingVertical: 8,
+		paddingHorizontal: 16,
+	},
+	demoText: {
+		color: '#3A3A3C',
+		fontSize: 11,
+		textAlign: 'center',
+		letterSpacing: 0.3,
 	},
 })
