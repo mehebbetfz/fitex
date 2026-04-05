@@ -137,6 +137,9 @@ export class AuthService {
 				lastName: user.lastName,
 				avatarUrl: user.avatarUrl,
 				isPremium: user.isPremium,
+				trialStartedAt: user.trialStartedAt ?? null,
+				trialEndsAt: user.trialEndsAt ?? null,
+				isNewUser: user.isNewUser ?? true,
 			},
 		}
 	}

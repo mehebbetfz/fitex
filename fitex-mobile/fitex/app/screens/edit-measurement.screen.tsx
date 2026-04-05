@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -15,20 +16,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const MEASUREMENT_TYPES = [
-	{ name: 'Вес', unit: 'кг', icon: 'scale' },
-	{ name: 'Грудь', unit: 'см', icon: 'body' },
-	{ name: 'Талия', unit: 'см', icon: 'body' },
-	{ name: 'Бедра', unit: 'см', icon: 'body' },
-	{ name: 'Бицепс', unit: 'см', icon: 'fitness' },
-	{ name: 'Шея', unit: 'см', icon: 'body' },
-	{ name: 'Икры', unit: 'см', icon: 'body' },
-	{ name: 'Плечо', unit: 'см', icon: 'body' },
-	{ name: 'Жир', unit: '%', icon: 'water' },
-	{ name: 'Мышцы', unit: 'кг', icon: 'fitness' },
+	{ name: 'Вес', unit: 'кг', icon: 'scale', labelKey: 'weightLabel' },
+	{ name: 'Грудь', unit: 'см', icon: 'body', labelKey: 'chestLabel' },
+	{ name: 'Талия', unit: 'см', icon: 'body', labelKey: 'waistLabel' },
+	{ name: 'Бедра', unit: 'см', icon: 'body', labelKey: 'hipsLabel' },
+	{ name: 'Бицепс', unit: 'см', icon: 'fitness', labelKey: 'bicepsLabel' },
+	{ name: 'Шея', unit: 'см', icon: 'body', labelKey: 'neckLabel' },
+	{ name: 'Икры', unit: 'см', icon: 'body', labelKey: 'calfLabel' },
+	{ name: 'Плечо', unit: 'см', icon: 'body', labelKey: 'bicepsLabel' },
+	{ name: 'Жир', unit: '%', icon: 'water', labelKey: 'bodyFatLabel' },
+	{ name: 'Мышцы', unit: 'кг', icon: 'fitness', labelKey: 'thighLabel' },
 ]
 
 export default function EditMeasurementScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const { id } = useLocalSearchParams<{ id: string }>()
 
 	const [selectedType, setSelectedType] = useState(MEASUREMENT_TYPES[0])
@@ -53,18 +55,18 @@ export default function EditMeasurementScreen() {
 				const type = MEASUREMENT_TYPES.find(t => t.name === m.name)
 				if (type) setSelectedType(type)
 			}
-		} catch {
-			Alert.alert('Ошибка', 'Не удалось загрузить данные')
-		} finally {
+	} catch {
+		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+	} finally {
 			setLoading(false)
 		}
 	}
 
 	const handleUpdate = async () => {
-		if (!value.trim()) {
-			Alert.alert('Ошибка', 'Введите значение')
-			return
-		}
+	if (!value.trim()) {
+		Alert.alert(t('common', 'error'), t('measurements', 'value'))
+		return
+	}
 		try {
 			const measurementId = parseInt(id)
 			const measurements = await db.getBodyMeasurements()
@@ -89,19 +91,19 @@ export default function EditMeasurementScreen() {
 				trend,
 				goal: goal ? parseFloat(goal) : undefined,
 			})
-			Alert.alert('Успех', 'Замер обновлен!', [
-				{ text: 'OK', onPress: () => router.back() },
-			])
-		} catch {
-			Alert.alert('Ошибка', 'Не удалось обновить замер')
-		}
+		Alert.alert(t('common', 'success'), t('measurements', 'edit'), [
+			{ text: t('common', 'ok'), onPress: () => router.back() },
+		])
+	} catch {
+		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+	}
 	}
 
 	const handleDelete = () => {
-		Alert.alert('Удалить?', 'Действие нельзя отменить', [
-			{ text: 'Отмена', style: 'cancel' },
-			{
-				text: 'Удалить',
+	Alert.alert(t('measurements', 'confirmDelete'), t('measurements', 'confirmDeleteMsg'), [
+		{ text: t('common', 'cancel'), style: 'cancel' },
+		{
+			text: t('measurements', 'delete'),
 				style: 'destructive',
 				onPress: async () => {
 					await db.deleteBodyMeasurement(parseInt(id))
@@ -127,7 +129,7 @@ export default function EditMeasurementScreen() {
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
-				<Text style={s.headerTitle}>Редактировать замер</Text>
+				<Text style={s.headerTitle}>{t('measurements', 'edit')}</Text>
 				<TouchableOpacity onPress={handleDelete} style={s.backBtn}>
 					<Ionicons name='trash-outline' size={20} color='#FF3B30' />
 				</TouchableOpacity>
@@ -138,7 +140,7 @@ export default function EditMeasurementScreen() {
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Тип замера */}
-				<Text style={s.label}>Тип замера</Text>
+				<Text style={s.label}>{t('measurements', 'current')}</Text>
 				<ScrollView
 					horizontal
 					showsHorizontalScrollIndicator={false}
@@ -159,8 +161,8 @@ export default function EditMeasurementScreen() {
 										color={active ? '#34C759' : '#8E8E93'}
 									/>
 									<Text style={[s.typeName, active && s.typeNameActive]}>
-										{type.name}
-									</Text>
+									{t('measurements', (type as any).labelKey)}
+								</Text>
 									<Text style={s.typeUnit}>{type.unit}</Text>
 								</TouchableOpacity>
 							)
@@ -169,7 +171,7 @@ export default function EditMeasurementScreen() {
 				</ScrollView>
 
 				{/* Значение */}
-				<Text style={s.label}>Значение</Text>
+				<Text style={s.label}>{t('measurements', 'value')}</Text>
 				<View style={s.inputRow}>
 					<TextInput
 						style={s.bigInput}
@@ -184,19 +186,19 @@ export default function EditMeasurementScreen() {
 				</View>
 
 				{/* Дата */}
-				<Text style={s.label}>Дата</Text>
-				<TextInput
-					style={s.input}
-					value={date}
-					onChangeText={setDate}
-					placeholder='ГГГГ-ММ-ДД'
-					placeholderTextColor='#8E8E93'
-				/>
+			<Text style={s.label}>{t('measurements', 'date')}</Text>
+			<TextInput
+				style={s.input}
+				value={date}
+				onChangeText={setDate}
+				placeholder='YYYY-MM-DD'
+				placeholderTextColor='#8E8E93'
+			/>
 
-				{/* Цель */}
-				<Text style={s.label}>
-					Цель <Text style={s.optional}>(опционально)</Text>
-				</Text>
+			{/* Goal */}
+			<Text style={s.label}>
+				{t('measurements', 'goal')} <Text style={s.optional}>({t('common', 'optional')})</Text>
+			</Text>
 				<View style={s.inputRow}>
 					<TextInput
 						style={s.bigInput}
@@ -209,9 +211,9 @@ export default function EditMeasurementScreen() {
 					<Text style={s.unitLabel}>{selectedType.unit}</Text>
 				</View>
 
-				<TouchableOpacity style={s.saveBtn} onPress={handleUpdate}>
-					<Text style={s.saveBtnText}>Сохранить изменения</Text>
-				</TouchableOpacity>
+			<TouchableOpacity style={s.saveBtn} onPress={handleUpdate}>
+				<Text style={s.saveBtnText}>{t('common', 'save')}</Text>
+			</TouchableOpacity>
 			</ScrollView>
 		</SafeAreaView>
 	)

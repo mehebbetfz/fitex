@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -17,45 +18,27 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 const EXERCISE_CATEGORIES = [
 	{
 		id: 'strength',
-		name: 'Сила',
+		nameKey: 'catStrength',
 		icon: 'barbell',
-		exercises: [
-			'Жим лежа',
-			'Приседания',
-			'Становая тяга',
-			'Подтягивания',
-			'Жим штанги стоя',
-			'Тяга штанги в наклоне',
-		],
+		exercises: ['Bench Press', 'Squat', 'Deadlift', 'Pull-up', 'OHP', 'Bent-over Row'],
 	},
 	{
 		id: 'cardio',
-		name: 'Кардио',
+		nameKey: 'catCardio',
 		icon: 'heart',
-		exercises: [
-			'Бег 5 км',
-			'Бег 10 км',
-			'Велосипед 20 км',
-			'Плавание 100 м',
-			'Прыжки на скакалке',
-		],
+		exercises: ['5k Run', '10k Run', '20k Bike', '100m Swim', 'Jump Rope'],
 	},
 	{
 		id: 'endurance',
-		name: 'Выносливость',
+		nameKey: 'catEndurance',
 		icon: 'time',
-		exercises: [
-			'Отжимания',
-			'Планка',
-			'Приседания (на время)',
-			'Берпи',
-			'Скалолазание',
-		],
+		exercises: ['Push-ups', 'Plank', 'Squats (timed)', 'Burpees', 'Mountain Climbers'],
 	},
 ]
 
 export default function EditRecordScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const { id } = useLocalSearchParams<{ id: string }>()
 
 	const [selectedCategory, setSelectedCategory] = useState(
@@ -95,32 +78,32 @@ export default function EditRecordScreen() {
 			}
 		} catch (error) {
 			console.error('Error loading record:', error)
-			Alert.alert('Ошибка', 'Не удалось загрузить данные рекорда')
+			Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 		} finally {
 			setLoading(false)
 		}
 	}
 
 	const handleUpdate = async () => {
-		if (!exercise.trim()) {
-			Alert.alert('Ошибка', 'Введите название упражнения')
-			return
-		}
+	if (!exercise.trim()) {
+		Alert.alert(t('common', 'error'), t('records', 'exercisePlaceholder'))
+		return
+	}
 
-		if (!weight.trim()) {
-			Alert.alert('Ошибка', 'Введите вес/результат')
-			return
-		}
+	if (!weight.trim()) {
+		Alert.alert(t('common', 'error'), t('records', 'kg'))
+		return
+	}
 
 		try {
 			const recordId = parseInt(id)
 
 			// Получаем текущий рекорд для расчета тренда
 			const currentRecord = await db.getRecordById(recordId)
-			if (!currentRecord) {
-				Alert.alert('Ошибка', 'Рекорд не найден')
-				return
-			}
+		if (!currentRecord) {
+			Alert.alert(t('common', 'error'), t('records', 'noRecords'))
+			return
+		}
 
 			// Рассчитываем тренд на основе предыдущих рекордов
 			const previousRecords = await db.getPersonalRecords()
@@ -156,36 +139,36 @@ export default function EditRecordScreen() {
 				improvement,
 			})
 
-			Alert.alert('Успех', 'Рекорд обновлен!', [
-				{ text: 'OK', onPress: () => router.back() },
-			])
-		} catch (error) {
-			console.error('Error updating record:', error)
-			Alert.alert('Ошибка', 'Не удалось обновить рекорд')
-		}
+		Alert.alert(t('common', 'success'), t('records', 'editRecord'), [
+			{ text: t('common', 'ok'), onPress: () => router.back() },
+		])
+	} catch (error) {
+		console.error('Error updating record:', error)
+		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+	}
 	}
 
 	const handleDelete = async () => {
-		Alert.alert('Удаление', 'Вы уверены, что хотите удалить этот рекорд?', [
-			{ text: 'Отмена', style: 'cancel' },
-			{
-				text: 'Удалить',
-				style: 'destructive',
-				onPress: async () => {
-					try {
-						const recordId = parseInt(id)
-						await db.deletePersonalRecord(recordId)
+	Alert.alert(t('records', 'confirmDelete'), t('records', 'confirmDeleteMsg'), [
+		{ text: t('common', 'cancel'), style: 'cancel' },
+		{
+			text: t('common', 'delete'),
+			style: 'destructive',
+			onPress: async () => {
+				try {
+					const recordId = parseInt(id)
+					await db.deletePersonalRecord(recordId)
 
-						Alert.alert('Успех', 'Рекорд удален!', [
-							{ text: 'OK', onPress: () => router.back() },
-						])
-					} catch (error) {
-						console.error('Error deleting record:', error)
-						Alert.alert('Ошибка', 'Не удалось удалить рекорд')
-					}
-				},
+					Alert.alert(t('common', 'success'), t('records', 'deleteRecord' as any) || t('records', 'noRecords'), [
+						{ text: t('common', 'ok'), onPress: () => router.back() },
+					])
+				} catch (error) {
+					console.error('Error deleting record:', error)
+					Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+				}
 			},
-		])
+		},
+	])
 	}
 
 	if (loading) {
@@ -193,7 +176,7 @@ export default function EditRecordScreen() {
 			<SafeAreaView style={styles.container}>
 				<View style={styles.loadingContainer}>
 					<ActivityIndicator size='large' color='#34C759' />
-					<Text style={styles.loadingText}>Загрузка данных...</Text>
+					<Text style={styles.loadingText}>{t('common', 'loading')}</Text>
 				</View>
 			</SafeAreaView>
 		)
@@ -209,14 +192,14 @@ export default function EditRecordScreen() {
 				>
 					<Ionicons name='arrow-back' size={24} color='#FFFFFF' />
 				</TouchableOpacity>
-				<Text style={styles.headerTitle}>Редактировать рекорд</Text>
+				<Text style={styles.headerTitle}>{t('records', 'editRecord')}</Text>
 				<View style={styles.placeholder} />
 			</View>
 
 			<ScrollView contentContainerStyle={styles.content}>
 				{/* Выбор категории */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Категория</Text>
+					<Text style={styles.sectionTitle}>{t('records', 'category')}</Text>
 					<ScrollView
 						horizontal
 						showsHorizontalScrollIndicator={false}
@@ -249,7 +232,7 @@ export default function EditRecordScreen() {
 												styles.selectedCategoryText,
 										]}
 									>
-										{category.name}
+										{t('records', (category as any).nameKey)}
 									</Text>
 								</TouchableOpacity>
 							))}
@@ -259,15 +242,15 @@ export default function EditRecordScreen() {
 
 				{/* Упражнение */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Упражнение</Text>
-					<View style={styles.exerciseContainer}>
-						<TextInput
-							style={styles.exerciseInput}
-							value={exercise}
-							onChangeText={setExercise}
-							placeholder='Введите упражнение'
-							placeholderTextColor='#8E8E93'
-						/>
+				<Text style={styles.sectionTitle}>{t('records', 'exerciseName')}</Text>
+				<View style={styles.exerciseContainer}>
+					<TextInput
+						style={styles.exerciseInput}
+						value={exercise}
+						onChangeText={setExercise}
+						placeholder={t('records', 'exercisePlaceholder')}
+						placeholderTextColor='#8E8E93'
+					/>
 					</View>
 					{selectedCategory.exercises.length > 0 && (
 						<ScrollView
@@ -302,22 +285,19 @@ export default function EditRecordScreen() {
 
 				{/* Вес/Результат */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Вес/Результат</Text>
-					<TextInput
-						style={styles.weightInput}
-						value={weight}
-						onChangeText={setWeight}
-						placeholder='Например: 100 кг или 22:30'
-						placeholderTextColor='#8E8E93'
-					/>
-					<Text style={styles.weightHint}>
-						Укажите вес (кг) или время (мм:сс) в зависимости от упражнения
-					</Text>
+				<Text style={styles.sectionTitle}>{t('records', 'record')}</Text>
+				<TextInput
+					style={styles.weightInput}
+					value={weight}
+					onChangeText={setWeight}
+					placeholder={`e.g. 100 ${t('records', 'kg')}`}
+					placeholderTextColor='#8E8E93'
+				/>
 				</View>
 
 				{/* Дата */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Дата</Text>
+					<Text style={styles.sectionTitle}>{t('measurements', 'date')}</Text>
 					<TextInput
 						style={styles.dateInput}
 						value={date}
@@ -329,27 +309,27 @@ export default function EditRecordScreen() {
 
 				{/* Заметки */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Заметки</Text>
-					<TextInput
-						style={styles.notesInput}
-						value={notes}
-						onChangeText={setNotes}
-						placeholder='Например: 3 подхода по 5 повторений'
-						placeholderTextColor='#8E8E93'
-						multiline
-						numberOfLines={4}
-					/>
+				<Text style={styles.sectionTitle}>{t('workout', 'notesPlaceholder')}</Text>
+				<TextInput
+					style={styles.notesInput}
+					value={notes}
+					onChangeText={setNotes}
+					placeholder={`e.g. 3×5 ${t('records', 'reps')}`}
+					placeholderTextColor='#8E8E93'
+					multiline
+					numberOfLines={4}
+				/>
 				</View>
 
 				{/* Кнопки */}
 				<View style={styles.buttonsContainer}>
-					<TouchableOpacity style={styles.updateButton} onPress={handleUpdate}>
-						<Text style={styles.updateButtonText}>Обновить рекорд</Text>
-					</TouchableOpacity>
+				<TouchableOpacity style={styles.updateButton} onPress={handleUpdate}>
+					<Text style={styles.updateButtonText}>{t('records', 'saveRecord')}</Text>
+				</TouchableOpacity>
 
 					<TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
 						<Ionicons name='trash' size={20} color='#FF3B30' />
-						<Text style={styles.deleteButtonText}>Удалить рекорд</Text>
+						<Text style={styles.deleteButtonText}>{t('records', 'confirmDelete')}</Text>
 					</TouchableOpacity>
 				</View>
 			</ScrollView>

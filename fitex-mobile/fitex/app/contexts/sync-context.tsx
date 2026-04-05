@@ -1,4 +1,5 @@
 // app/contexts/sync-context.tsx
+import { useLanguage } from '@/contexts/language-context'
 import React, {
 	createContext,
 	useCallback,
@@ -31,15 +32,6 @@ interface SyncContextValue {
 
 const IDLE: SyncState = { phase: 'idle', progress: 0, message: '' }
 
-const PHASE_LABELS: Record<SyncPhase, string> = {
-	idle: '',
-	connecting: 'Подключение...',
-	uploading: 'Загрузка данных...',
-	downloading: 'Получение данных...',
-	done: 'Синхронизировано',
-	error: 'Ошибка синхронизации',
-}
-
 const SyncContext = createContext<SyncContextValue>({
 	sync: IDLE,
 	startSync: () => {},
@@ -51,6 +43,15 @@ const SyncContext = createContext<SyncContextValue>({
 export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
+	const { t } = useLanguage()
+	const PHASE_LABELS: Record<SyncPhase, string> = {
+		idle: '',
+		connecting: t('sync', 'connecting'),
+		uploading: t('sync', 'uploading'),
+		downloading: t('sync', 'downloading'),
+		done: t('sync', 'done'),
+		error: t('sync', 'error'),
+	}
 	const [sync, setSync] = useState<SyncState>(IDLE)
 	const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 

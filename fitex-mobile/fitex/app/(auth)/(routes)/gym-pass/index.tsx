@@ -49,11 +49,11 @@ const MembershipCard = ({
 	membership: Membership
 	userName: string
 }) => {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const gym = membership.gymId as any
 	const planKey = PLAN_KEY_MAP[membership.planType] ?? 'plan_month'
 
-	const validUntil = new Date(membership.endDate).toLocaleDateString('ru-RU', {
+	const validUntil = new Date(membership.endDate).toLocaleDateString(language, {
 		day: '2-digit',
 		month: '2-digit',
 		year: 'numeric',
@@ -144,10 +144,11 @@ const MembershipCard = ({
 // ─── Visit row ────────────────────────────────────────────────────────────────
 
 const VisitRow = ({ visit }: { visit: GymVisit }) => {
+	const { language } = useLanguage()
 	const gym = visit.gymId as any
 	const date = new Date(visit.checkInTime)
-	const dateStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-	const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+	const dateStr = date.toLocaleDateString(language, { day: '2-digit', month: '2-digit', year: 'numeric' })
+	const timeStr = date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })
 
 	return (
 		<View style={styles.visitRow}>

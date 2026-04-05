@@ -11,6 +11,7 @@ import {
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
 import { muscle_groups } from '@/constants/muscle-groups'
+import { useLanguage } from '@/contexts/language-context'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -302,6 +303,7 @@ interface SetRowProps {
 
 const SetRow: React.FC<SetRowProps> = React.memo(
 	({ set, exerciseId, onComplete, onUpdate, onRemove }) => {
+		const { t } = useLanguage()
 		return (
 			<View style={styles.setRow}>
 				<View style={styles.setNumberContainer}>
@@ -323,7 +325,7 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 						placeholder='0'
 						placeholderTextColor={COLORS.textSecondary}
 					/>
-					<Text style={styles.inputLabel}>кг</Text>
+					<Text style={styles.inputLabel}>{t('workout', 'kg')}</Text>
 				</View>
 
 				<View style={styles.setInputContainer}>
@@ -400,6 +402,7 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 		onShowHistory,
 		onShowExerciseDetails,
 	}) => {
+		const { t } = useLanguage()
 		const [showHistoryModal, setShowHistoryModal] = useState(false)
 		const [showDetailsModal, setShowDetailsModal] = useState(false)
 		const [exerciseDetail, setExerciseDetail] = useState<ExerciseDetail | null>(
@@ -523,21 +526,21 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 				{!exercise.collapsed && (
 					<>
 						<View style={styles.setsContainer}>
-							<View style={styles.setsHeader}>
-								<Text
-									style={{
-										...styles.setHeaderText,
-										...styles.setNumberContainer,
-										width: 30,
-									}}
-								>
-									#
-								</Text>
-								<Text style={{ ...styles.setHeaderText, width: 70 }}>Вес</Text>
-								<Text style={{ ...styles.setHeaderText, width: 30 }}></Text>
-								<Text style={{ ...styles.setHeaderText, width: 70 }}>
-									Повт.
-								</Text>
+						<View style={styles.setsHeader}>
+							<Text
+								style={{
+									...styles.setHeaderText,
+									...styles.setNumberContainer,
+									width: 30,
+								}}
+							>
+								#
+							</Text>
+							<Text style={{ ...styles.setHeaderText, width: 70 }}>{t('workout', 'weight')}</Text>
+							<Text style={{ ...styles.setHeaderText, width: 30 }}></Text>
+							<Text style={{ ...styles.setHeaderText, width: 70 }}>
+								{t('workout', 'reps')}
+							</Text>
 								<Text style={{ ...styles.setHeaderText, width: 40 }}>✓</Text>
 								<Text style={{ ...styles.setHeaderText, width: 20 }}>x</Text>
 							</View>
@@ -569,7 +572,7 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 								size={20}
 								color={COLORS.primary}
 							/>
-							<Text style={styles.addSetText}>Добавить подход</Text>
+							<Text style={styles.addSetText}>{t('workout', 'addSet')}</Text>
 						</TouchableOpacity>
 					</>
 				)}
@@ -581,9 +584,14 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 export default function CreateWorkoutScreen() {
 	const router = useRouter()
 	const { completeWorkout } = useDatabase()
+	const { t } = useLanguage()
 
 	const [exercises, setExercises] = useState<Exercise[]>([])
-	const [workoutName, setWorkoutName] = useState('Моя тренировка')
+	const [workoutName, setWorkoutName] = useState('')
+
+	useEffect(() => {
+		setWorkoutName(t('workout', 'myWorkout'))
+	}, [])
 	const [timer, setTimer] = useState(0)
 	const [isWorkoutActive, setIsWorkoutActive] = useState(false)
 	const [isTimerRunning, setIsTimerRunning] = useState(false)
@@ -603,10 +611,7 @@ export default function CreateWorkoutScreen() {
 
 	const handleSaveAsTemplate = () => {
 		if (exercises.length === 0) {
-			Alert.alert(
-				'Ошибка',
-				'Добавьте хотя бы одно упражнение для создания шаблона',
-			)
+			Alert.alert(t('common', 'error'), t('workout', 'saveTemplateError'))
 			return
 		}
 
@@ -641,7 +646,7 @@ export default function CreateWorkoutScreen() {
 		if (templateExercises) {
 			try {
 				const parsedExercises = JSON.parse(templateExercises)
-				setWorkoutName(templateName || 'Моя тренировка')
+				setWorkoutName(templateName || t('workout', 'myWorkout'))
 
 				const newExercises = parsedExercises.map((ex: any, i: number) => ({
 					id: Date.now() + i,
@@ -873,10 +878,10 @@ export default function CreateWorkoutScreen() {
 	}
 
 	const handleRemoveSet = (exerciseId: number, setId: number) => {
-		Alert.alert('Удалить подход?', 'Это действие нельзя отменить', [
-			{ text: 'Отмена', style: 'cancel' },
+		Alert.alert(t('workout', 'deleteSet'), t('workout', 'deleteSetMsg'), [
+			{ text: t('common', 'cancel'), style: 'cancel' },
 			{
-				text: 'Удалить',
+				text: t('workout', 'delete'),
 				style: 'destructive',
 				onPress: () => {
 					setExercises(prev =>
@@ -923,19 +928,18 @@ export default function CreateWorkoutScreen() {
 	}
 
 	const handleRemoveExercise = (exerciseId: number) => {
-		// Добавляем флаг для предотвращения двойного вызова
 		const alertShownRef = { current: false }
 
 		if (alertShownRef.current) return
 		alertShownRef.current = true
 
 		Alert.alert(
-			'Удалить упражнение?',
-			'Все подходы также будут удалены',
+			t('workout', 'deleteExercise'),
+			t('workout', 'deleteExerciseMsg'),
 			[
-				{ text: 'Отмена', style: 'cancel' },
+				{ text: t('common', 'cancel'), style: 'cancel' },
 				{
-					text: 'Удалить',
+					text: t('workout', 'delete'),
 					style: 'destructive',
 					onPress: () => {
 						Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -982,24 +986,23 @@ export default function CreateWorkoutScreen() {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
 		if (!workoutName.trim()) {
-			Alert.alert('Ошибка', 'Введите название тренировки')
+			Alert.alert(t('common', 'error'), t('workout', 'noNameError'))
 			return
 		}
 		if (exercises.length === 0) {
-			Alert.alert('Ошибка', 'Добавьте хотя бы одно упражнение')
+			Alert.alert(t('common', 'error'), t('workout', 'noExercisesError'))
 			return
 		}
 
-		// Предотвращаем двойное завершение
 		if (isSaving) return
 
 		Alert.alert(
-			'Завершить тренировку?',
-			`Вы выполнили ${exercises.length} упражнений, ${totalSets} подходов\nОбщий объем: ${totalVolume} кг\nВремя: ${formatTime(workoutDuration)}`,
+			t('workout', 'finishTitle'),
+			`${exercises.length} ${t('workout', 'exercises')}, ${totalSets} ${t('workout', 'sets')}\n${t('workout', 'volume')}: ${totalVolume} ${t('workout', 'kg')}\n${t('workout', 'time')}: ${formatTime(workoutDuration)}`,
 			[
-				{ text: 'Отмена', style: 'cancel' },
+				{ text: t('common', 'cancel'), style: 'cancel' },
 				{
-					text: 'Завершить',
+					text: t('workout', 'finish'),
 					onPress: async () => {
 						setIsSaving(true)
 						try {
@@ -1023,17 +1026,15 @@ export default function CreateWorkoutScreen() {
 							await completeWorkout(workoutData)
 							await stopWorkoutTimer()
 
-							// Очищаем состояние перед переходом
 							setExercises([])
-							setWorkoutName('Моя тренировка')
+							setWorkoutName(t('workout', 'myWorkout'))
 							setNotes('')
 							setWorkoutDuration(0)
 
-							// Используем replace с навигацией на главный таб
 							router.replace('/(tabs)')
 						} catch (error) {
 							console.error('Error saving workout:', error)
-							Alert.alert('Ошибка', 'Не удалось сохранить тренировку')
+							Alert.alert(t('common', 'error'), t('workout', 'saveError'))
 							setIsSaving(false)
 						}
 					},
@@ -1051,12 +1052,12 @@ export default function CreateWorkoutScreen() {
 			notes.trim().length > 0
 		) {
 			Alert.alert(
-				'Отменить тренировку?',
-				'Все данные будут удалены без сохранения',
+				t('workout', 'discardTitle'),
+				t('workout', 'discardMsg'),
 				[
-					{ text: 'Продолжить', style: 'cancel' },
+					{ text: t('workout', 'continueBtn'), style: 'cancel' },
 					{
-						text: 'Отменить',
+						text: t('workout', 'discard'),
 						style: 'destructive',
 						onPress: async () => {
 							await stopWorkoutTimer()
@@ -1090,7 +1091,7 @@ export default function CreateWorkoutScreen() {
 					<View style={styles.loadingSpinner}>
 						<Ionicons name='barbell' size={48} color={COLORS.primary} />
 					</View>
-					<Text style={styles.loadingText}>Сохранение тренировки...</Text>
+					<Text style={styles.loadingText}>{t('workout', 'saving')}</Text>
 				</View>
 			</SafeAreaView>
 		)
@@ -1112,7 +1113,7 @@ export default function CreateWorkoutScreen() {
 						style={styles.workoutNameInput}
 						value={workoutName}
 						onChangeText={setWorkoutName}
-						placeholder='Название тренировки'
+						placeholder={t('workout', 'myWorkout')}
 						placeholderTextColor={COLORS.textSecondary}
 					/>
 				</View>
@@ -1122,7 +1123,7 @@ export default function CreateWorkoutScreen() {
 					style={styles.finishButton}
 					activeOpacity={0.7}
 				>
-					<Text style={styles.finishButtonText}>Завершить</Text>
+					<Text style={styles.finishButtonText}>{t('workout', 'finish')}</Text>
 				</TouchableOpacity>
 			</View>
 
@@ -1137,23 +1138,23 @@ export default function CreateWorkoutScreen() {
 							<Text style={styles.statNumber}>
 								{totalCompleted}/{totalSets}
 							</Text>
-							<Text style={styles.statLabel}>Подходы</Text>
+							<Text style={styles.statLabel}>{t('workout', 'sets')}</Text>
 						</View>
 						<View style={styles.statItem}>
 							<Text style={styles.statNumber}>{exercises.length}</Text>
-							<Text style={styles.statLabel}>Упражнения</Text>
+							<Text style={styles.statLabel}>{t('workout', 'exercises')}</Text>
 						</View>
 						{isWorkoutActive && (
 							<View style={styles.statItem}>
 								<Text style={styles.statNumber}>
 									{formatTime(workoutDuration)}
 								</Text>
-								<Text style={styles.statLabel}>Время</Text>
+								<Text style={styles.statLabel}>{t('workout', 'time')}</Text>
 							</View>
 						)}
 						<View style={styles.statItem}>
 							<Text style={styles.statNumber}>{totalVolume}</Text>
-							<Text style={styles.statLabel}>Объем</Text>
+							<Text style={styles.statLabel}>{t('workout', 'volume')}</Text>
 						</View>
 					</View>
 				</View>
@@ -1161,10 +1162,10 @@ export default function CreateWorkoutScreen() {
 				<View style={styles.exercisesSection}>
 					<View style={styles.sectionHeader}>
 						<Text style={{ ...styles.sectionTitle, paddingHorizontal: 16 }}>
-							Упражнения
+							{t('workout', 'exercises')}
 						</Text>
 						<Text style={{ ...styles.sectionSubtitle, paddingHorizontal: 16 }}>
-							{exercises.length} упражнений
+							{exercises.length} {t('workout', 'exercises').toLowerCase()}
 						</Text>
 					</View>
 
@@ -1177,9 +1178,9 @@ export default function CreateWorkoutScreen() {
 									color={COLORS.textSecondary}
 								/>
 							</View>
-							<Text style={styles.emptyTitle}>Нет упражнений</Text>
+							<Text style={styles.emptyTitle}>{t('workout', 'noExercises')}</Text>
 							<Text style={styles.emptySubtitle}>
-								Добавьте первое упражнение, чтобы начать тренировку
+								{t('workout', 'noExercisesSubtitle')}
 							</Text>
 							<TouchableOpacity
 								style={styles.addFirstExerciseButton}
@@ -1191,7 +1192,7 @@ export default function CreateWorkoutScreen() {
 							>
 								<Ionicons name='add' size={20} color={COLORS.background} />
 								<Text style={styles.addFirstExerciseText}>
-									Добавить упражнение
+									{t('workout', 'addExercise')}
 								</Text>
 							</TouchableOpacity>
 						</View>
@@ -1223,7 +1224,7 @@ export default function CreateWorkoutScreen() {
 									<Ionicons name='add' size={24} color={COLORS.primary} />
 								</View>
 								<Text style={styles.addExerciseCardText}>
-									Добавить упражнение
+									{t('workout', 'addExercise')}
 								</Text>
 							</TouchableOpacity>
 						</>
@@ -1232,7 +1233,7 @@ export default function CreateWorkoutScreen() {
 
 				<View style={styles.notesSection}>
 					<View style={styles.sectionHeader}>
-						<Text style={styles.sectionTitle}>Заметки</Text>
+						<Text style={styles.sectionTitle}>{t('workout', 'notes')}</Text>
 						<Ionicons
 							name='create-outline'
 							size={20}
@@ -1241,7 +1242,7 @@ export default function CreateWorkoutScreen() {
 					</View>
 					<TextInput
 						style={styles.notesInput}
-						placeholder='Добавьте заметки к тренировке...'
+						placeholder={t('workout', 'notesPlaceholder')}
 						placeholderTextColor={COLORS.textSecondary}
 						multiline
 						numberOfLines={4}

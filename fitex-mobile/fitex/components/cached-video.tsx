@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react'
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
+import { useLanguage } from '@/contexts/language-context'
 import { VideoView, useVideoPlayer } from 'expo-video'
 import { useVideoCache } from '@/hooks/use-video-cache'
+import React, { useEffect } from 'react'
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
 
 interface CachedVideoProps {
 	/** Текущая ссылка из muscle_groups.ts — может меняться */
@@ -24,6 +25,7 @@ export const CachedVideo: React.FC<CachedVideoProps> = ({
 	muted = true,
 	nativeControls = false,
 }) => {
+	const { t } = useLanguage()
 	const { localUri, isLoading, progress, error } = useVideoCache(
 		remoteUrl,
 		videoId,
@@ -60,7 +62,7 @@ export const CachedVideo: React.FC<CachedVideoProps> = ({
 					</View>
 				)}
 				{!remoteUrl && (
-					<Text style={styles.noVideoText}>Видео недоступно</Text>
+					<Text style={styles.noVideoText}>{t('exercises', 'videoUnavailable')}</Text>
 				)}
 			</View>
 		)

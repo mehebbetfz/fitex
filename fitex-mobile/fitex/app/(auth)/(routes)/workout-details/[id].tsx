@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
@@ -159,6 +160,7 @@ const PROGRESS_DATA = {
 }
 
 export default function WorkoutDetailScreen() {
+	const { t } = useLanguage()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const [workout, setWorkout] = useState<WorkoutDetail | null>(null)
 	const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
@@ -178,16 +180,15 @@ export default function WorkoutDetailScreen() {
 
 	const handleDeleteWorkout = () => {
 		Alert.alert(
-			'Удалить тренировку',
-			'Вы уверены, что хотите удалить эту тренировку?',
+			t('workout', 'deleteExercise'),
+			t('workout', 'deleteSetMsg'),
 			[
-				{ text: 'Отмена', style: 'cancel' },
+				{ text: t('common', 'cancel'), style: 'cancel' },
 				{
-					text: 'Удалить',
+					text: t('common', 'delete'),
 					style: 'destructive',
 					onPress: () => {
 						router.back()
-						// Здесь должна быть логика удаления
 					},
 				},
 			],
@@ -213,9 +214,9 @@ export default function WorkoutDetailScreen() {
 					</View>
 				</View>
 				<View style={styles.exerciseStats}>
-					<Text style={styles.volumeText}>{exercise.volume} кг</Text>
-					<Text style={styles.setsText}>{exercise.sets.length} подх.</Text>
-				</View>
+				<Text style={styles.volumeText}>{exercise.volume} {t('records', 'kg')}</Text>
+				<Text style={styles.setsText}>{exercise.sets.length} {t('workout', 'sets')}</Text>
+			</View>
 			</View>
 			{exercise.notes && (
 				<Text style={styles.exerciseNotes} numberOfLines={1}>
@@ -238,7 +239,7 @@ export default function WorkoutDetailScreen() {
 
 		return (
 			<View style={styles.chartContainer}>
-				<Text style={styles.chartTitle}>Прогресс по упражнению</Text>
+					<Text style={styles.chartTitle}>{t('records', 'progress')}</Text>
 				<LineChart
 					data={{
 						labels: data.labels,
@@ -277,13 +278,13 @@ export default function WorkoutDetailScreen() {
 			<SafeAreaView style={styles.container}>
 				<View style={styles.centerContent}>
 					<Ionicons name='barbell-outline' size={64} color='#8E8E93' />
-					<Text style={styles.notFoundText}>Тренировка не найдена</Text>
-					<TouchableOpacity
-						style={styles.backButton}
-						onPress={() => router.back()}
-					>
-						<Text style={styles.backButtonText}>Назад</Text>
-					</TouchableOpacity>
+				<Text style={styles.notFoundText}>{t('history', 'noWorkouts')}</Text>
+				<TouchableOpacity
+					style={styles.backButton}
+					onPress={() => router.back()}
+				>
+					<Text style={styles.backButtonText}>{t('common', 'cancel')}</Text>
+				</TouchableOpacity>
 				</View>
 			</SafeAreaView>
 		)
@@ -301,7 +302,7 @@ export default function WorkoutDetailScreen() {
 						<Ionicons name='arrow-back' size={24} color='#FFFFFF' />
 					</TouchableOpacity>
 					<View style={styles.headerTitle}>
-						<Text style={styles.headerTitleText}>Детали тренировки</Text>
+						<Text style={styles.headerTitleText}>{t('workout', 'title')}</Text>
 						<Text style={styles.headerSubtitle}>
 							{workout.date}, {workout.time}
 						</Text>
@@ -348,7 +349,7 @@ export default function WorkoutDetailScreen() {
 									size={16}
 									color='#8E8E93'
 								/>
-								<Text style={styles.notesTitle}>Заметки</Text>
+								<Text style={styles.notesTitle}>{t('workout', 'notes')}</Text>
 								<Ionicons
 									name={showNotes ? 'chevron-up' : 'chevron-down'}
 									size={16}
@@ -364,32 +365,32 @@ export default function WorkoutDetailScreen() {
 					<View style={styles.statsGrid}>
 						<View style={styles.statItem}>
 							<Text style={styles.statValue}>{workout.totalExercises}</Text>
-							<Text style={styles.statLabel}>Упражнений</Text>
-						</View>
-						<View style={styles.statItem}>
-							<Text style={styles.statValue}>{workout.totalSets}</Text>
-							<Text style={styles.statLabel}>Подходов</Text>
-						</View>
-						<View style={styles.statItem}>
-							<Text style={styles.statValue}>
-								{workout.totalVolume.toLocaleString()}
-							</Text>
-							<Text style={styles.statLabel}>Общий тоннаж</Text>
-						</View>
-						<View style={styles.statItem}>
-							<Text style={styles.statValue}>
-								{Math.round(workout.totalVolume / workout.totalSets)}
-							</Text>
-							<Text style={styles.statLabel}>Ср. вес/подход</Text>
-						</View>
+					<Text style={styles.statLabel}>{t('workout', 'exercises')}</Text>
+					</View>
+					<View style={styles.statItem}>
+						<Text style={styles.statValue}>{workout.totalSets}</Text>
+						<Text style={styles.statLabel}>{t('workout', 'sets')}</Text>
+					</View>
+					<View style={styles.statItem}>
+						<Text style={styles.statValue}>
+							{workout.totalVolume.toLocaleString()}
+						</Text>
+						<Text style={styles.statLabel}>{t('progress', 'totalVolume')}</Text>
+					</View>
+					<View style={styles.statItem}>
+						<Text style={styles.statValue}>
+							{Math.round(workout.totalVolume / workout.totalSets)}
+						</Text>
+						<Text style={styles.statLabel}>{t('workout', 'weight')}/{t('workout', 'sets')}</Text>
+					</View>
 					</View>
 				</View>
 
 				{/* Список упражнений */}
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>
-						Упражнения ({workout.exercises.length})
-					</Text>
+				<Text style={styles.sectionTitle}>
+					{t('workout', 'exercises')} ({workout.exercises.length})
+				</Text>
 					<View style={styles.exercisesList}>
 						{workout.exercises.map(renderExerciseCard)}
 					</View>
@@ -398,17 +399,17 @@ export default function WorkoutDetailScreen() {
 				{/* Детали выбранного упражнения */}
 				{selectedExercise && (
 					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>
-							{selectedExercise.name} - Подходы
-						</Text>
+					<Text style={styles.sectionTitle}>
+						{selectedExercise.name} - {t('workout', 'sets')}
+					</Text>
 
-						<View style={styles.setsTable}>
-							<View style={styles.tableHeader}>
-								<Text style={styles.tableHeaderText}>Подход</Text>
-								<Text style={styles.tableHeaderText}>Вес (кг)</Text>
-								<Text style={styles.tableHeaderText}>Повторения</Text>
-								<Text style={styles.tableHeaderText}>Тоннаж</Text>
-							</View>
+					<View style={styles.setsTable}>
+						<View style={styles.tableHeader}>
+							<Text style={styles.tableHeaderText}>{t('workout', 'sets')}</Text>
+							<Text style={styles.tableHeaderText}>{t('workout', 'weight')} ({t('records', 'kg')})</Text>
+							<Text style={styles.tableHeaderText}>{t('workout', 'reps')}</Text>
+							<Text style={styles.tableHeaderText}>{t('progress', 'totalVolume')}</Text>
+						</View>
 
 							{selectedExercise.sets.map((set, index) => (
 								<View key={index} style={styles.tableRow}>
@@ -419,15 +420,15 @@ export default function WorkoutDetailScreen() {
 								</View>
 							))}
 
-							<View style={styles.tableFooter}>
-								<Text style={styles.tableFooterText}>Всего:</Text>
-								<Text style={styles.tableFooterText}>
-									{selectedExercise.sets.reduce(
-										(sum, set) => sum + set.weight,
-										0,
-									)}{' '}
-									кг
-								</Text>
+						<View style={styles.tableFooter}>
+							<Text style={styles.tableFooterText}>{t('common', 'all')}:</Text>
+							<Text style={styles.tableFooterText}>
+								{selectedExercise.sets.reduce(
+									(sum, set) => sum + set.weight,
+									0,
+								)}{' '}
+								{t('records', 'kg')}
+							</Text>
 								<Text style={styles.tableFooterText}>
 									{selectedExercise.sets.reduce(
 										(sum, set) => sum + set.reps,
@@ -435,8 +436,8 @@ export default function WorkoutDetailScreen() {
 									)}
 								</Text>
 								<Text style={styles.tableFooterText}>
-									{selectedExercise.volume} кг
-								</Text>
+								{selectedExercise.volume} {t('records', 'kg')}
+							</Text>
 							</View>
 						</View>
 
@@ -444,7 +445,7 @@ export default function WorkoutDetailScreen() {
 							<View style={styles.oneRepMaxContainer}>
 								<Ionicons name='trophy-outline' size={16} color='#FFD60A' />
 								<Text style={styles.oneRepMaxText}>
-									1ПМ: {selectedExercise.oneRepMax} кг
+									1RM: {selectedExercise.oneRepMax} {t('records', 'kg')}
 								</Text>
 							</View>
 						)}
@@ -471,12 +472,12 @@ export default function WorkoutDetailScreen() {
 				<View style={styles.actionsContainer}>
 					<TouchableOpacity style={styles.editButton}>
 						<Ionicons name='create-outline' size={20} color='#FFFFFF' />
-						<Text style={styles.editButtonText}>Редактировать</Text>
-					</TouchableOpacity>
-					<TouchableOpacity style={styles.shareButton}>
-						<Ionicons name='share-outline' size={20} color='#00ff48' />
-						<Text style={styles.shareButtonText}>Поделиться</Text>
-					</TouchableOpacity>
+					<Text style={styles.editButtonText}>{t('common', 'edit')}</Text>
+				</TouchableOpacity>
+				<TouchableOpacity style={styles.shareButton}>
+					<Ionicons name='share-outline' size={20} color='#00ff48' />
+					<Text style={styles.shareButtonText}>{t('export', 'dialogTitle')}</Text>
+				</TouchableOpacity>
 				</View>
 			</ScrollView>
 		</SafeAreaView>

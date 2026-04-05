@@ -5,6 +5,7 @@ import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
+import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { Image } from 'expo-image'
@@ -314,6 +315,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 	onClose,
 	exerciseDetail,
 }) => {
+	const { t } = useLanguage()
 	const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
 	const [modalVisible, setModalVisible] = useState(false)
 
@@ -339,6 +341,15 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 	const handleClose = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 		onClose()
+	}
+
+	const getDifficultyLabel = (diff: string) => {
+		const MAP: Record<string, string> = {
+			'Начинающий': t('exercises', 'diffBeginner'),
+			'Средний': t('exercises', 'diffIntermediate'),
+			'Продвинутый': t('exercises', 'diffAdvanced'),
+		}
+		return MAP[diff] || diff
 	}
 
 	if (!modalVisible || !exerciseDetail) return null
@@ -474,10 +485,10 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 										<Ionicons name='barbell' size={18} color={COLORS.primary} />
 									</View>
 									<View>
-										<Text style={styles.detailStatLabel}>Сложность</Text>
-										<Text style={styles.detailStatValue}>
-											{exerciseDetail.difficulty}
-										</Text>
+										<Text style={styles.detailStatLabel}>{t('exercises', 'difficulty')}</Text>
+									<Text style={styles.detailStatValue}>
+										{getDifficultyLabel(exerciseDetail.difficulty)}
+									</Text>
 									</View>
 								</View>
 								<View style={styles.detailStat}>
@@ -489,7 +500,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 										/>
 									</View>
 									<View>
-										<Text style={styles.detailStatLabel}>Оборудование</Text>
+										<Text style={styles.detailStatLabel}>{t('exercises', 'equipment')}</Text>
 										{exerciseDetail.equipment.map((item, index) => (
 											<Text key={index} style={styles.detailStatValue}>
 												{item}
@@ -500,12 +511,12 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 							</View>
 
 							<View style={styles.section}>
-								<Text style={styles.sectionTitle}>Работающие мышцы</Text>
+								<Text style={styles.sectionTitle}>{t('exercises', 'workingMuscles')}</Text>
 								<View style={styles.muscleGroupsGridDetail}>
 									<View style={styles.muscleGroupItem}>
 										<View style={styles.muscleGroupHeader}>
 											<Ionicons name='star' size={16} color={COLORS.primary} />
-											<Text style={styles.muscleGroupLabel}>Основные:</Text>
+											<Text style={styles.muscleGroupLabel}>{t('exercises', 'primaryMuscles')}</Text>
 										</View>
 										{exerciseDetail.primaryMuscles.map((m, i) => (
 											<View key={i} style={styles.muscleItem}>
@@ -523,7 +534,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 													color={COLORS.textSecondary}
 												/>
 												<Text style={styles.muscleGroupLabel}>
-													Второстепенные:
+												{t('exercises', 'secondaryMuscles')}
 												</Text>
 											</View>
 											{exerciseDetail.secondaryMuscles.map((m, i) => (
@@ -550,7 +561,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 							</View>
 
 							<View style={styles.section}>
-								<Text style={styles.sectionTitle}>Техника выполнения</Text>
+								<Text style={styles.sectionTitle}>{t('exercises', 'technique')}</Text>
 								<View style={styles.tipsList}>
 									{exerciseDetail.tips.map((tip, index) => (
 										<View

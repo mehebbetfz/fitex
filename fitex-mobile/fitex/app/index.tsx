@@ -15,6 +15,11 @@ export default function Index() {
 		return <Redirect href='/(auth)/language-select' />
 	}
 
+	// Redirect to trial paywall if user hasn't started their trial yet
+	if (user && !user.trialStartedAt) {
+		return <Redirect href='/(auth)/trial-paywall' />
+	}
+
 	if (user) {
 		return <Redirect href='/(tabs)' />
 	}

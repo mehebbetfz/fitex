@@ -508,11 +508,12 @@ const SectionLabel = ({ label }: { label: string }) => (
 // ─────────────────────────────────────────────
 const MuscleCardDate = ({ lastTrained }: { lastTrained: string }) => {
 	const { t } = useLanguage()
+	const noDataLabel = t('recovery', 'noData')
 	return (
 		<Text style={styles.cardDate} numberOfLines={1}>
-			{lastTrained !== 'Нет данных'
+			{lastTrained && lastTrained !== 'Нет данных' && lastTrained !== noDataLabel
 				? `${t('recovery', 'lastTrained')} ${lastTrained}`
-				: t('recovery', 'noData')}
+				: noDataLabel}
 		</Text>
 	)
 }
@@ -555,6 +556,17 @@ const MuscleCard = ({
 		svgColors[key] = liveColor
 	})
 
+	const { t } = useLanguage()
+	const MUSCLE_NAME_KEYS: Record<string, string> = {
+		'Грудь': 'chestLabel', 'Пресс': 'waistLabel', 'Бицепс': 'bicepsLabel',
+		'Плечи': 'neckLabel', 'Трапеции': 'thighLabel', 'Ноги': 'hipsLabel',
+		'Предплечья': 'calfLabel', 'Шея': 'neckLabel', 'Ягодицы': 'hipsLabel',
+		'Спина': 'bodyFatLabel', 'Трицепс': 'bicepsLabel',
+	}
+	const muscleName = MUSCLE_NAME_KEYS[muscle.name]
+		? t('measurements', MUSCLE_NAME_KEYS[muscle.name] as any)
+		: muscle.name
+
 	return (
 		<TouchableOpacity
 			style={[
@@ -586,7 +598,7 @@ const MuscleCard = ({
 			</View>
 
 		<View style={styles.cardBody}>
-			<Text style={styles.cardName}>{muscle.name}</Text>
+		<Text style={styles.cardName}>{muscleName}</Text>
 			<MuscleCardDate lastTrained={liveStats.lastTrained} />
 		</View>
 
@@ -651,8 +663,8 @@ export default function RecoveryTab() {
 							r => r.muscle_name?.toLowerCase() === muscleName.toLowerCase(),
 						)
 
-			if (matched.length === 0)
-				return { status: 'not_trained', recovery: 0, lastTrained: 'Нет данных' }
+		if (matched.length === 0)
+			return { status: 'not_trained', recovery: 0, lastTrained: t('recovery', 'noData') }
 
 			const avgRecovery = Math.round(
 				matched.reduce((sum, r) => sum + (r.recovery ?? 0), 0) / matched.length,
@@ -671,9 +683,9 @@ export default function RecoveryTab() {
 			const lastTrained =
 				lastDates.length > 0
 					? formatDate(lastDates.sort().reverse()[0])
-					: 'Нет данных'
+				: t('recovery', 'noData')
 
-			return { status, recovery: avgRecovery, lastTrained }
+		return { status, recovery: avgRecovery, lastTrained }
 		},
 		[recoveryData],
 	)

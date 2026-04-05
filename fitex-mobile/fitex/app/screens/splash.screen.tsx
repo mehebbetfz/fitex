@@ -1,4 +1,5 @@
 // components/CustomSplash.tsx
+import { useLanguage } from '@/contexts/language-context'
 import { mains } from '@/constants/images'
 import {
 	ImageBackground,
@@ -10,6 +11,7 @@ import {
 } from 'react-native'
 
 export default function CustomSplash() {
+	const { t } = useLanguage()
 	return (
 		<>
 			<StatusBar barStyle='light-content' backgroundColor='#000' />
@@ -30,12 +32,12 @@ export default function CustomSplash() {
 					{/* Нижняя часть с кнопкой */}
 					<View style={styles.bottomSection}>
 						<TouchableOpacity style={styles.button}>
-							<Text style={styles.buttonText}>Get Started</Text>
+							<Text style={styles.buttonText}>{t('splash', 'getStarted')}</Text>
 						</TouchableOpacity>
 
 						<View style={styles.footerNote}>
-							<Text style={styles.footerText}>Already have an account? </Text>
-							<Text style={styles.footerLink}>Sign In</Text>
+						<Text style={styles.footerText}>{t('splash', 'hasAccount')} </Text>
+						<Text style={styles.footerLink}>{t('splash', 'signIn')}</Text>
 						</View>
 					</View>
 				</View>

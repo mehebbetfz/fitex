@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
@@ -196,6 +197,7 @@ const MONTHS = [
 
 export default function FullHistoryScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const navigation = useNavigation()
 	const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
 	const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -308,11 +310,11 @@ export default function FullHistoryScreen() {
 			<View style={styles.workoutStats}>
 				<View style={styles.statItem}>
 					<Ionicons name='barbell' size={16} color='#8E8E93' />
-					<Text style={styles.statText}>{item.exercises} упр.</Text>
+					<Text style={styles.statText}>{item.exercises} {t('history', 'exercises')}</Text>
 				</View>
 				<View style={styles.statItem}>
 					<Ionicons name='repeat' size={16} color='#8E8E93' />
-					<Text style={styles.statText}>{item.sets} подх.</Text>
+					<Text style={styles.statText}>{item.sets} {t('history', 'sets')}</Text>
 				</View>
 				<View style={styles.statItem}>
 					<Ionicons name='time' size={16} color='#8E8E93' />
@@ -322,7 +324,7 @@ export default function FullHistoryScreen() {
 					<View style={styles.statItem}>
 						<Ionicons name='trending-up' size={16} color='#8E8E93' />
 						<Text style={styles.statText}>
-							{item.volume.toLocaleString()} кг
+							{item.volume.toLocaleString()} {t('history', 'kg')}
 						</Text>
 					</View>
 				)}
@@ -352,12 +354,12 @@ export default function FullHistoryScreen() {
 						<View style={styles.monthStat}>
 							<Ionicons name='barbell-outline' size={14} color='#8E8E93' />
 							<Text style={styles.monthStatText}>
-								{totalWorkouts} тренировок
+								{totalWorkouts} {t('history', 'workout5')}
 							</Text>
 						</View>
 						<View style={styles.monthStat}>
 							<Ionicons name='time-outline' size={14} color='#8E8E93' />
-							<Text style={styles.monthStatText}>{totalTime} мин</Text>
+							<Text style={styles.monthStatText}>{totalTime} {t('history', 'min')}</Text>
 						</View>
 						{totalVolume > 0 && (
 							<View style={styles.monthStat}>
@@ -367,7 +369,7 @@ export default function FullHistoryScreen() {
 									color='#8E8E93'
 								/>
 								<Text style={styles.monthStatText}>
-									{totalVolume.toLocaleString()} кг
+									{totalVolume.toLocaleString()} {t('history', 'kg')}
 								</Text>
 							</View>
 						)}
@@ -400,7 +402,7 @@ export default function FullHistoryScreen() {
 	}
 
 	const getFilterLabel = (filter: string) => {
-		if (filter === 'all') return 'Все мышцы'
+		if (filter === 'all') return t('history', 'allMuscles')
 		return filter
 	}
 
@@ -414,17 +416,17 @@ export default function FullHistoryScreen() {
 					<Ionicons name='arrow-back' size={24} color='#FFFFFF' />
 				</TouchableOpacity>
 				<View>
-					<Text style={styles.title}>Вся история</Text>
-					<Text style={styles.subtitle}>
-						{ALL_WORKOUT_HISTORY.length} тренировок
-					</Text>
+				<Text style={styles.title}>{t('history', 'title')}</Text>
+				<Text style={styles.subtitle}>
+					{ALL_WORKOUT_HISTORY.length} {t('history', 'workout5')}
+				</Text>
 				</View>
 				<View style={styles.headerRight} />
 			</View>
 
 			{/* Фильтры */}
 			<View style={styles.filtersSection}>
-				<Text style={styles.filtersTitle}>Фильтровать по мышцам</Text>
+				<Text style={styles.filtersTitle}>{t('history', 'filterByMuscle')}</Text>
 				<FlatList
 					horizontal
 					data={muscleGroups}
@@ -462,9 +464,9 @@ export default function FullHistoryScreen() {
 				ListEmptyComponent={
 					<View style={styles.emptyState}>
 						<Ionicons name='barbell-outline' size={64} color='#3A3A3C' />
-						<Text style={styles.emptyStateTitle}>Нет тренировок</Text>
+						<Text style={styles.emptyStateTitle}>{t('history', 'noWorkouts')}</Text>
 						<Text style={styles.emptyStateText}>
-							По выбранному фильтру тренировки не найдены
+							{t('history', 'noWorkoutsFilter')}
 						</Text>
 					</View>
 				}

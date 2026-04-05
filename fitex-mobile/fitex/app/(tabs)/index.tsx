@@ -78,20 +78,23 @@ const MEASUREMENT_ICONS: Record<string, string> = {
 }
 
 // ── Вынесено за компонент ──
+type TFn = (section: string, key: string) => string
+
 const calculateMuscleGrowth = (
 	measurements: BodyMeasurement[],
+	t: TFn,
 ): {
 	value: string
 	subtitle: string
 	trend: 'positive' | 'negative' | 'neutral'
 } => {
 	if (measurements.length === 0)
-		return { value: '0 кг', subtitle: 'нет данных', trend: 'neutral' }
+		return { value: `0 ${t('records', 'kg')}`, subtitle: t('common', 'noData'), trend: 'neutral' }
 	const muscleMeasurements = measurements.filter(m =>
 		['Грудь', 'Бицепс', 'Бедра', 'Шея'].includes(m.name),
 	)
 	if (muscleMeasurements.length === 0)
-		return { value: '0 кг', subtitle: 'нет замеров мышц', trend: 'neutral' }
+		return { value: `0 ${t('records', 'kg')}`, subtitle: t('progress', 'noMeasurements'), trend: 'neutral' }
 	const totalChange = muscleMeasurements.reduce(
 		(sum, m) => sum + (m.trend === 'up' ? 0.5 : m.trend === 'down' ? -0.5 : 0),
 		0,
@@ -99,20 +102,20 @@ const calculateMuscleGrowth = (
 	const avgChange = totalChange / muscleMeasurements.length
 	if (avgChange > 0)
 		return {
-			value: `+${avgChange.toFixed(1)} кг`,
-			subtitle: 'рост мышечной массы',
+			value: `+${avgChange.toFixed(1)} ${t('records', 'kg')}`,
+			subtitle: t('progress', 'muscleGrowth'),
 			trend: 'positive',
 		}
 	if (avgChange < 0)
 		return {
-			value: `${avgChange.toFixed(1)} кг`,
-			subtitle: 'снижение массы',
+			value: `${avgChange.toFixed(1)} ${t('records', 'kg')}`,
+			subtitle: t('progress', 'massDecrease'),
 			trend: 'negative',
 		}
-	return { value: '0 кг', subtitle: 'без изменений', trend: 'neutral' }
+	return { value: `0 ${t('records', 'kg')}`, subtitle: t('progress', 'noChange'), trend: 'neutral' }
 }
 
-const calculateStrengthProgress = async (): Promise<{
+const calculateStrengthProgress = async (t: TFn): Promise<{
 	value: string
 	subtitle: string
 	trend: 'positive' | 'negative' | 'neutral'
@@ -120,44 +123,45 @@ const calculateStrengthProgress = async (): Promise<{
 	try {
 		const records = await db.getPersonalRecords()
 		if (records.length === 0)
-			return { value: '0%', subtitle: 'нет рекордов', trend: 'neutral' }
+			return { value: '0%', subtitle: t('progress', 'noRecords'), trend: 'neutral' }
 		const strengthRecords = records.filter(r => r.category === 'strength')
 		if (strengthRecords.length === 0)
-			return { value: '0%', subtitle: 'нет силовых рекордов', trend: 'neutral' }
+			return { value: '0%', subtitle: t('progress', 'noStrengthRecords'), trend: 'neutral' }
 		const positiveTrends = strengthRecords.filter(r => r.trend === 'up').length
 		const totalRecords = strengthRecords.length
 		const progressPercent = Math.round((positiveTrends / totalRecords) * 100)
 		if (progressPercent > 50)
 			return {
 				value: `+${progressPercent}%`,
-				subtitle: `улучшение ${positiveTrends}/${totalRecords}`,
+				subtitle: `${t('progress', 'improved')} ${positiveTrends}/${totalRecords}`,
 				trend: 'positive',
 			}
 		if (progressPercent < 30)
 			return {
 				value: `${progressPercent}%`,
-				subtitle: `ухудшение ${positiveTrends}/${totalRecords}`,
+				subtitle: `${t('progress', 'decreased')} ${positiveTrends}/${totalRecords}`,
 				trend: 'negative',
 			}
 		return {
 			value: `${progressPercent}%`,
-			subtitle: `стабильно ${positiveTrends}/${totalRecords}`,
+			subtitle: `${t('progress', 'stable')} ${positiveTrends}/${totalRecords}`,
 			trend: 'neutral',
 		}
 	} catch {
-		return { value: '0%', subtitle: 'ошибка расчета', trend: 'neutral' }
+		return { value: '0%', subtitle: t('common', 'unknownError'), trend: 'neutral' }
 	}
 }
 
 const calculateEnduranceProgress = (
 	workouts: any[],
+	t: TFn,
 ): {
 	value: string
 	subtitle: string
 	trend: 'positive' | 'negative' | 'neutral'
 } => {
 	if (workouts.length === 0)
-		return { value: '0%', subtitle: 'нет тренировок', trend: 'neutral' }
+		return { value: '0%', subtitle: t('progress', 'noWorkouts'), trend: 'neutral' }
 	const recentWorkouts = workouts.slice(0, 10)
 	const avgDuration =
 		recentWorkouts.reduce((sum, w) => sum + (w.duration || 0), 0) /
@@ -171,24 +175,24 @@ const calculateEnduranceProgress = (
 		if (durationChange > 10)
 			return {
 				value: `+${Math.round(durationChange)}%`,
-				subtitle: 'рост выносливости',
+				subtitle: t('progress', 'enduranceGrowth'),
 				trend: 'positive',
 			}
 		if (durationChange < -10)
 			return {
 				value: `${Math.round(durationChange)}%`,
-				subtitle: 'снижение выносливости',
+				subtitle: t('progress', 'enduranceDecrease'),
 				trend: 'negative',
 			}
 		return {
 			value: `${Math.round(durationChange)}%`,
-			subtitle: 'стабильная выносливость',
+			subtitle: t('progress', 'enduranceStable'),
 			trend: 'neutral',
 		}
 	}
 	return {
-		value: `${Math.round(avgDuration)} мин`,
-		subtitle: 'средняя продолжительность',
+		value: `${Math.round(avgDuration)} ${t('history', 'min')}`,
+		subtitle: t('progress', 'avgDuration'),
 		trend: avgDuration > 60 ? 'positive' : 'neutral',
 	}
 }
@@ -328,8 +332,24 @@ const RecordSkeleton = () => (
 // ─────────────────────────────────────────────
 export default function StatisticsTab() {
 	const router = useRouter()
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const [selectedMetric, setSelectedMetric] = useState('Вес')
+
+	const getMeasurementDisplayName = (name: string) => {
+		const MAP: Record<string, string> = {
+			'Вес': t('measurements', 'weightLabel'),
+			'Грудь': t('measurements', 'chestLabel'),
+			'Талия': t('measurements', 'waistLabel'),
+			'Бедра': t('measurements', 'hipsLabel'),
+			'Бицепс': t('measurements', 'bicepsLabel'),
+			'Шея': t('measurements', 'neckLabel'),
+			'Икры': t('measurements', 'calfLabel'),
+			'Плечо': t('measurements', 'bicepsLabel'),
+			'Жир': t('measurements', 'bodyFatLabel'),
+			'Мышцы': t('measurements', 'thighLabel'),
+		}
+		return MAP[name] || name
+	}
 
 	const [measurementHistoryMap, setMeasurementHistoryMap] = useState<
 		Record<string, { month: string; value: number }[]>
@@ -407,20 +427,9 @@ export default function StatisticsTab() {
 				setBodyMeasurements(formattedMeasurements)
 				if (!silent) setLoading(prev => ({ ...prev, measurements: false }))
 
-				const months = [
-					'Янв',
-					'Фев',
-					'Мар',
-					'Апр',
-					'Май',
-					'Июн',
-					'Июл',
-					'Авг',
-					'Сен',
-					'Окт',
-					'Ноя',
-					'Дек',
-				]
+			const months = Array.from({ length: 12 }, (_, i) =>
+				new Intl.DateTimeFormat(language, { month: 'short' }).format(new Date(2024, i, 1))
+			)
 				const allByName = new Map<string, any[]>()
 				measurements.forEach(m => {
 					if (!allByName.has(m.name)) allByName.set(m.name, [])
@@ -464,47 +473,47 @@ export default function StatisticsTab() {
 
 				const stats = await db.getWorkoutStats()
 				const allWorkouts = await db.getWorkouts()
-				const muscleGrowth = calculateMuscleGrowth(formattedMeasurements)
-				const strengthProgress = await calculateStrengthProgress()
-				const enduranceProgress = calculateEnduranceProgress(allWorkouts)
+				const muscleGrowth = calculateMuscleGrowth(formattedMeasurements, t)
+				const strengthProgress = await calculateStrengthProgress(t)
+				const enduranceProgress = calculateEnduranceProgress(allWorkouts, t)
 				const totalVolume = stats.total_volume
 					? `${(stats.total_volume / 1000).toFixed(1)} т`
 					: '0 т'
 
-				setProgressStats([
-					{
-						id: '1',
-						title: 'Общий вес',
-						value: totalVolume,
-						subtitle: 'общий тоннаж',
-						icon: 'scale',
-						trend: 'positive',
-					},
-					{
-						id: '2',
-						title: 'Мышцы',
-						value: muscleGrowth.value,
-						subtitle: muscleGrowth.subtitle,
-						icon: 'fitness',
-						trend: muscleGrowth.trend,
-					},
-					{
-						id: '3',
-						title: 'Сила',
-						value: strengthProgress.value,
-						subtitle: strengthProgress.subtitle,
-						icon: 'barbell',
-						trend: strengthProgress.trend,
-					},
-					{
-						id: '4',
-						title: 'Выносливость',
-						value: enduranceProgress.value,
-						subtitle: enduranceProgress.subtitle,
-						icon: 'speedometer',
-						trend: enduranceProgress.trend,
-					},
-				])
+			setProgressStats([
+				{
+					id: '1',
+					title: t('progress', 'totalVolume'),
+					value: totalVolume,
+					subtitle: t('records', 'volume'),
+					icon: 'scale',
+					trend: 'positive',
+				},
+				{
+					id: '2',
+					title: t('recovery', 'muscleStatus'),
+					value: muscleGrowth.value,
+					subtitle: muscleGrowth.subtitle,
+					icon: 'fitness',
+					trend: muscleGrowth.trend,
+				},
+				{
+					id: '3',
+					title: t('records', 'catStrength'),
+					value: strengthProgress.value,
+					subtitle: strengthProgress.subtitle,
+					icon: 'barbell',
+					trend: strengthProgress.trend,
+				},
+				{
+					id: '4',
+					title: t('records', 'catEndurance'),
+					value: enduranceProgress.value,
+					subtitle: enduranceProgress.subtitle,
+					icon: 'speedometer',
+					trend: enduranceProgress.trend,
+				},
+			])
 				if (!silent) setLoading(prev => ({ ...prev, stats: false }))
 			} catch (error) {
 				console.error('Error loading statistics data:', error)
@@ -721,11 +730,11 @@ export default function StatisticsTab() {
 												selectedMetric === name && styles.activeMetricText,
 											]}
 										>
-											{name}
-										</Text>
-									</TouchableOpacity>
-								))}
-							</ScrollView>
+					{getMeasurementDisplayName(name)}
+									</Text>
+								</TouchableOpacity>
+							))}
+						</ScrollView>
 
 							<View style={styles.currentValueIndicator}>
 								<Text style={styles.currentValueText}>
@@ -807,7 +816,7 @@ export default function StatisticsTab() {
 													color='#34C759'
 												/>
 											</View>
-											<Text style={styles.measurementName}>{item.name}</Text>
+											<Text style={styles.measurementName}>{getMeasurementDisplayName(item.name)}</Text>
 										</View>
 										<View style={styles.measurementGridRight}>
 											<Text style={styles.measurementValue}>
@@ -920,9 +929,9 @@ export default function StatisticsTab() {
 					<ScrollView style={styles.measurementsInputContainer}>
 						{currentMeasurements.map((measurement, index) => (
 							<View key={index} style={styles.measurementInputRow}>
-								<Text style={styles.measurementLabel}>
-									{measurement.name} ({measurement.unit})
-								</Text>
+							<Text style={styles.measurementLabel}>
+								{getMeasurementDisplayName(measurement.name)} ({measurement.unit})
+							</Text>
 								<TextInput
 									style={styles.measurementInput}
 									value={measurement.value}

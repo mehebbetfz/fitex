@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
@@ -16,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function ProfileTab() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const [user, setUser] = useState({
 		firstName: 'Алексей',
 		lastName: 'Иванов',
@@ -221,7 +223,7 @@ export default function ProfileTab() {
 							<Text
 								style={[styles.statusText, { color: colors.textSecondary }]}
 							>
-								Локальный профиль
+								{t('profile', 'title')}
 							</Text>
 						</View>
 					</View>
@@ -233,7 +235,7 @@ export default function ProfileTab() {
 							{stats.totalWorkouts}
 						</Text>
 						<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-							Тренировок
+							{t('history', 'workout5')}
 						</Text>
 					</View>
 					<View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -242,7 +244,7 @@ export default function ProfileTab() {
 							{stats.totalSets}
 						</Text>
 						<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-							Подходов
+							{t('workout', 'sets')}
 						</Text>
 					</View>
 					<View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -251,14 +253,14 @@ export default function ProfileTab() {
 							{stats.streakDays}
 						</Text>
 						<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-							Дней подряд
+							{t('profile', 'title')}
 						</Text>
 					</View>
 				</View>
 
 				<View style={styles.section}>
 					<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-						Настройки
+						{t('profile', 'notifications')}
 					</Text>
 					<View
 						style={[styles.settingsCard, { backgroundColor: colors.surface }]}
@@ -273,7 +275,7 @@ export default function ProfileTab() {
 								<Text
 									style={[styles.settingLabel, { color: colors.textPrimary }]}
 								>
-									Уведомления
+									{t('profile', 'notifications')}
 								</Text>
 							</View>
 							<Switch
@@ -296,7 +298,7 @@ export default function ProfileTab() {
 								<Text
 									style={[styles.settingLabel, { color: colors.textPrimary }]}
 								>
-									Темная тема
+									{t('profile', 'syncData')}
 								</Text>
 							</View>
 							<Switch
@@ -321,7 +323,7 @@ export default function ProfileTab() {
 								<Text
 									style={[styles.settingLabel, { color: colors.textPrimary }]}
 								>
-									Метрическая система
+									{t('profile', 'language')}
 								</Text>
 							</View>
 							<Switch
@@ -342,7 +344,7 @@ export default function ProfileTab() {
 
 				<View style={styles.section}>
 					<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-						Меню
+						{t('profile', 'title')}
 					</Text>
 					<View style={[styles.menuCard, { backgroundColor: colors.surface }]}>
 						{menuItems.map((item, index) => (
@@ -377,23 +379,19 @@ export default function ProfileTab() {
 					style={[styles.logoutButton, { backgroundColor: colors.surface }]}
 					onPress={() => {
 						Alert.alert(
-							'Сброс данных',
-							'Вы уверены, что хотите сбросить все данные? Это действие нельзя отменить.',
+							t('profile', 'signOutTitle'),
+							t('profile', 'signOutConfirm'),
 							[
-								{ text: 'Отмена', style: 'cancel' },
+								{ text: t('common', 'cancel'), style: 'cancel' },
 								{
-									text: 'Сбросить',
+									text: t('common', 'confirm'),
 									style: 'destructive',
 									onPress: async () => {
 										try {
 											await AsyncStorage.clear()
-											Alert.alert(
-												'Успех',
-												'Все данные сброшены. Приложение будет перезапущено.',
-											)
-											// В реальном приложении здесь можно перезагрузить приложение
+											Alert.alert(t('common', 'success'), t('profile', 'syncDone'))
 										} catch (error) {
-											Alert.alert('Ошибка', 'Не удалось сбросить данные')
+											Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 										}
 									},
 								},
@@ -403,17 +401,17 @@ export default function ProfileTab() {
 				>
 					<Ionicons name='refresh-circle' size={22} color={colors.warning} />
 					<Text style={[styles.logoutText, { color: colors.warning }]}>
-						Сбросить все данные
+						{t('profile', 'signOut')}
 					</Text>
 				</TouchableOpacity>
 
 				<View style={styles.footer}>
-					<Text style={[styles.version, { color: colors.textTertiary }]}>
-						Версия 1.0.0
-					</Text>
-					<Text style={[styles.copyright, { color: colors.textTertiary }]}>
-						© 2024 Fitex. Все права защищены.
-					</Text>
+				<Text style={[styles.version, { color: colors.textTertiary }]}>
+					v1.0.0
+				</Text>
+				<Text style={[styles.copyright, { color: colors.textTertiary }]}>
+					© 2024 Fitex
+				</Text>
 				</View>
 			</ScrollView>
 		</SafeAreaView>

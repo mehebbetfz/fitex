@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -16,45 +17,27 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 const EXERCISE_CATEGORIES = [
 	{
 		id: 'strength',
-		name: 'Сила',
+		nameKey: 'catStrength',
 		icon: 'barbell',
-		exercises: [
-			'Жим лежа',
-			'Приседания',
-			'Становая тяга',
-			'Подтягивания',
-			'Жим стоя',
-			'Тяга в наклоне',
-		],
+		exercises: ['Bench Press', 'Squat', 'Deadlift', 'Pull-up', 'OHP', 'Bent-over Row'],
 	},
 	{
 		id: 'cardio',
-		name: 'Кардио',
+		nameKey: 'catCardio',
 		icon: 'heart',
-		exercises: [
-			'Бег 5 км',
-			'Бег 10 км',
-			'Велосипед 20 км',
-			'Плавание 100 м',
-			'Скакалка',
-		],
+		exercises: ['5k Run', '10k Run', '20k Bike', '100m Swim', 'Jump Rope'],
 	},
 	{
 		id: 'endurance',
-		name: 'Выносливость',
+		nameKey: 'catEndurance',
 		icon: 'time',
-		exercises: [
-			'Отжимания',
-			'Планка',
-			'Приседания (время)',
-			'Берпи',
-			'Скалолазание',
-		],
+		exercises: ['Push-ups', 'Plank', 'Squats (timed)', 'Burpees', 'Mountain Climbers'],
 	},
 ]
 
 export default function AddRecordScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const [selectedCategory, setSelectedCategory] = useState(
 		EXERCISE_CATEGORIES[0],
 	)
@@ -64,14 +47,14 @@ export default function AddRecordScreen() {
 	const [notes, setNotes] = useState('')
 
 	const handleSave = async () => {
-		if (!exercise.trim()) {
-			Alert.alert('Ошибка', 'Введите упражнение')
-			return
-		}
-		if (!weight.trim()) {
-			Alert.alert('Ошибка', 'Введите результат')
-			return
-		}
+	if (!exercise.trim()) {
+		Alert.alert(t('common', 'error'), t('records', 'exercisePlaceholder'))
+		return
+	}
+	if (!weight.trim()) {
+		Alert.alert(t('common', 'error'), t('records', 'kg'))
+		return
+	}
 		try {
 			const previousRecords = await db.getPersonalRecords()
 			const prev = previousRecords
@@ -104,12 +87,12 @@ export default function AddRecordScreen() {
 				previous_record: prev?.weight,
 				improvement,
 			})
-			Alert.alert('Успех', 'Рекорд сохранен!', [
-				{ text: 'OK', onPress: () => router.back() },
-			])
-		} catch {
-			Alert.alert('Ошибка', 'Не удалось сохранить рекорд')
-		}
+		Alert.alert(t('common', 'success'), t('records', 'saveRecord'), [
+			{ text: t('common', 'ok'), onPress: () => router.back() },
+		])
+	} catch {
+		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+	}
 	}
 
 	return (
@@ -118,7 +101,7 @@ export default function AddRecordScreen() {
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
-				<Text style={s.headerTitle}>Добавить рекорд</Text>
+				<Text style={s.headerTitle}>{t('records', 'addRecord')}</Text>
 				<View style={{ width: 30 }} />
 			</View>
 
@@ -127,7 +110,7 @@ export default function AddRecordScreen() {
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Категория */}
-				<Text style={s.label}>Категория</Text>
+				<Text style={s.label}>{t('records', 'category')}</Text>
 				<View style={s.categoryRow}>
 					{EXERCISE_CATEGORIES.map((cat, i) => {
 						const active = selectedCategory.id === cat.id
@@ -146,23 +129,23 @@ export default function AddRecordScreen() {
 									size={20}
 									color={active ? '#34C759' : '#8E8E93'}
 								/>
-								<Text style={[s.categoryName, active && s.categoryNameActive]}>
-									{cat.name}
-								</Text>
+							<Text style={[s.categoryName, active && s.categoryNameActive]}>
+								{t('records', cat.nameKey as any)}
+							</Text>
 							</TouchableOpacity>
 						)
 					})}
 				</View>
 
 				{/* Упражнение */}
-				<Text style={s.label}>Упражнение</Text>
-				<TextInput
-					style={s.input}
-					value={exercise}
-					onChangeText={setExercise}
-					placeholder='Введите или выберите ниже'
-					placeholderTextColor='#8E8E93'
-				/>
+			<Text style={s.label}>{t('records', 'exerciseName')}</Text>
+			<TextInput
+				style={s.input}
+				value={exercise}
+				onChangeText={setExercise}
+				placeholder={t('records', 'exercisePlaceholder')}
+				placeholderTextColor='#8E8E93'
+			/>
 				<ScrollView
 					horizontal
 					showsHorizontalScrollIndicator={false}
@@ -184,43 +167,43 @@ export default function AddRecordScreen() {
 				</ScrollView>
 
 				{/* Результат */}
-				<Text style={s.label}>Вес / Результат</Text>
-				<TextInput
-					style={s.input}
-					value={weight}
-					onChangeText={setWeight}
-					placeholder='напр. 100 кг или 22:30'
-					placeholderTextColor='#8E8E93'
-				/>
+			<Text style={s.label}>{t('records', 'record')}</Text>
+			<TextInput
+				style={s.input}
+				value={weight}
+				onChangeText={setWeight}
+				placeholder={`e.g. 100 ${t('records', 'kg')}`}
+				placeholderTextColor='#8E8E93'
+			/>
 
-				{/* Дата */}
-				<Text style={s.label}>Дата</Text>
-				<TextInput
-					style={s.input}
-					value={date}
-					onChangeText={setDate}
-					placeholder='ГГГГ-ММ-ДД'
-					placeholderTextColor='#8E8E93'
-				/>
+			{/* Date */}
+			<Text style={s.label}>{t('measurements', 'date')}</Text>
+			<TextInput
+				style={s.input}
+				value={date}
+				onChangeText={setDate}
+				placeholder='YYYY-MM-DD'
+				placeholderTextColor='#8E8E93'
+			/>
 
-				{/* Заметки */}
-				<Text style={s.label}>
-					Заметки <Text style={s.optional}>(опционально)</Text>
-				</Text>
-				<TextInput
-					style={[s.input, s.notesInput]}
-					value={notes}
-					onChangeText={setNotes}
-					placeholder='напр. 3×5 повторений'
-					placeholderTextColor='#8E8E93'
-					multiline
-					numberOfLines={3}
-					textAlignVertical='top'
-				/>
+			{/* Notes */}
+			<Text style={s.label}>
+				{t('workout', 'notesPlaceholder')} <Text style={s.optional}>({t('common', 'optional')})</Text>
+			</Text>
+			<TextInput
+				style={[s.input, s.notesInput]}
+				value={notes}
+				onChangeText={setNotes}
+				placeholder={`e.g. 3×5 ${t('records', 'reps')}`}
+				placeholderTextColor='#8E8E93'
+				multiline
+				numberOfLines={3}
+				textAlignVertical='top'
+			/>
 
-				<TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-					<Text style={s.saveBtnText}>Сохранить рекорд</Text>
-				</TouchableOpacity>
+			<TouchableOpacity style={s.saveBtn} onPress={handleSave}>
+				<Text style={s.saveBtnText}>{t('records', 'saveRecord')}</Text>
+			</TouchableOpacity>
 			</ScrollView>
 		</SafeAreaView>
 	)

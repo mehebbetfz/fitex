@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import { muscle_groups } from '@/constants/muscle-groups'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -49,6 +50,7 @@ interface ExerciseItem {
 
 export default function EditTemplateScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { getWorkoutTemplate, editWorkoutTemplate, removeTemplate } =
 		useDatabase()
@@ -98,7 +100,7 @@ export default function EditTemplateScreen() {
 			}
 		} catch (error) {
 			console.error('Error loading template:', error)
-			Alert.alert('Ошибка', 'Не удалось загрузить данные шаблона')
+			Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 		} finally {
 			setLoading(false)
 		}
@@ -143,14 +145,14 @@ export default function EditTemplateScreen() {
 	}
 
 	const handleUpdate = async () => {
-		if (!name.trim()) {
-			Alert.alert('Ошибка', 'Введите название шаблона')
-			return
-		}
-		if (exercises.length === 0) {
-			Alert.alert('Ошибка', 'Добавьте хотя бы одно упражнение')
-			return
-		}
+	if (!name.trim()) {
+		Alert.alert(t('common', 'error'), t('templates', 'nameRequired'))
+		return
+	}
+	if (exercises.length === 0) {
+		Alert.alert(t('common', 'error'), t('templates', 'exerciseRequired'))
+		return
+	}
 
 		setSaving(true)
 		try {
@@ -175,38 +177,38 @@ export default function EditTemplateScreen() {
 
 			await editWorkoutTemplate(templateId, templateData, templateExercises)
 
-			Alert.alert('Успех', 'Шаблон обновлен!', [
-				{ text: 'OK', onPress: () => router.back() },
-			])
-		} catch (error) {
-			console.error('Error updating template:', error)
-			Alert.alert('Ошибка', 'Не удалось обновить шаблон')
-		} finally {
+		Alert.alert(t('common', 'success'), t('templates', 'updateTemplate'), [
+			{ text: t('common', 'ok'), onPress: () => router.back() },
+		])
+	} catch (error) {
+		console.error('Error updating template:', error)
+		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+	} finally {
 			setSaving(false)
 		}
 	}
 
 	const handleDelete = async () => {
-		Alert.alert('Удаление', 'Вы уверены, что хотите удалить этот шаблон?', [
-			{ text: 'Отмена', style: 'cancel' },
-			{
-				text: 'Удалить',
-				style: 'destructive',
-				onPress: async () => {
-					try {
-						const templateId = parseInt(id)
-						await removeTemplate(templateId)
+	Alert.alert(t('templates', 'deleteConfirmTitle'), t('templates', 'deleteConfirmMsg'), [
+		{ text: t('common', 'cancel'), style: 'cancel' },
+		{
+			text: t('common', 'delete'),
+			style: 'destructive',
+			onPress: async () => {
+				try {
+					const templateId = parseInt(id)
+					await removeTemplate(templateId)
 
-						Alert.alert('Успех', 'Шаблон удален!', [
-							{ text: 'OK', onPress: () => router.back() },
-						])
-					} catch (error) {
-						console.error('Error deleting template:', error)
-						Alert.alert('Ошибка', 'Не удалось удалить шаблон')
-					}
-				},
+					Alert.alert(t('common', 'success'), t('templates', 'deleteTemplate'), [
+						{ text: t('common', 'ok'), onPress: () => router.back() },
+					])
+				} catch (error) {
+					console.error('Error deleting template:', error)
+					Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+				}
 			},
-		])
+		},
+	])
 	}
 
 	if (loading) {
@@ -214,7 +216,7 @@ export default function EditTemplateScreen() {
 			<SafeAreaView style={s.container}>
 				<View style={s.loadingContainer}>
 					<ActivityIndicator size='large' color={COLORS.primary} />
-					<Text style={s.loadingText}>Загрузка данных...</Text>
+					<Text style={s.loadingText}>{t('common', 'loading')}</Text>
 				</View>
 			</SafeAreaView>
 		)
@@ -227,7 +229,7 @@ export default function EditTemplateScreen() {
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
-				<Text style={s.headerTitle}>Редактировать шаблон</Text>
+				<Text style={s.headerTitle}>{t('templates', 'editBtn')}</Text>
 				<View style={{ width: 30 }} />
 			</View>
 
@@ -236,34 +238,34 @@ export default function EditTemplateScreen() {
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Название */}
-				<Text style={s.label}>Название *</Text>
-				<TextInput
-					style={s.input}
-					value={name}
-					onChangeText={setName}
-					placeholder='Например: День груди'
-					placeholderTextColor='#8E8E93'
-				/>
+			<Text style={s.label}>{t('templates', 'namePlaceholder')} *</Text>
+			<TextInput
+				style={s.input}
+				value={name}
+				onChangeText={setName}
+				placeholder={t('templates', 'durationPlaceholder')}
+				placeholderTextColor='#8E8E93'
+			/>
 
 				{/* Описание */}
-				<Text style={s.label}>
-					Описание <Text style={s.optional}>(опционально)</Text>
-				</Text>
-				<TextInput
-					style={[s.input, s.notesInput]}
-					value={description}
-					onChangeText={setDescription}
-					placeholder='Краткое описание тренировки...'
-					placeholderTextColor='#8E8E93'
-					multiline
-					numberOfLines={3}
-					textAlignVertical='top'
-				/>
+			<Text style={s.label}>
+				{t('templates', 'descPlaceholder')} <Text style={s.optional}>({t('common', 'optional')})</Text>
+			</Text>
+			<TextInput
+				style={[s.input, s.notesInput]}
+				value={description}
+				onChangeText={setDescription}
+				placeholder={t('templates', 'descPlaceholder')}
+				placeholderTextColor='#8E8E93'
+				multiline
+				numberOfLines={3}
+				textAlignVertical='top'
+			/>
 
-				{/* Длительность */}
-				<Text style={s.label}>
-					Длительность (мин) <Text style={s.optional}>(опционально)</Text>
-				</Text>
+			{/* Duration */}
+			<Text style={s.label}>
+				{t('templates', 'duration')} <Text style={s.optional}>({t('common', 'optional')})</Text>
+			</Text>
 				<TextInput
 					style={[s.input, s.durationInput]}
 					value={duration}
@@ -276,24 +278,24 @@ export default function EditTemplateScreen() {
 
 				{/* Упражнения */}
 				<View style={s.exercisesHeader}>
-					<Text style={s.label}>
-						Упражнения {exercises.length > 0 && `(${exercises.length})`}
-					</Text>
-					<TouchableOpacity
-						style={s.addExerciseBtn}
-						onPress={() => setShowExercisePicker(true)}
-					>
-						<Ionicons name='add-circle' size={22} color={COLORS.primary} />
-						<Text style={s.addExerciseBtnText}>Добавить</Text>
-					</TouchableOpacity>
+				<Text style={s.label}>
+					{t('templates', 'exercisesLabel' as any)} {exercises.length > 0 && `(${exercises.length})`}
+				</Text>
+				<TouchableOpacity
+					style={s.addExerciseBtn}
+					onPress={() => setShowExercisePicker(true)}
+				>
+					<Ionicons name='add-circle' size={22} color={COLORS.primary} />
+					<Text style={s.addExerciseBtnText}>{t('common', 'add')}</Text>
+				</TouchableOpacity>
 				</View>
 
 				{exercises.length === 0 ? (
 					<View style={s.emptyExercises}>
 						<Ionicons name='barbell-outline' size={40} color='#3A3A3C' />
-						<Text style={s.emptyExercisesText}>
-							Добавьте упражнения в шаблон
-						</Text>
+					<Text style={s.emptyExercisesText}>
+						{t('templates', 'addExerciseHint' as any)}
+					</Text>
 					</View>
 				) : (
 					exercises.map((ex, index) => (
@@ -320,7 +322,7 @@ export default function EditTemplateScreen() {
 
 							<View style={s.exerciseParams}>
 								<View style={s.paramItem}>
-									<Text style={s.paramLabel}>Подходы</Text>
+									<Text style={s.paramLabel}>{t('templates', 'sets' as any)}</Text>
 									<View style={s.stepper}>
 										<TouchableOpacity
 											style={s.stepperBtn}
@@ -351,7 +353,7 @@ export default function EditTemplateScreen() {
 								</View>
 
 								<View style={s.paramItem}>
-									<Text style={s.paramLabel}>Повторения</Text>
+									<Text style={s.paramLabel}>{t('templates', 'reps' as any)}</Text>
 									<View style={s.stepper}>
 										<TouchableOpacity
 											style={s.stepperBtn}
@@ -382,7 +384,7 @@ export default function EditTemplateScreen() {
 								</View>
 
 								<View style={s.paramItem}>
-									<Text style={s.paramLabel}>Вес (кг)</Text>
+									<Text style={s.paramLabel}>{t('templates', 'weight' as any)}</Text>
 									<TextInput
 										style={s.weightInput}
 										value={ex.weight.toString()}
@@ -406,14 +408,14 @@ export default function EditTemplateScreen() {
 						onPress={handleUpdate}
 						disabled={saving}
 					>
-						<Text style={s.updateButtonText}>
-							{saving ? 'Сохранение...' : 'Обновить шаблон'}
-						</Text>
+					<Text style={s.updateButtonText}>
+						{saving ? t('templates', 'saving') : t('templates', 'updateTemplate')}
+					</Text>
 					</TouchableOpacity>
 
 					<TouchableOpacity style={s.deleteButton} onPress={handleDelete}>
 						<Ionicons name='trash' size={20} color={COLORS.error} />
-						<Text style={s.deleteButtonText}>Удалить шаблон</Text>
+						<Text style={s.deleteButtonText}>{t('templates', 'deleteTemplate')}</Text>
 					</TouchableOpacity>
 				</View>
 			</ScrollView>
@@ -423,7 +425,7 @@ export default function EditTemplateScreen() {
 				<View style={s.pickerOverlay}>
 					<View style={s.pickerContent}>
 						<View style={s.pickerHeader}>
-							<Text style={s.pickerTitle}>Выбрать упражнение</Text>
+							<Text style={s.pickerTitle}>{t('exercises', 'selectExercise')}</Text>
 							<TouchableOpacity onPress={() => setShowExercisePicker(false)}>
 								<Ionicons name='close' size={24} color='#8E8E93' />
 							</TouchableOpacity>
@@ -433,7 +435,7 @@ export default function EditTemplateScreen() {
 							<Ionicons name='search' size={18} color='#8E8E93' />
 							<TextInput
 								style={s.searchInput}
-								placeholder='Поиск упражнений...'
+								placeholder={t('exercises', 'searchPlaceholder')}
 								placeholderTextColor='#8E8E93'
 								value={searchQuery}
 								onChangeText={setSearchQuery}

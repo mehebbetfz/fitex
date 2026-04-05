@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -211,12 +212,15 @@ const TabsSkeleton = () => (
 )
 
 // ── Скелетон для подгрузки ──
-const LoadingFooter = () => (
-	<View style={styles.loadingFooter}>
-		<ActivityIndicator size='small' color='#34C759' />
-		<Text style={styles.loadingFooterText}>Загрузка истории...</Text>
-	</View>
-)
+const LoadingFooter = () => {
+	const { t } = useLanguage()
+	return (
+		<View style={styles.loadingFooter}>
+			<ActivityIndicator size='small' color='#34C759' />
+			<Text style={styles.loadingFooterText}>{t('measurements', 'loading')}</Text>
+		</View>
+	)
+}
 
 // ── Полный скелетон для первой загрузки ──
 const InitialLoadingSkeleton = () => (
@@ -265,6 +269,7 @@ const InitialLoadingSkeleton = () => (
 
 export default function MeasurementsHistoryScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const [selectedTab, setSelectedTab] = useState<'current' | 'history'>(
 		'current',
 	)
@@ -406,10 +411,10 @@ export default function MeasurementsHistoryScreen() {
 	])
 
 	const handleDeleteMeasurement = async (id: string) => {
-		Alert.alert('Удалить?', 'Действие нельзя отменить', [
-			{ text: 'Отмена', style: 'cancel' },
+	Alert.alert(t('measurements', 'confirmDelete'), t('measurements', 'confirmDeleteMsg'), [
+		{ text: t('common', 'cancel'), style: 'cancel' },
 			{
-				text: 'Удалить',
+				text: t('measurements', 'delete'),
 				style: 'destructive',
 				onPress: async () => {
 					await db.deleteBodyMeasurement(Number(id))
@@ -524,7 +529,7 @@ export default function MeasurementsHistoryScreen() {
 				>
 					<Ionicons name='arrow-back' size={22} color='#FFFFFF' />
 				</TouchableOpacity>
-				<Text style={styles.headerTitle}>История замеров</Text>
+				<Text style={styles.headerTitle}>{t('measurements', 'title')}</Text>
 				<TouchableOpacity
 					onPress={() => router.push('/(routes)/add-measurement')}
 					style={styles.addButton}
@@ -537,15 +542,15 @@ export default function MeasurementsHistoryScreen() {
 			<View style={styles.statsRow}>
 				<View style={styles.statCard}>
 					<Text style={styles.statValue}>
-						{weightMeasurement
-							? `${weightMeasurement.change && weightMeasurement.change > 0 ? '+' : ''}${weightMeasurement.change?.toFixed(1) ?? '0'} кг`
-							: '— кг'}
+					{weightMeasurement
+						? `${weightMeasurement.change && weightMeasurement.change > 0 ? '+' : ''}${weightMeasurement.change?.toFixed(1) ?? '0'} ${t('records', 'kg')}`
+						: `— ${t('records', 'kg')}`}
 					</Text>
-					<Text style={styles.statLabel}>Изм. веса</Text>
+					<Text style={styles.statLabel}>{t('measurements', 'weightChange')}</Text>
 				</View>
 				<View style={styles.statCard}>
 					<Text style={styles.statValue}>{currentMeasurements.length}</Text>
-					<Text style={styles.statLabel}>Параметров</Text>
+					<Text style={styles.statLabel}>{t('measurements', 'bodyChange')}</Text>
 				</View>
 				<View style={styles.statCard}>
 					<Text style={styles.statValue}>
@@ -557,7 +562,7 @@ export default function MeasurementsHistoryScreen() {
 								)
 							: '—'}
 					</Text>
-					<Text style={styles.statLabel}>Дней назад</Text>
+					<Text style={styles.statLabel}>{t('measurements', 'daysAgo')}</Text>
 				</View>
 			</View>
 
@@ -575,7 +580,7 @@ export default function MeasurementsHistoryScreen() {
 								selectedTab === tab && styles.activeTabText,
 							]}
 						>
-							{tab === 'current' ? 'Текущие' : 'История'}
+							{tab === 'current' ? t('measurements', 'current') : t('measurements', 'history')}
 						</Text>
 					</TouchableOpacity>
 				))}
@@ -599,7 +604,7 @@ export default function MeasurementsHistoryScreen() {
 						ListEmptyComponent={
 							<View style={styles.emptyWrap}>
 								<Ionicons name='body-outline' size={48} color='#3A3A3C' />
-								<Text style={styles.emptyText}>Нет замеров</Text>
+								<Text style={styles.emptyText}>{t('measurements', 'emptyTitle')}</Text>
 							</View>
 						}
 					/>
@@ -617,7 +622,7 @@ export default function MeasurementsHistoryScreen() {
 					ListEmptyComponent={
 						<View style={styles.emptyWrap}>
 							<Ionicons name='calendar-outline' size={48} color='#3A3A3C' />
-							<Text style={styles.emptyText}>Нет истории</Text>
+							<Text style={styles.emptyText}>{t('measurements', 'emptyHistory')}</Text>
 						</View>
 					}
 				/>
@@ -655,19 +660,19 @@ export default function MeasurementsHistoryScreen() {
 
 								<View style={styles.modalStatsRow}>
 									<View style={styles.modalStat}>
-										<Text style={styles.modalStatLabel}>Значение</Text>
+										<Text style={styles.modalStatLabel}>{t('measurements', 'value')}</Text>
 										<Text style={styles.modalStatValue}>
 											{selectedMeasurement.value} {selectedMeasurement.unit}
 										</Text>
 									</View>
 									<View style={styles.modalStat}>
-										<Text style={styles.modalStatLabel}>Дата</Text>
+										<Text style={styles.modalStatLabel}>{t('measurements', 'date')}</Text>
 										<Text style={styles.modalStatValue}>
 											{formatDate(selectedMeasurement.date)}
 										</Text>
 									</View>
 									<View style={styles.modalStat}>
-										<Text style={styles.modalStatLabel}>Изменение</Text>
+										<Text style={styles.modalStatLabel}>{t('measurements', 'change')}</Text>
 										<View style={styles.modalChangeRow}>
 											<Ionicons
 												name={getTrendIcon(selectedMeasurement.trend) as any}
@@ -696,7 +701,7 @@ export default function MeasurementsHistoryScreen() {
 										<View style={styles.goalSection}>
 											<View style={styles.goalHeader}>
 												<Text style={styles.goalLabel}>
-													Цель: {selectedMeasurement.goal}{' '}
+													{t('measurements', 'goal')}: {selectedMeasurement.goal}{' '}
 													{selectedMeasurement.unit}
 												</Text>
 												<Text
@@ -745,7 +750,7 @@ export default function MeasurementsHistoryScreen() {
 										}}
 									>
 										<Ionicons name='create-outline' size={18} color='#FFFFFF' />
-										<Text style={styles.editBtnText}>Изменить</Text>
+										<Text style={styles.editBtnText}>{t('measurements', 'edit')}</Text>
 									</TouchableOpacity>
 									<TouchableOpacity
 										style={styles.deleteBtn}
@@ -754,7 +759,7 @@ export default function MeasurementsHistoryScreen() {
 										}
 									>
 										<Ionicons name='trash-outline' size={18} color='#FF3B30' />
-										<Text style={styles.deleteBtnText}>Удалить</Text>
+										<Text style={styles.deleteBtnText}>{t('measurements', 'delete')}</Text>
 									</TouchableOpacity>
 								</View>
 							</>

@@ -278,6 +278,7 @@ const TimePickerModal = ({
 }) => {
 	const [selectedHour, setSelectedHour] = useState(hour)
 	const [selectedMinute, setSelectedMinute] = useState(minute)
+	const { t } = useLanguage()
 
 	return (
 		<Modal transparent animationType='fade' visible={visible} onRequestClose={onClose}>
@@ -288,10 +289,10 @@ const TimePickerModal = ({
 			>
 				<TouchableOpacity activeOpacity={1} onPress={() => {}}>
 					<View style={pickerStyles.container}>
-						<Text style={pickerStyles.title}>Время напоминания</Text>
+						<Text style={pickerStyles.title}>{t('profile', 'reminderTime')}</Text>
 						<View style={pickerStyles.pickers}>
 							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>Часы</Text>
+								<Text style={pickerStyles.pickerLabel}>{t('profile', 'hours')}</Text>
 								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
 									{HOURS.map(h => (
 										<TouchableOpacity
@@ -308,7 +309,7 @@ const TimePickerModal = ({
 							</View>
 							<Text style={pickerStyles.colon}>:</Text>
 							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>Минуты</Text>
+								<Text style={pickerStyles.pickerLabel}>{t('profile', 'minutes')}</Text>
 								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
 									{MINUTES.map(m => (
 										<TouchableOpacity
@@ -326,13 +327,13 @@ const TimePickerModal = ({
 						</View>
 						<View style={pickerStyles.actions}>
 							<TouchableOpacity style={pickerStyles.cancelBtn} onPress={onClose}>
-								<Text style={pickerStyles.cancelText}>Отмена</Text>
+								<Text style={pickerStyles.cancelText}>{t('common', 'cancel')}</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
 								style={pickerStyles.confirmBtn}
 								onPress={() => onConfirm(selectedHour, selectedMinute)}
 							>
-								<Text style={pickerStyles.confirmText}>Сохранить</Text>
+								<Text style={pickerStyles.confirmText}>{t('common', 'save')}</Text>
 							</TouchableOpacity>
 						</View>
 					</View>
@@ -560,9 +561,9 @@ export default function ProfileScreen() {
 							</View>
 							<View style={styles.userInfo}>
 								<Text style={styles.userName}>
-									{user?.firstName
-										? `${user.firstName} ${user.lastName || ''}`
-										: 'Пользователь'}
+								{user?.firstName
+									? `${user.firstName} ${user.lastName || ''}`
+									: t('profile', 'defaultUser')}
 								</Text>
 								<Text style={styles.userEmail}>{user?.email || '—'}</Text>
 							</View>
@@ -657,20 +658,7 @@ export default function ProfileScreen() {
 							onPress={() => router.push('/(routes)/rating')}
 							iconColor='#FFD700'
 						/>
-						<SettingsItem
-							icon='storefront-outline'
-							title={t('profile', 'marketplaceEntry')}
-							subtitle={t('profile', 'marketplaceSubtitle')}
-							onPress={() => router.push('/(routes)/marketplace')}
-							iconColor='#5AC8FA'
-						/>
-						<SettingsItem
-							icon='card-outline'
-							title={t('profile', 'gymPassEntry')}
-							subtitle={t('profile', 'gymPassSubtitle')}
-							onPress={() => router.push('/(routes)/gym-pass')}
-							iconColor='#34C759'
-						/>
+					{/* marketplace and gym-pass hidden temporarily */}
 					</View>
 				</FadeIn>
 			)}

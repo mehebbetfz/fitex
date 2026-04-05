@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -26,11 +27,11 @@ interface Record {
 	improvement?: string
 }
 
-const CATEGORIES = [
-	{ id: 'all', name: 'Все', icon: 'list' },
-	{ id: 'strength', name: 'Сила', icon: 'barbell' },
-	{ id: 'cardio', name: 'Кардио', icon: 'heart' },
-	{ id: 'endurance', name: 'Выносливость', icon: 'time' },
+const getCategories = (t: (s: string, k: string) => string) => [
+	{ id: 'all', name: t('records', 'all'), icon: 'list' },
+	{ id: 'strength', name: t('records', 'strength'), icon: 'barbell' },
+	{ id: 'cardio', name: t('records', 'cardio'), icon: 'heart' },
+	{ id: 'endurance', name: t('records', 'endurance'), icon: 'time' },
 ]
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -152,12 +153,15 @@ const FilterSkeleton = () => (
 )
 
 // ── Скелетон для подгрузки ──
-const LoadingFooter = () => (
-	<View style={s.loadingFooter}>
-		<ActivityIndicator size='small' color='#34C759' />
-		<Text style={s.loadingFooterText}>Загрузка рекордов...</Text>
-	</View>
-)
+const LoadingFooter = () => {
+	const { t } = useLanguage()
+	return (
+		<View style={s.loadingFooter}>
+			<ActivityIndicator size='small' color='#34C759' />
+			<Text style={s.loadingFooterText}>{t('records', 'loading')}</Text>
+		</View>
+	)
+}
 
 // ── Полный скелетон для первой загрузки ──
 const InitialLoadingSkeleton = () => (
@@ -214,6 +218,7 @@ const InitialLoadingSkeleton = () => (
 
 export default function RecordsHistoryScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const [selectedCategory, setSelectedCategory] = useState('all')
 	const [selectedRecord, setSelectedRecord] = useState<Record | null>(null)
 	const [modalVisible, setModalVisible] = useState(false)
@@ -383,12 +388,12 @@ export default function RecordsHistoryScreen() {
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
 				<View>
-					<Text style={s.headerTitle}>Личные рекорды</Text>
-					<Text style={s.headerSub}>Обновляются автоматически</Text>
+				<Text style={s.headerTitle}>{t('records', 'title')}</Text>
+				<Text style={s.headerSub}>{t('records', 'autoUpdate')}</Text>
 				</View>
 				<View style={s.autoBadge}>
 					<Ionicons name='flash' size={14} color='#FF9500' />
-					<Text style={s.autoBadgeText}>Авто</Text>
+					<Text style={s.autoBadgeText}>{t('records', 'auto')}</Text>
 				</View>
 			</View>
 
@@ -396,19 +401,19 @@ export default function RecordsHistoryScreen() {
 			<View style={s.statsRow}>
 				<View style={s.statCard}>
 					<Text style={s.statValue}>{allRecords.length}</Text>
-					<Text style={s.statLabel}>Рекордов</Text>
+					<Text style={s.statLabel}>{t('records', 'total')}</Text>
 				</View>
 				<View style={s.statCard}>
 					<Text style={[s.statValue, { color: '#34C759' }]}>
 						{allRecords.filter(r => r.trend === 'up').length}
 					</Text>
-					<Text style={s.statLabel}>Улучшено</Text>
+					<Text style={s.statLabel}>{t('records', 'improved')}</Text>
 				</View>
 				<View style={s.statCard}>
 					<Text style={[s.statValue, { color: '#FF9500' }]}>
 						{allRecords.filter(r => r.category === 'strength').length}
 					</Text>
-					<Text style={s.statLabel}>Силовых</Text>
+					<Text style={s.statLabel}>{t('records', 'strength')}</Text>
 				</View>
 			</View>
 
@@ -416,7 +421,7 @@ export default function RecordsHistoryScreen() {
 			<View style={s.filterRow}>
 				<FlatList
 					horizontal
-					data={CATEGORIES}
+					data={getCategories(t)}
 					keyExtractor={item => item.id}
 					showsHorizontalScrollIndicator={false}
 					contentContainerStyle={{ gap: 8 }}
@@ -464,10 +469,8 @@ export default function RecordsHistoryScreen() {
 					ListEmptyComponent={
 						<View style={s.emptyWrap}>
 							<Ionicons name='trophy-outline' size={48} color='#3A3A3C' />
-							<Text style={s.emptyTitle}>Нет рекордов</Text>
-							<Text style={s.emptyText}>
-								Рекорды появятся автоматически{'\n'}после завершения тренировки
-							</Text>
+							<Text style={s.emptyTitle}>{t('records', 'empty')}</Text>
+							<Text style={s.emptyText}>{t('records', 'emptyHint')}</Text>
 						</View>
 					}
 				/>
@@ -504,19 +507,19 @@ export default function RecordsHistoryScreen() {
 
 								<View style={s.modalStatsRow}>
 									<View style={s.modalStat}>
-										<Text style={s.modalStatLabel}>Рекорд</Text>
+										<Text style={s.modalStatLabel}>{t('records', 'record')}</Text>
 										<Text style={s.modalStatValue}>
 											{selectedRecord.weight}
 										</Text>
 									</View>
 									<View style={s.modalStat}>
-										<Text style={s.modalStatLabel}>Предыдущий</Text>
+										<Text style={s.modalStatLabel}>{t('records', 'previous')}</Text>
 										<Text style={s.modalStatValue}>
 											{selectedRecord.previousRecord || '—'}
 										</Text>
 									</View>
 									<View style={s.modalStat}>
-										<Text style={s.modalStatLabel}>Прогресс</Text>
+										<Text style={s.modalStatLabel}>{t('records', 'progress')}</Text>
 										<View
 											style={{
 												flexDirection: 'row',
@@ -548,7 +551,7 @@ export default function RecordsHistoryScreen() {
 									</Text>
 									<View style={s.autoTag}>
 										<Ionicons name='flash' size={11} color='#FF9500' />
-										<Text style={s.autoTagText}>Авто</Text>
+										<Text style={s.autoTagText}>{t('records', 'auto')}</Text>
 									</View>
 								</View>
 

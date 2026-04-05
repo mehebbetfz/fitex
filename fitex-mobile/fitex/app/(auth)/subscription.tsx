@@ -25,6 +25,7 @@ import {
 	requestPurchase,
 } from 'react-native-iap'
 
+import { useLanguage } from '@/contexts/language-context'
 import { api } from '../../services/api'
 import { useAuth } from '../contexts/auth-context'
 
@@ -86,29 +87,11 @@ const handleBack = () => {
 	router.back()
 }
 
-const renderHeader = () => {
-	let title = 'Купить премиум'
-
-	return (
-		<View style={modalStyles.header}>
-			<TouchableOpacity
-				style={modalStyles.backButton}
-				onPress={handleBack}
-				activeOpacity={0.7}
-			>
-				<Ionicons name={'arrow-back'} size={24} color={COLORS.text} />
-			</TouchableOpacity>
-			<Text style={modalStyles.headerTitle} numberOfLines={1}>
-				{title}
-			</Text>
-		</View>
-	)
-}
-
 export default function SubscriptionScreen() {
 	log('Component function called (render)')
 
 	const { updateUser } = useAuth()
+	const { t } = useLanguage()
 	const [products, setProducts] = useState<any[]>([])
 	const [loading, setLoading] = useState(false)
 	const [initializing, setInitializing] = useState(true)
@@ -136,7 +119,7 @@ export default function SubscriptionScreen() {
 
 			if (!receipt) {
 				logWarn('No receipt found in purchase object')
-				Alert.alert('Ошибка', 'Нет чека покупки')
+				Alert.alert(t('common', 'error'), 'No purchase receipt found')
 				setLoading(false)
 				return
 			}
@@ -170,7 +153,7 @@ export default function SubscriptionScreen() {
 					await updateUser({ isPremium: true })
 					log('updateUser completed')
 
-					Alert.alert('Успех', 'Подписка активирована!')
+					Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
 					log('Navigating back after successful purchase')
 					router.back()
 				} else {
@@ -178,13 +161,13 @@ export default function SubscriptionScreen() {
 						message: response.data?.message,
 					})
 					Alert.alert(
-						'Ошибка',
-						response.data?.message || 'Не удалось активировать подписку',
+						t('common', 'error'),
+						response.data?.message || t('subscription', 'purchaseError'),
 					)
 				}
 			} catch (error) {
 				logError('Verify request threw an error', error)
-				Alert.alert('Ошибка', 'Проблема при проверке покупки')
+				Alert.alert(t('common', 'error'), t('subscription', 'purchaseError'))
 			} finally {
 				log('handlePurchase finally: setLoading(false)')
 				setLoading(false)
@@ -222,7 +205,7 @@ export default function SubscriptionScreen() {
 						message: error.message,
 					})
 					if (error.code !== ErrorCode.UserCancelled) {
-						Alert.alert('Ошибка покупки', error.message)
+						Alert.alert(t('subscription', 'purchaseError'), error.message)
 					} else {
 						log('User cancelled purchase — no alert shown')
 					}
@@ -315,9 +298,9 @@ export default function SubscriptionScreen() {
 				code: error.code,
 				message: error.message,
 			})
-			if (error.code !== ErrorCode.UserCancelled) {
-				Alert.alert('Ошибка', error.message)
-			} else {
+		if (error.code !== ErrorCode.UserCancelled) {
+					Alert.alert(t('common', 'error'), error.message)
+				} else {
 				log('User cancelled purchase in requestPurchase catch')
 			}
 			log('setLoading(false) after requestPurchase error')
@@ -349,7 +332,7 @@ export default function SubscriptionScreen() {
 
 			if (!purchases.length) {
 				logWarn('No available purchases found')
-				Alert.alert('Нет активных подписок для восстановления')
+				Alert.alert(t('subscription', 'restoreEmpty'))
 				setLoading(false)
 				return
 			}
@@ -360,14 +343,26 @@ export default function SubscriptionScreen() {
 			await handlePurchase(purchases[0])
 		} catch (error) {
 			logError('restorePurchases threw', error)
-			Alert.alert('Ошибка восстановления')
+			Alert.alert(t('common', 'error'), t('subscription', 'purchaseError'))
 			setLoading(false)
 		}
 	}
 
-	// ==============================
-	// РЕНДЕР КАРТОЧКИ
-	// ==============================
+	const renderHeader = () => (
+		<View style={modalStyles.header}>
+			<TouchableOpacity
+				style={modalStyles.backButton}
+				onPress={handleBack}
+				activeOpacity={0.7}
+			>
+				<Ionicons name={'arrow-back'} size={24} color={COLORS.text} />
+			</TouchableOpacity>
+			<Text style={modalStyles.headerTitle} numberOfLines={1}>
+				{t('subscription', 'title')}
+			</Text>
+		</View>
+	)
+
 	const FeatureItem = ({ text }: { text: string }) => (
 		<View style={styles.featureRow}>
 			<Ionicons name='checkmark-circle' size={18} color={COLORS.primary} />
@@ -381,9 +376,7 @@ export default function SubscriptionScreen() {
 		const price = item.localizedPrice ?? item.price ?? '—'
 		const description =
 			item.description ??
-			(isYearly
-				? 'Годовой план со скидкой'
-				: 'Месячный план, отмена в любое время')
+			(isYearly ? t('subscription', 'yearlyDesc') : t('subscription', 'monthlyDesc'))
 
 		return (
 			<TouchableOpacity
@@ -397,19 +390,21 @@ export default function SubscriptionScreen() {
 			>
 				{isYearly && (
 					<View style={styles.popularBadge}>
-						<Text style={styles.popularText}>Хит</Text>
+						<Text style={styles.popularText}>{t('subscription', 'bestValue')}</Text>
 					</View>
 				)}
 				<Text style={styles.productTitle}>{item.title}</Text>
 				<View style={styles.priceContainer}>
 					<Text style={styles.price}>{price}</Text>
-					<Text style={styles.period}>/{isYearly ? 'год' : 'мес'}</Text>
+					<Text style={styles.period}>/{isYearly ? t('subscription', 'year') : t('subscription', 'month')}</Text>
 				</View>
 				<Text style={styles.productDescription}>{description}</Text>
 				<View style={styles.featureList}>
-					<FeatureItem text='Облачная синхронизация' />
-					<FeatureItem text='Расширенная статистика' />
-					<FeatureItem text='Без рекламы' />
+					<FeatureItem text={t('subscription', 'feature1')} />
+					<FeatureItem text={t('subscription', 'feature2')} />
+					<FeatureItem text={t('subscription', 'feature3')} />
+					<FeatureItem text={t('subscription', 'feature4')} />
+					<FeatureItem text={t('subscription', 'feature5')} />
 				</View>
 			</TouchableOpacity>
 		)
@@ -422,7 +417,7 @@ export default function SubscriptionScreen() {
 		return (
 			<SafeAreaView style={styles.loadingContainer}>
 				<ActivityIndicator size='large' color={COLORS.primary} />
-				<Text style={styles.loadingText}>Загрузка подписок...</Text>
+				<Text style={styles.loadingText}>{t('subscription', 'loading')}</Text>
 			</SafeAreaView>
 		)
 	}
@@ -434,10 +429,9 @@ export default function SubscriptionScreen() {
 			<FlatList
 				ListHeaderComponent={
 					<>
-						<Text style={styles.title}>Премиум подписка</Text>
+						<Text style={styles.title}>{t('subscription', 'title')}</Text>
 						<Text style={styles.subtitle}>
-							Откройте все возможности FitEx: синхронизация, статистика и
-							никакой рекламы
+							{t('subscription', 'feature1')} · {t('subscription', 'feature2')} · {t('subscription', 'feature3')}
 						</Text>
 					</>
 				}
@@ -455,7 +449,7 @@ export default function SubscriptionScreen() {
 								restorePurchases()
 							}}
 						>
-							<Text style={styles.restoreText}>Восстановить покупки</Text>
+							<Text style={styles.restoreText}>{t('subscription', 'restore')}</Text>
 						</TouchableOpacity>
 					) : null
 				}

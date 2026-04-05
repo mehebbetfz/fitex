@@ -1,5 +1,6 @@
 // app/modals/exercise-history-modal.tsx
 import { useDatabase } from '@/app/contexts/database-context'
+import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import React, { useEffect, useRef, useState } from 'react'
 import {
@@ -150,14 +151,14 @@ interface Props {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate = (d: string) => {
+const fmtDate = (d: string, todayStr: string, yesterdayStr: string) => {
 	try {
 		const date = new Date(d)
 		const today = new Date()
 		const yesterday = new Date(today)
 		yesterday.setDate(today.getDate() - 1)
-		if (date.toDateString() === today.toDateString()) return 'Сегодня'
-		if (date.toDateString() === yesterday.toDateString()) return 'Вчера'
+		if (date.toDateString() === today.toDateString()) return todayStr
+		if (date.toDateString() === yesterday.toDateString()) return yesterdayStr
 		return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 	} catch {
 		return d
@@ -215,6 +216,7 @@ const SetCompareRow = ({
 	current: CurrentSet
 	previous: { weight: number; reps: number } | null
 }) => {
+	const { t } = useLanguage()
 	const wDiff = previous ? current.weight - previous.weight : null
 	const rDiff = previous ? current.reps - previous.reps : null
 	const vDiff = previous
@@ -247,29 +249,29 @@ const SetCompareRow = ({
 
 			{/* Values */}
 			<View style={cmp.vals}>
-				{previous ? (
-					<>
-						<View style={cmp.valLine}>
-							<Text style={cmp.label}>Прошлый раз</Text>
-							<Text style={cmp.prev}>
-								{previous.weight} кг × {previous.reps}
-							</Text>
-						</View>
-						<View style={cmp.valLine}>
-							<Text style={cmp.label}>Сейчас</Text>
-							<Text style={cmp.curr}>
-								{current.weight} кг × {current.reps}
-							</Text>
-						</View>
-					</>
-				) : (
+			{previous ? (
+				<>
 					<View style={cmp.valLine}>
-						<Text style={cmp.label}>Сейчас</Text>
-						<Text style={cmp.curr}>
-							{current.weight} кг × {current.reps}
+						<Text style={cmp.label}>{t('exercises', 'lastTime')}</Text>
+						<Text style={cmp.prev}>
+							{previous.weight} {t('workout', 'kg')} × {previous.reps}
 						</Text>
 					</View>
-				)}
+					<View style={cmp.valLine}>
+						<Text style={cmp.label}>{t('exercises', 'now')}</Text>
+						<Text style={cmp.curr}>
+							{current.weight} {t('workout', 'kg')} × {current.reps}
+						</Text>
+					</View>
+				</>
+			) : (
+				<View style={cmp.valLine}>
+					<Text style={cmp.label}>{t('exercises', 'now')}</Text>
+					<Text style={cmp.curr}>
+						{current.weight} {t('workout', 'kg')} × {current.reps}
+					</Text>
+				</View>
+			)}
 			</View>
 
 			{/* Diff pills */}
@@ -339,6 +341,7 @@ const HistoryCard = ({
 	entry: any
 	isLatest: boolean
 }) => {
+	const { t } = useLanguage()
 	const sets: Array<{ weight: number; reps: number; set_number?: number }> =
 		entry.sets ?? []
 	const maxW = sets.length ? Math.max(...sets.map(s => s.weight)) : 0
@@ -351,7 +354,7 @@ const HistoryCard = ({
 					{isLatest && (
 						<View style={[hc.dot, { backgroundColor: C.warning }]} />
 					)}
-					<Text style={hc.date}>{fmtDate(entry.date)}</Text>
+					<Text style={hc.date}>{fmtDate(entry.date, t('exercises', 'today'), t('exercises', 'yesterday'))}</Text>
 					{entry.time ? <Text style={hc.time}>{entry.time}</Text> : null}
 				</View>
 				<View style={{ flexDirection: 'row', gap: 8 }}>
@@ -459,6 +462,7 @@ export default function ExerciseHistoryModal({
 	currentSets,
 }: Props) {
 	const { fetchExerciseHistory, getExerciseRecords } = useDatabase()
+	const { t } = useLanguage()
 
 	const [history, setHistory] = useState<any[]>([])
 	const [records, setRecords] = useState<any>(null)
@@ -594,21 +598,21 @@ export default function ExerciseHistoryModal({
 								<View style={ms.bestCard}>
 									<Ionicons name='star' size={16} color={C.warning} />
 									<Text style={ms.bestTxt}>
-										Лучший подход:{' '}
+										{t('exercises', 'lastTime')}:{' '}
 										<Text style={{ color: C.text, fontWeight: '700' }}>
-											{bestSet.weight} кг × {bestSet.reps}
+											{bestSet.weight} {t('workout', 'kg')} × {bestSet.reps}
 										</Text>
 									</Text>
-									<Text style={ms.bestDate}>{fmtDate(bestSet.date)}</Text>
+									<Text style={ms.bestDate}>{fmtDate(bestSet.date, t('exercises', 'today'), t('exercises', 'yesterday'))}</Text>
 								</View>
 							)}
 
 							{/* ── Set-by-set comparison ─────────────────────── */}
 							{currentSets.length > 0 && lastSets.length > 0 && (
 								<>
-									<SectionLabel
-										label={`Сравнение с ${fmtDate(records.lastWorkout.date)}`}
-									/>
+							<SectionLabel
+									label={fmtDate(records.lastWorkout.date, t('exercises', 'today'), t('exercises', 'yesterday'))}
+								/>
 									<View style={ms.card}>
 										{currentSets.map((cur, i) => {
 											const prev =
@@ -627,11 +631,11 @@ export default function ExerciseHistoryModal({
 										{lastVol > 0 && (
 											<View style={ms.volRow}>
 												<View style={ms.volLine}>
-													<Text style={ms.volLabel}>Прошлый объём</Text>
-													<Text style={ms.volVal}>{lastVol} кг</Text>
+													<Text style={ms.volLabel}>{t('exercises', 'prevVolume')}</Text>
+													<Text style={ms.volVal}>{lastVol} {t('workout', 'kg')}</Text>
 												</View>
 												<View style={ms.volLine}>
-													<Text style={ms.volLabel}>Текущий объём</Text>
+													<Text style={ms.volLabel}>{t('exercises', 'currVolume')}</Text>
 													<View
 														style={{
 															flexDirection: 'row',
@@ -640,7 +644,7 @@ export default function ExerciseHistoryModal({
 														}}
 													>
 														<Text style={[ms.volVal, { color: C.primary }]}>
-															{currentVol} кг
+															{currentVol} {t('workout', 'kg')}
 														</Text>
 														{volDiff !== null && (
 															<DiffPill value={volDiff} unit=' кг' />
@@ -656,7 +660,7 @@ export default function ExerciseHistoryModal({
 							{/* Current sets shown alone when no comparison */}
 							{currentSets.length > 0 && lastSets.length === 0 && (
 								<>
-									<SectionLabel label='Текущая тренировка' />
+									<SectionLabel label={t('exercises', 'currentWorkout')} />
 									<View style={ms.card}>
 										{currentSets.map((cur, i) => (
 											<SetCompareRow
@@ -673,7 +677,7 @@ export default function ExerciseHistoryModal({
 							{/* ── History ───────────────────────────────────── */}
 							{history.length > 0 && (
 								<>
-									<SectionLabel label='История тренировок' />
+									<SectionLabel label={t('exercises', 'workoutHistory')} />
 									{history.map((entry, i) => (
 										<HistoryCard
 											key={`${entry.date}-${i}`}
@@ -687,9 +691,9 @@ export default function ExerciseHistoryModal({
 							{history.length === 0 && currentSets.length === 0 && (
 								<View style={ms.empty}>
 									<Ionicons name='time-outline' size={44} color={C.textSec} />
-									<Text style={ms.emptyTitle}>Нет истории</Text>
-									<Text style={ms.emptyTxt}>
-										Данные появятся после первой тренировки
+								<Text style={ms.emptyTitle}>{t('exercises', 'noHistory')}</Text>
+								<Text style={ms.emptyTxt}>
+										{t('exercises', 'noHistorySubtitle')}
 									</Text>
 								</View>
 							)}

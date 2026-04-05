@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -17,33 +18,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const MEASUREMENT_TYPES = [
-	{ name: 'Вес', unit: 'кг', icon: 'scale' },
-	{ name: 'Грудь', unit: 'см', icon: 'body' },
-	{ name: 'Талия', unit: 'см', icon: 'body' },
-	{ name: 'Бедра', unit: 'см', icon: 'body' },
-	{ name: 'Бицепс', unit: 'см', icon: 'fitness' },
-	{ name: 'Шея', unit: 'см', icon: 'body' },
-	{ name: 'Икры', unit: 'см', icon: 'body' },
-	{ name: 'Плечо', unit: 'см', icon: 'body' },
-	{ name: 'Жир', unit: '%', icon: 'water' },
-	{ name: 'Мышцы', unit: 'кг', icon: 'fitness' },
+	{ name: 'Вес', unit: 'кг', icon: 'scale', labelKey: 'weightLabel' },
+	{ name: 'Грудь', unit: 'см', icon: 'body', labelKey: 'chestLabel' },
+	{ name: 'Талия', unit: 'см', icon: 'body', labelKey: 'waistLabel' },
+	{ name: 'Бедра', unit: 'см', icon: 'body', labelKey: 'hipsLabel' },
+	{ name: 'Бицепс', unit: 'см', icon: 'fitness', labelKey: 'bicepsLabel' },
+	{ name: 'Шея', unit: 'см', icon: 'body', labelKey: 'neckLabel' },
+	{ name: 'Икры', unit: 'см', icon: 'body', labelKey: 'calfLabel' },
+	{ name: 'Плечо', unit: 'см', icon: 'body', labelKey: 'bicepsLabel' },
+	{ name: 'Жир', unit: '%', icon: 'water', labelKey: 'bodyFatLabel' },
+	{ name: 'Мышцы', unit: 'кг', icon: 'fitness', labelKey: 'thighLabel' },
 ]
-
-const ICONS: Record<string, string> = {
-	Вес: 'scale',
-	Грудь: 'body',
-	Талия: 'body',
-	Бедра: 'body',
-	Бицепс: 'fitness',
-	Шея: 'body',
-	Икры: 'body',
-	Плечо: 'body',
-	Жир: 'water',
-	Мышцы: 'fitness',
-}
 
 export default function QuickMeasurementsScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const [values, setValues] = useState<Record<string, string>>(
 		Object.fromEntries(MEASUREMENT_TYPES.map(m => [m.name, ''])),
 	)
@@ -52,10 +41,10 @@ export default function QuickMeasurementsScreen() {
 	const filledCount = Object.values(values).filter(v => v.trim()).length
 
 	const handleSave = async () => {
-		if (filledCount === 0) {
-			Alert.alert('Нет данных', 'Заполните хотя бы одно поле')
-			return
-		}
+	if (filledCount === 0) {
+		Alert.alert(t('common', 'noData'), t('measurements', 'emptySubtitle'))
+		return
+	}
 
 		try {
 			setSaving(true)
@@ -90,12 +79,12 @@ export default function QuickMeasurementsScreen() {
 			}
 
 			await AsyncStorage.setItem('lastMeasurementDate', today)
-			Alert.alert('Сохранено', `Записано замеров: ${filledCount}`, [
-				{ text: 'OK', onPress: () => router.back() },
-			])
-		} catch (err) {
-			console.error(err)
-			Alert.alert('Ошибка', 'Не удалось сохранить замеры')
+		Alert.alert(t('common', 'success'), `${t('measurements', 'saveBtn')}: ${filledCount}`, [
+			{ text: t('common', 'ok'), onPress: () => router.back() },
+		])
+	} catch (err) {
+		console.error(err)
+		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 		} finally {
 			setSaving(false)
 		}
@@ -108,8 +97,8 @@ export default function QuickMeasurementsScreen() {
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
 				<View>
-					<Text style={s.headerTitle}>Замеры тела</Text>
-					<Text style={s.headerSub}>Заполните нужные поля</Text>
+				<Text style={s.headerTitle}>{t('measurements', 'title')}</Text>
+				<Text style={s.headerSub}>{t('measurements', 'emptySubtitle')}</Text>
 				</View>
 				{/* Счётчик заполненных */}
 				{filledCount > 0 ? (
@@ -142,9 +131,9 @@ export default function QuickMeasurementsScreen() {
 										color={filled ? '#34C759' : '#8E8E93'}
 									/>
 								</View>
-								<Text style={[s.rowName, filled && s.rowNameFilled]}>
-									{type.name}
-								</Text>
+							<Text style={[s.rowName, filled && s.rowNameFilled]}>
+								{t('measurements', type.labelKey as any)}
+							</Text>
 								<View style={s.inputWrap}>
 									<TextInput
 										style={s.input}
@@ -169,9 +158,9 @@ export default function QuickMeasurementsScreen() {
 					>
 						<Ionicons name='checkmark-circle' size={20} color='#FFF' />
 						<Text style={s.saveBtnText}>
-							{saving
-								? 'Сохранение...'
-								: `Сохранить${filledCount > 0 ? ` (${filledCount})` : ''}`}
+						{saving
+							? t('templates', 'saving')
+							: `${t('common', 'save')}${filledCount > 0 ? ` (${filledCount})` : ''}`}
 						</Text>
 					</TouchableOpacity>
 				</ScrollView>

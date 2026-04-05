@@ -6,6 +6,7 @@ import {
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
 import { muscle_groups } from '@/constants/muscle-groups'
+import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { Image } from 'expo-image'
@@ -363,6 +364,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	onClose,
 	onSelectExercise,
 }) => {
+	const { t } = useLanguage()
 	const [selectedMuscleGroup, setSelectedMuscleGroup] =
 		useState<MuscleGroup | null>(null)
 	const [selectedExercise, setSelectedExercise] =
@@ -635,7 +637,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 				/>
 			</TouchableOpacity>
 			<Text style={modalStyles.headerTitle} numberOfLines={1}>
-				{selectedExercise ? selectedExercise.name : 'Выберите упражнение'}
+				{selectedExercise ? selectedExercise.name : t('exercises', 'title')}
 			</Text>
 		</View>
 	)
@@ -710,7 +712,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 				<Ionicons name='search' size={20} color={COLORS.textSecondary} />
 				<TextInput
 					style={modalStyles.searchInput}
-					placeholder='Поиск упражнений...'
+					placeholder={t('exercises', 'searchPlaceholder')}
 					placeholderTextColor={COLORS.textSecondary}
 					value={searchQuery}
 					onChangeText={setSearchQuery}
@@ -810,9 +812,9 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						size={64}
 						color={COLORS.textSecondary}
 					/>
-					<Text style={modalStyles.emptyStateTitle}>Выберите группу мышц</Text>
-					<Text style={modalStyles.emptyStateText}>
-						Выберите группу мышц сверху или воспользуйтесь поиском
+				<Text style={modalStyles.emptyStateTitle}>{t('exercises', 'selectMuscle')}</Text>
+				<Text style={modalStyles.emptyStateText}>
+						{t('exercises', 'selectMuscle')}
 					</Text>
 				</View>
 			)
@@ -826,7 +828,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						size={64}
 						color={COLORS.textSecondary}
 					/>
-					<Text style={modalStyles.emptyStateTitle}>Ничего не найдено</Text>
+					<Text style={modalStyles.emptyStateTitle}>{t('exercises', 'notFound')}</Text>
 				</View>
 			)
 		}
@@ -959,7 +961,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 										<Ionicons name='barbell' size={18} color={COLORS.primary} />
 									</View>
 									<View>
-										<Text style={modalStyles.detailStatLabel}>Сложность</Text>
+										<Text style={modalStyles.detailStatLabel}>{t('exercises', 'difficulty')}</Text>
 										<Text style={modalStyles.detailStatValue}>
 											{selectedExercise.difficulty}
 										</Text>
@@ -975,7 +977,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 									</View>
 									<View>
 										<Text style={modalStyles.detailStatLabel}>
-											Оборудование
+											{t('exercises', 'equipment')}
 										</Text>
 										{selectedExercise.equipment.map((item, index) => (
 											<Text key={index} style={modalStyles.detailStatValue}>
@@ -988,12 +990,12 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						</View>
 
 						<View style={modalStyles.section}>
-							<Text style={modalStyles.sectionTitle}>Работающие мышцы</Text>
+							<Text style={modalStyles.sectionTitle}>{t('exercises', 'workingMuscles')}</Text>
 							<View style={modalStyles.muscleGroupsGridDetail}>
 								<View style={modalStyles.muscleGroupItem}>
 									<View style={modalStyles.muscleGroupHeader}>
 										<Ionicons name='star' size={16} color={COLORS.primary} />
-										<Text style={modalStyles.muscleGroupLabel}>Основные:</Text>
+										<Text style={modalStyles.muscleGroupLabel}>{t('exercises', 'primaryMuscles')}</Text>
 									</View>
 									{selectedExercise.primaryMuscles.map((m, i) => (
 										<View key={i} style={modalStyles.muscleItem}>
@@ -1011,7 +1013,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 												color={COLORS.textSecondary}
 											/>
 											<Text style={modalStyles.muscleGroupLabel}>
-												Второстепенные:
+												{t('exercises', 'secondaryMuscles')}
 											</Text>
 										</View>
 										{selectedExercise.secondaryMuscles.map((m, i) => (
@@ -1038,7 +1040,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						</View>
 
 						<View style={modalStyles.section}>
-							<Text style={modalStyles.sectionTitle}>Техника выполнения</Text>
+							<Text style={modalStyles.sectionTitle}>{t('exercises', 'technique')}</Text>
 							<View style={modalStyles.tipsList}>
 								{selectedExercise.tips.map((tip, i) => (
 									<View
@@ -1070,7 +1072,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						activeOpacity={0.7}
 					>
 						<Text style={modalStyles.confirmButtonText}>
-							Добавить в тренировку
+							{t('exercises', 'addToWorkout')}
 						</Text>
 					</TouchableOpacity>
 					{selectedExercise && (

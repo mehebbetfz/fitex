@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import { WorkoutTemplate } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -142,12 +143,15 @@ const StatsSkeleton = () => (
 )
 
 // ── Скелетон для подгрузки ──
-const LoadingFooter = () => (
-	<View style={styles.loadingFooter}>
-		<ActivityIndicator size='small' color={COLORS.primary} />
-		<Text style={styles.loadingFooterText}>Загрузка шаблонов...</Text>
-	</View>
-)
+const LoadingFooter = () => {
+	const { t } = useLanguage()
+	return (
+		<View style={styles.loadingFooter}>
+			<ActivityIndicator size='small' color={COLORS.primary} />
+			<Text style={styles.loadingFooterText}>{t('templates', 'loading')}</Text>
+		</View>
+	)
+}
 
 // ── Полный скелетон для первой загрузки ──
 const InitialLoadingSkeleton = () => (
@@ -209,6 +213,7 @@ const InitialLoadingSkeleton = () => (
 export default function TemplatesScreen() {
 	const router = useRouter()
 	const { templates: allTemplates, refreshTemplates, isLoading } = useDatabase()
+	const { t } = useLanguage()
 	const [selectedTemplate, setSelectedTemplate] =
 		useState<WorkoutTemplate | null>(null)
 	const [modalVisible, setModalVisible] = useState(false)
@@ -356,8 +361,8 @@ export default function TemplatesScreen() {
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
 				<View>
-					<Text style={styles.headerTitle}>Мои шаблоны</Text>
-					<Text style={styles.headerSub}>Быстрый старт тренировки</Text>
+					<Text style={styles.headerTitle}>{t('templates', 'title')}</Text>
+					<Text style={styles.headerSub}>{t('templates', 'startWorkout')}</Text>
 				</View>
 				<TouchableOpacity
 					style={styles.addButton}
@@ -371,7 +376,7 @@ export default function TemplatesScreen() {
 			<View style={styles.statsRow}>
 				<View style={styles.statCard}>
 					<Text style={styles.statValue}>{allTemplates.length}</Text>
-					<Text style={styles.statLabel}>Шаблонов</Text>
+					<Text style={styles.statLabel}>{t('templates', 'title')}</Text>
 				</View>
 				<View style={styles.statCard}>
 					<Text style={[styles.statValue, { color: '#FF6B6B' }]}>
@@ -380,7 +385,7 @@ export default function TemplatesScreen() {
 								.length
 						}
 					</Text>
-					<Text style={styles.statLabel}>Грудь</Text>
+					<Text style={styles.statLabel}>{t('exercises', 'muscleChest')}</Text>
 				</View>
 				<View style={styles.statCard}>
 					<Text style={[styles.statValue, { color: '#4ECDC4' }]}>
@@ -389,7 +394,7 @@ export default function TemplatesScreen() {
 								.length
 						}
 					</Text>
-					<Text style={styles.statLabel}>Спина</Text>
+					<Text style={styles.statLabel}>{t('exercises', 'muscleBack')}</Text>
 				</View>
 			</View>
 
@@ -406,7 +411,7 @@ export default function TemplatesScreen() {
 				ListEmptyComponent={
 					<View style={styles.emptyWrap}>
 						<Ionicons name='copy-outline' size={48} color='#3A3A3C' />
-						<Text style={styles.emptyTitle}>Нет шаблонов</Text>
+						<Text style={styles.emptyTitle}>{t('templates', 'noTemplates')}</Text>
 						<Text style={styles.emptyText}>
 							Создайте свой первый шаблон{'\n'}чтобы быстро начинать тренировки
 						</Text>
@@ -414,7 +419,7 @@ export default function TemplatesScreen() {
 							style={styles.emptyButton}
 							onPress={() => router.push('/(routes)/add-template')}
 						>
-							<Text style={styles.emptyButtonText}>Создать шаблон</Text>
+							<Text style={styles.emptyButtonText}>{t('templates', 'createTemplate')}</Text>
 						</TouchableOpacity>
 					</View>
 				}
@@ -452,19 +457,19 @@ export default function TemplatesScreen() {
 
 								<View style={styles.modalStatsRow}>
 									<View style={styles.modalStat}>
-										<Text style={styles.modalStatLabel}>Упражнений</Text>
+										<Text style={styles.modalStatLabel}>{t('workout', 'exercises')}</Text>
 										<Text style={styles.modalStatValue}>
 											{selectedTemplate.exercises_count}
 										</Text>
 									</View>
 									<View style={styles.modalStat}>
-										<Text style={styles.modalStatLabel}>Длительность</Text>
+										<Text style={styles.modalStatLabel}>{t('templates', 'duration')}</Text>
 										<Text style={styles.modalStatValue}>
 											{selectedTemplate.estimated_duration || 60} мин
 										</Text>
 									</View>
 									<View style={styles.modalStat}>
-										<Text style={styles.modalStatLabel}>Группы мышц</Text>
+										<Text style={styles.modalStatLabel}>{t('exercises', 'workingMuscles')}</Text>
 										<Text style={styles.modalStatValue} numberOfLines={1}>
 											{selectedTemplate.muscle_groups?.split(',').length || 0}
 										</Text>
@@ -498,7 +503,7 @@ export default function TemplatesScreen() {
 										onPress={handleUseTemplate}
 									>
 										<Ionicons name='play' size={18} color='#FFF' />
-										<Text style={styles.useButtonText}>Использовать</Text>
+										<Text style={styles.useButtonText}>{t('templates', 'useTemplate')}</Text>
 									</TouchableOpacity>
 
 									<TouchableOpacity
@@ -510,7 +515,7 @@ export default function TemplatesScreen() {
 											size={18}
 											color={COLORS.blue}
 										/>
-										<Text style={styles.editButtonText}>Редактировать</Text>
+										<Text style={styles.editButtonText}>{t('templates', 'editBtn')}</Text>
 									</TouchableOpacity>
 								</View>
 							</>

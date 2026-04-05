@@ -13,6 +13,17 @@ export class SubscriptionController {
 		return this.subService.verifyAndActivate(userId, receipt, platform)
 	}
 
+	@Post('start-trial')
+	@UseGuards(JwtAuthGuard)
+	async startTrial(
+		@Req() req,
+		@Body('trialStartedAt') trialStartedAt: string,
+		@Body('trialEndsAt') trialEndsAt: string,
+	) {
+		const userId = req.user.userId
+		return this.subService.startTrial(userId, trialStartedAt, trialEndsAt)
+	}
+
 	@Get('my')
 	@UseGuards(JwtAuthGuard)
 	async mySubscriptions(@Req() req) {

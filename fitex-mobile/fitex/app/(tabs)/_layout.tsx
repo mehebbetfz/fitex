@@ -105,7 +105,7 @@ export default function TabsLayout() {
 				<Tabs.Screen
 					name='start-workout'
 					options={{
-						title: 'Старт',
+						title: t('workout', 'start'),
 						tabBarShowLabel: false,
 						tabBarButton: () => (
 							<View

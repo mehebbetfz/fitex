@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import { muscle_groups } from '@/constants/muscle-groups'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -58,6 +59,7 @@ interface ExerciseItem {
 export default function AddTemplateScreen() {
 	const router = useRouter()
 	const { createWorkoutTemplate } = useDatabase()
+	const { t } = useLanguage()
 
 	const [name, setName] = useState('')
 	const [description, setDescription] = useState('')
@@ -108,11 +110,11 @@ export default function AddTemplateScreen() {
 
 	const handleSave = async () => {
 		if (!name.trim()) {
-			Alert.alert('Ошибка', 'Введите название шаблона')
+			Alert.alert(t('common', 'error'), t('templates', 'nameRequired'))
 			return
 		}
 		if (exercises.length === 0) {
-			Alert.alert('Ошибка', 'Добавьте хотя бы одно упражнение')
+			Alert.alert(t('common', 'error'), t('templates', 'exerciseRequired'))
 			return
 		}
 
@@ -136,12 +138,12 @@ export default function AddTemplateScreen() {
 
 			await createWorkoutTemplate(templateData, templateExercises)
 
-			Alert.alert('Успех', 'Шаблон сохранен!', [
+			Alert.alert(t('common', 'ok'), t('templates', 'saveTemplate'), [
 				{ text: 'OK', onPress: () => router.back() },
 			])
 		} catch (error) {
 			console.error('Error saving template:', error)
-			Alert.alert('Ошибка', 'Не удалось сохранить шаблон')
+			Alert.alert(t('common', 'error'), t('templates', 'confirmDelete'))
 		}
 	}
 
@@ -152,7 +154,7 @@ export default function AddTemplateScreen() {
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
-				<Text style={s.headerTitle}>Новый шаблон</Text>
+				<Text style={s.headerTitle}>{t('templates', 'newTemplate')}</Text>
 				<View style={{ width: 30 }} />
 			</View>
 
@@ -166,7 +168,7 @@ export default function AddTemplateScreen() {
 					style={s.input}
 					value={name}
 					onChangeText={setName}
-					placeholder='Например: День груди'
+					placeholder={t('templates', 'namePlaceholder')}
 					placeholderTextColor='#8E8E93'
 				/>
 
@@ -178,7 +180,7 @@ export default function AddTemplateScreen() {
 					style={[s.input, s.notesInput]}
 					value={description}
 					onChangeText={setDescription}
-					placeholder='Краткое описание тренировки...'
+					placeholder={t('templates', 'descPlaceholder')}
 					placeholderTextColor='#8E8E93'
 					multiline
 					numberOfLines={3}
@@ -209,7 +211,7 @@ export default function AddTemplateScreen() {
 						onPress={() => setShowExercisePicker(true)}
 					>
 						<Ionicons name='add-circle' size={22} color={COLORS.primary} />
-						<Text style={s.addExerciseBtnText}>Добавить</Text>
+						<Text style={s.addExerciseBtnText}>{t('workout', 'addExercise')}</Text>
 					</TouchableOpacity>
 				</View>
 
@@ -217,7 +219,7 @@ export default function AddTemplateScreen() {
 					<View style={s.emptyExercises}>
 						<Ionicons name='barbell-outline' size={40} color='#3A3A3C' />
 						<Text style={s.emptyExercisesText}>
-							Нажмите "Добавить", чтобы выбрать упражнения
+							{t('templates', 'selectExercise')}
 						</Text>
 					</View>
 				) : (
@@ -245,7 +247,7 @@ export default function AddTemplateScreen() {
 
 							<View style={s.exerciseParams}>
 								<View style={s.paramItem}>
-									<Text style={s.paramLabel}>Подходы</Text>
+									<Text style={s.paramLabel}>{t('workout', 'sets')}</Text>
 									<View style={s.stepper}>
 										<TouchableOpacity
 											style={s.stepperBtn}
@@ -276,7 +278,7 @@ export default function AddTemplateScreen() {
 								</View>
 
 								<View style={s.paramItem}>
-									<Text style={s.paramLabel}>Повторения</Text>
+									<Text style={s.paramLabel}>{t('workout', 'reps')}</Text>
 									<View style={s.stepper}>
 										<TouchableOpacity
 											style={s.stepperBtn}
@@ -307,7 +309,7 @@ export default function AddTemplateScreen() {
 								</View>
 
 								<View style={s.paramItem}>
-									<Text style={s.paramLabel}>Вес (кг)</Text>
+									<Text style={s.paramLabel}>{t('workout', 'weight')} ({t('workout', 'kg')})</Text>
 									<TextInput
 										style={s.weightInput}
 										value={ex.weight.toString()}
@@ -325,7 +327,7 @@ export default function AddTemplateScreen() {
 				)}
 
 				<TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-					<Text style={s.saveBtnText}>Сохранить шаблон</Text>
+					<Text style={s.saveBtnText}>{t('templates', 'saveTemplate')}</Text>
 				</TouchableOpacity>
 			</ScrollView>
 
@@ -334,7 +336,7 @@ export default function AddTemplateScreen() {
 				<View style={s.pickerOverlay}>
 					<View style={s.pickerContent}>
 						<View style={s.pickerHeader}>
-							<Text style={s.pickerTitle}>Выбрать упражнение</Text>
+							<Text style={s.pickerTitle}>{t('exercises', 'title')}</Text>
 							<TouchableOpacity onPress={() => setShowExercisePicker(false)}>
 								<Ionicons name='close' size={24} color='#8E8E93' />
 							</TouchableOpacity>
@@ -344,7 +346,7 @@ export default function AddTemplateScreen() {
 							<Ionicons name='search' size={18} color='#8E8E93' />
 							<TextInput
 								style={s.searchInput}
-								placeholder='Поиск упражнений...'
+								placeholder={t('exercises', 'searchPlaceholder')}
 								placeholderTextColor='#8E8E93'
 								value={searchQuery}
 								onChangeText={setSearchQuery}

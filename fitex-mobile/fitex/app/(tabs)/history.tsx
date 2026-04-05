@@ -32,27 +32,15 @@ const COLORS = {
 	info: '#5AC8FA',
 } as const
 
-const MONTHS = [
-	'Январь',
-	'Февраль',
-	'Март',
-	'Апрель',
-	'Май',
-	'Июнь',
-	'Июль',
-	'Август',
-	'Сентябрь',
-	'Октябрь',
-	'Ноябрь',
-	'Декабрь',
-]
-
 // Количество тренировок для загрузки за раз
 const PAGE_SIZE = 5
 
 // Функция для форматирования даты
 const formatWorkoutDate = (
 	dateString: string,
+	locale: string,
+	todayLabel: string,
+	yesterdayLabel: string,
 ): { fullDate: string; dayOfWeek: string; time: string } => {
 	try {
 		const date = new Date(dateString)
@@ -62,19 +50,19 @@ const formatWorkoutDate = (
 
 		let fullDate = ''
 		if (date.toDateString() === today.toDateString()) {
-			fullDate = 'Сегодня'
+			fullDate = todayLabel
 		} else if (date.toDateString() === yesterday.toDateString()) {
-			fullDate = 'Вчера'
+			fullDate = yesterdayLabel
 		} else {
-			fullDate = date.toLocaleDateString('ru-RU', {
+			fullDate = date.toLocaleDateString(locale, {
 				day: 'numeric',
 				month: 'long',
 				year: 'numeric',
 			})
 		}
 
-		const dayOfWeek = date.toLocaleDateString('ru-RU', { weekday: 'long' })
-		const time = date.toLocaleTimeString('ru-RU', {
+		const dayOfWeek = date.toLocaleDateString(locale, { weekday: 'long' })
+		const time = date.toLocaleTimeString(locale, {
 			hour: '2-digit',
 			minute: '2-digit',
 		})
@@ -254,7 +242,7 @@ const InitialLoadingSkeleton = () => (
 
 export default function FullHistoryScreen() {
 	const router = useRouter()
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const {
 		workouts: allWorkouts,
 		isLoading,
@@ -358,7 +346,7 @@ export default function FullHistoryScreen() {
 	}
 
 	const renderWorkoutCard = ({ item }: { item: Workout }) => {
-		const { fullDate, dayOfWeek, time } = formatWorkoutDate(item.date)
+		const { fullDate, dayOfWeek, time } = formatWorkoutDate(item.date, language, t('exercises', 'today'), t('exercises', 'yesterday'))
 		const muscleGroupsList =
 			item.muscle_groups?.split(',').filter(g => g.trim()) || []
 
@@ -427,10 +415,13 @@ export default function FullHistoryScreen() {
 	}
 
 	const getWorkoutWord = (count: number) => {
-		if (count % 10 === 1 && count % 100 !== 11) return 'тренировка'
-		if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100))
-			return 'тренировки'
-		return 'тренировок'
+		if (language === 'ru') {
+			if (count % 10 === 1 && count % 100 !== 11) return t('history', 'workout1')
+			if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100))
+				return t('history', 'workout2')
+			return t('history', 'workout5')
+		}
+		return count === 1 ? t('history', 'workout1') : t('history', 'workout5')
 	}
 
 	const getTypeColor = (type: string) => {

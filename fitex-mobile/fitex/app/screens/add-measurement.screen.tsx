@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/language-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -14,30 +15,31 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const MEASUREMENT_TYPES = [
-	{ name: 'Вес', unit: 'кг', icon: 'scale' },
-	{ name: 'Грудь', unit: 'см', icon: 'body' },
-	{ name: 'Талия', unit: 'см', icon: 'body' },
-	{ name: 'Бедра', unit: 'см', icon: 'body' },
-	{ name: 'Бицепс', unit: 'см', icon: 'fitness' },
-	{ name: 'Шея', unit: 'см', icon: 'body' },
-	{ name: 'Икры', unit: 'см', icon: 'body' },
-	{ name: 'Плечо', unit: 'см', icon: 'body' },
-	{ name: 'Жир', unit: '%', icon: 'water' },
-	{ name: 'Мышцы', unit: 'кг', icon: 'fitness' },
+	{ name: 'Вес', unit: 'кг', icon: 'scale', labelKey: 'weightLabel' },
+	{ name: 'Грудь', unit: 'см', icon: 'body', labelKey: 'chestLabel' },
+	{ name: 'Талия', unit: 'см', icon: 'body', labelKey: 'waistLabel' },
+	{ name: 'Бедра', unit: 'см', icon: 'body', labelKey: 'hipsLabel' },
+	{ name: 'Бицепс', unit: 'см', icon: 'fitness', labelKey: 'bicepsLabel' },
+	{ name: 'Шея', unit: 'см', icon: 'body', labelKey: 'neckLabel' },
+	{ name: 'Икры', unit: 'см', icon: 'body', labelKey: 'calfLabel' },
+	{ name: 'Плечо', unit: 'см', icon: 'body', labelKey: 'bicepsLabel' },
+	{ name: 'Жир', unit: '%', icon: 'water', labelKey: 'bodyFatLabel' },
+	{ name: 'Мышцы', unit: 'кг', icon: 'fitness', labelKey: 'thighLabel' },
 ]
 
 export default function AddMeasurementScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const [selectedType, setSelectedType] = useState(MEASUREMENT_TYPES[0])
 	const [value, setValue] = useState('')
 	const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 	const [goal, setGoal] = useState('')
 
 	const handleSave = async () => {
-		if (!value.trim()) {
-			Alert.alert('Ошибка', 'Введите значение измерения')
-			return
-		}
+	if (!value.trim()) {
+		Alert.alert(t('common', 'error'), t('measurements', 'value'))
+		return
+	}
 		try {
 			const previousMeasurements = await db.getBodyMeasurements()
 			const previousForType = previousMeasurements
@@ -62,11 +64,11 @@ export default function AddMeasurementScreen() {
 				goal: goal ? parseFloat(goal) : undefined,
 			})
 
-			Alert.alert('Успех', 'Замер сохранен!', [
-				{ text: 'OK', onPress: () => router.back() },
-			])
-		} catch (error) {
-			Alert.alert('Ошибка', 'Не удалось сохранить замер')
+		Alert.alert(t('common', 'success'), t('measurements', 'saveBtn'), [
+			{ text: 'OK', onPress: () => router.back() },
+		])
+	} catch (error) {
+		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 		}
 	}
 
@@ -76,7 +78,7 @@ export default function AddMeasurementScreen() {
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
 					<Ionicons name='arrow-back' size={22} color='#FFF' />
 				</TouchableOpacity>
-				<Text style={s.headerTitle}>Добавить замер</Text>
+				<Text style={s.headerTitle}>{t('measurements', 'saveBtn')}</Text>
 				<View style={{ width: 30 }} />
 			</View>
 
@@ -85,7 +87,7 @@ export default function AddMeasurementScreen() {
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Тип замера */}
-				<Text style={s.label}>Тип замера</Text>
+				<Text style={s.label}>{t('measurements', 'current')}</Text>
 				<ScrollView
 					horizontal
 					showsHorizontalScrollIndicator={false}
@@ -105,9 +107,9 @@ export default function AddMeasurementScreen() {
 										size={20}
 										color={active ? '#34C759' : '#8E8E93'}
 									/>
-									<Text style={[s.typeName, active && s.typeNameActive]}>
-										{type.name}
-									</Text>
+								<Text style={[s.typeName, active && s.typeNameActive]}>
+								{t('measurements', type.labelKey as any)}
+							</Text>
 									<Text style={s.typeUnit}>{type.unit}</Text>
 								</TouchableOpacity>
 							)
@@ -116,7 +118,7 @@ export default function AddMeasurementScreen() {
 				</ScrollView>
 
 				{/* Значение */}
-				<Text style={s.label}>Значение</Text>
+				<Text style={s.label}>{t('measurements', 'value')}</Text>
 				<View style={s.inputRow}>
 					<TextInput
 						style={s.bigInput}
@@ -131,19 +133,19 @@ export default function AddMeasurementScreen() {
 				</View>
 
 				{/* Дата */}
-				<Text style={s.label}>Дата</Text>
-				<TextInput
-					style={s.input}
-					value={date}
-					onChangeText={setDate}
-					placeholder='ГГГГ-ММ-ДД'
+			<Text style={s.label}>{t('measurements', 'date')}</Text>
+			<TextInput
+				style={s.input}
+				value={date}
+				onChangeText={setDate}
+				placeholder='YYYY-MM-DD'
 					placeholderTextColor='#8E8E93'
 				/>
 
 				{/* Цель */}
-				<Text style={s.label}>
-					Цель <Text style={s.optional}>(опционально)</Text>
-				</Text>
+			<Text style={s.label}>
+				{t('measurements', 'goal')} <Text style={s.optional}>({t('common', 'optional')})</Text>
+			</Text>
 				<View style={s.inputRow}>
 					<TextInput
 						style={s.bigInput}
@@ -156,9 +158,9 @@ export default function AddMeasurementScreen() {
 					<Text style={s.unitLabel}>{selectedType.unit}</Text>
 				</View>
 
-				<TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-					<Text style={s.saveBtnText}>Сохранить замер</Text>
-				</TouchableOpacity>
+			<TouchableOpacity style={s.saveBtn} onPress={handleSave}>
+				<Text style={s.saveBtnText}>{t('measurements', 'saveBtn')}</Text>
+			</TouchableOpacity>
 			</ScrollView>
 		</SafeAreaView>
 	)

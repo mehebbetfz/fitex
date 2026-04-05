@@ -29,6 +29,15 @@ export class User {
 	@Prop()
 	premiumExpiresAt?: Date
 
+	@Prop()
+	trialStartedAt?: Date
+
+	@Prop()
+	trialEndsAt?: Date
+
+	@Prop({ default: true })
+	isNewUser: boolean
+
 	@Prop({ type: Object, default: {} })
 	settings: Record<string, any>
 }

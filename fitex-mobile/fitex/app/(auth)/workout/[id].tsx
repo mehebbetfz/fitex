@@ -1,4 +1,5 @@
 import { useDatabase } from '@/app/contexts/database-context'
+import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -216,6 +217,19 @@ interface ExerciseItemProps {
 	onAddSet: (exerciseId: number) => void
 }
 
+const ExerciseSetsHeader = () => {
+	const { t } = useLanguage()
+	return (
+		<View style={styles.setsHeader}>
+			<Text style={{ ...styles.setHeaderText, width: 20 }}>#</Text>
+			<Text style={{ ...styles.setHeaderText, width: 80 }}>{t('templates', 'weight')} ({t('records', 'kg')})</Text>
+			<Text style={{ ...styles.setHeaderText, width: 80 }}>{t('templates', 'reps')}</Text>
+			<Text style={styles.setHeaderText}></Text>
+			<Text style={styles.setHeaderText}></Text>
+		</View>
+	)
+}
+
 const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 	({
 		exercise,
@@ -225,6 +239,7 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 		onRemoveSet,
 		onAddSet,
 	}) => {
+		const { t } = useLanguage()
 		const exerciseId = exercise.id || parseInt(exercise.exerciseId || '0')
 
 		return (
@@ -257,17 +272,7 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 
 				{!exercise.collapsed && (
 					<>
-						<View style={styles.setsHeader}>
-							<Text style={{ ...styles.setHeaderText, width: 20 }}>#</Text>
-							<Text style={{ ...styles.setHeaderText, width: 80 }}>
-								Вес (кг)
-							</Text>
-							<Text style={{ ...styles.setHeaderText, width: 80 }}>
-								Повторения
-							</Text>
-							<Text style={styles.setHeaderText}></Text>
-							<Text style={styles.setHeaderText}>Delete</Text>
-						</View>
+					<ExerciseSetsHeader />
 
 						{exercise.sets.map(set => (
 							<SetRow
@@ -281,13 +286,13 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 						))}
 
 						<TouchableOpacity
-							style={styles.addSetButton}
-							onPress={() => onAddSet(exerciseId)}
-							activeOpacity={0.7}
-						>
-							<Ionicons name='add' size={20} color={COLORS.primary} />
-							<Text style={styles.addSetText}>Добавить подход</Text>
-						</TouchableOpacity>
+						style={styles.addSetButton}
+						onPress={() => onAddSet(exerciseId)}
+						activeOpacity={0.7}
+					>
+						<Ionicons name='add' size={20} color={COLORS.primary} />
+						<Text style={styles.addSetText}>{t('workout', 'addSet')}</Text>
+					</TouchableOpacity>
 					</>
 				)}
 			</View>
@@ -298,6 +303,7 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 // Основной компонент
 export default function WorkoutScreen() {
 	const router = useRouter()
+	const { t } = useLanguage()
 	const params = useLocalSearchParams()
 	const workoutId = params.id ? parseInt(params.id as string) : 0
 	const {
@@ -315,7 +321,7 @@ export default function WorkoutScreen() {
 		getActiveSets,
 	} = useDatabase()
 
-	const [workoutName, setWorkoutName] = useState('Новая тренировка')
+	const [workoutName, setWorkoutName] = useState('')
 	const [exercises, setExercises] = useState<Exercise[]>([])
 	const [timer, setTimer] = useState(0)
 	const [isTimerRunning, setIsTimerRunning] = useState(false)
@@ -365,7 +371,7 @@ export default function WorkoutScreen() {
 			setExercises(exercisesWithSets)
 		} catch (error) {
 			console.error('Error loading workout data:', error)
-			Alert.alert('Ошибка', 'Не удалось загрузить данные тренировки')
+			Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 		}
 	}
 
@@ -431,10 +437,10 @@ export default function WorkoutScreen() {
 				await loadWorkoutData() // Перезагружаем данные
 			} catch (error) {
 				console.error('Error completing set:', error)
-				Alert.alert('Ошибка', 'Не удалось обновить подход')
+				Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 			}
 		},
-		[],
+		[t],
 	)
 
 	const handleUpdateSet = useCallback(
@@ -456,32 +462,32 @@ export default function WorkoutScreen() {
 				await loadWorkoutData() // Перезагружаем данные
 			} catch (error) {
 				console.error('Error updating set:', error)
-				Alert.alert('Ошибка', 'Не удалось обновить подход')
+				Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 			}
 		},
-		[],
+		[t],
 	)
 
 	const handleRemoveSet = useCallback(
 		async (exerciseId: number, setId: number) => {
-			Alert.alert('Удалить подход?', 'Это действие нельзя отменить', [
-				{ text: 'Отмена', style: 'cancel' },
+			Alert.alert(t('workout', 'deleteSet'), t('workout', 'deleteSetMsg'), [
+				{ text: t('common', 'cancel'), style: 'cancel' },
 				{
-					text: 'Удалить',
+					text: t('common', 'delete'),
 					style: 'destructive',
 					onPress: async () => {
 						try {
 							await deleteSet(setId)
-							await loadWorkoutData() // Перезагружаем данные
+							await loadWorkoutData()
 						} catch (error) {
 							console.error('Error deleting set:', error)
-							Alert.alert('Ошибка', 'Не удалось удалить подход')
+							Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 						}
 					},
 				},
 			])
 		},
-		[],
+		[t],
 	)
 
 	const handleAddSet = useCallback(
@@ -501,39 +507,37 @@ export default function WorkoutScreen() {
 				await loadWorkoutData() // Перезагружаем данные
 			} catch (error) {
 				console.error('Error adding set:', error)
-				Alert.alert('Ошибка', 'Не удалось добавить подход')
+				Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 			}
 		},
-		[exercises],
+		[exercises, t],
 	)
 
 	const handleFinishWorkout = useCallback(async () => {
 		Alert.alert(
-			'Завершить тренировку?',
-			`Вы выполнили ${exercises.length} упражнений и ${totalSets} подходов`,
+			t('workout', 'finishTitle'),
+			`${exercises.length} ${t('workout', 'exercises')} · ${totalSets} ${t('workout', 'sets')}`,
 			[
-				{ text: 'Отмена', style: 'cancel' },
+				{ text: t('common', 'cancel'), style: 'cancel' },
 				{
-					text: 'Завершить',
+					text: t('workout', 'finish'),
 					onPress: async () => {
 						try {
-							// Обновляем заметки перед завершением
 							if (notes.trim()) {
 								await updateWorkout(workoutId, { notes: notes.trim() })
 							}
-
 							const completedId = await completeWorkout(workoutId)
-							Alert.alert('Успех', `Тренировка #${completedId} сохранена!`)
+							Alert.alert(t('common', 'success'), `#${completedId}`)
 							router.back()
 						} catch (error) {
 							console.error('Error completing workout:', error)
-							Alert.alert('Ошибка', 'Не удалось завершить тренировку')
+							Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 						}
 					},
 				},
 			],
 		)
-	}, [exercises, totalSets, notes, workoutId, router])
+	}, [exercises, totalSets, notes, workoutId, router, t])
 
 	const handleAddExercise = useCallback(async () => {
 		if (selectedExercise && selectedMuscleGroup) {
@@ -551,29 +555,29 @@ export default function WorkoutScreen() {
 				await loadWorkoutData() // Перезагружаем данные
 			} catch (error) {
 				console.error('Error adding exercise:', error)
-				Alert.alert('Ошибка', 'Не удалось добавить упражнение')
+				Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 			}
 		}
-	}, [selectedExercise, selectedMuscleGroup, workoutId, exercises.length])
+	}, [selectedExercise, selectedMuscleGroup, workoutId, exercises.length, t])
 
 	const handleRemoveExercise = useCallback(async (exerciseId: number) => {
-		Alert.alert('Удалить упражнение?', 'Все подходы также будут удалены', [
-			{ text: 'Отмена', style: 'cancel' },
+		Alert.alert(t('workout', 'deleteExercise'), t('workout', 'deleteExerciseMsg'), [
+			{ text: t('common', 'cancel'), style: 'cancel' },
 			{
-				text: 'Удалить',
+				text: t('common', 'delete'),
 				style: 'destructive',
 				onPress: async () => {
 					try {
 						await deleteExercise(exerciseId)
-						await loadWorkoutData() // Перезагружаем данные
+						await loadWorkoutData()
 					} catch (error) {
 						console.error('Error deleting exercise:', error)
-						Alert.alert('Ошибка', 'Не удалось удалить упражнение')
+						Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 					}
 				},
 			},
 		])
-	}, [])
+	}, [t])
 
 	// Рендер элементов для FlatList
 	const renderExerciseItem = useCallback(
@@ -617,8 +621,8 @@ export default function WorkoutScreen() {
 					)}
 				</View>
 				<Text style={styles.muscleGroupName}>{item.name}</Text>
-				<Text style={styles.muscleGroupExercisesCount}>
-					{item.exercises.length} упражнений
+			<Text style={styles.muscleGroupExercisesCount}>
+				{item.exercises.length} {t('workout', 'exercises')}
 				</Text>
 			</TouchableOpacity>
 		),
@@ -653,14 +657,14 @@ export default function WorkoutScreen() {
 				>
 					<Ionicons name='close' size={28} color={COLORS.textSecondary} />
 				</TouchableOpacity>
-				<Text style={styles.headerTitle}>Тренировка</Text>
-				<TouchableOpacity
-					onPress={handleFinishWorkout}
-					style={styles.finishButton}
-					activeOpacity={0.7}
-				>
-					<Text style={styles.finishButtonText}>Готово</Text>
-				</TouchableOpacity>
+			<Text style={styles.headerTitle}>{t('workout', 'title')}</Text>
+			<TouchableOpacity
+				onPress={handleFinishWorkout}
+				style={styles.finishButton}
+				activeOpacity={0.7}
+			>
+				<Text style={styles.finishButtonText}>{t('common', 'done')}</Text>
+			</TouchableOpacity>
 			</View>
 
 			<View style={styles.workoutInfo}>
@@ -675,7 +679,7 @@ export default function WorkoutScreen() {
 							console.error('Error updating workout name:', error)
 						}
 					}}
-					placeholder='Название тренировки'
+					placeholder={t('workout', 'namePlaceholder')}
 					placeholderTextColor={COLORS.textSecondary}
 				/>
 
@@ -684,15 +688,15 @@ export default function WorkoutScreen() {
 						<Text style={styles.statNumber}>
 							{totalCompleted}/{totalSets}
 						</Text>
-						<Text style={styles.statLabel}>Подходы</Text>
+						<Text style={styles.statLabel}>{t('workout', 'sets')}</Text>
 					</View>
 					<View style={styles.stat}>
 						<Text style={styles.statNumber}>{exercises.length}</Text>
-						<Text style={styles.statLabel}>Упражнения</Text>
+						<Text style={styles.statLabel}>{t('workout', 'exercises')}</Text>
 					</View>
 					<View style={styles.stat}>
 						<Text style={styles.statNumber}>{formatTime(timer)}</Text>
-						<Text style={styles.statLabel}>Время</Text>
+						<Text style={styles.statLabel}>{t('workout', 'time')}</Text>
 					</View>
 				</View>
 
@@ -707,7 +711,7 @@ export default function WorkoutScreen() {
 						color={COLORS.primary}
 					/>
 					<Text style={styles.timerButtonText}>
-						{isTimerRunning ? 'Пауза' : 'Старт'}
+						{isTimerRunning ? t('workout', 'pause') : t('workout', 'start')}
 					</Text>
 				</TouchableOpacity>
 			</View>
@@ -735,14 +739,14 @@ export default function WorkoutScreen() {
 								size={24}
 								color={COLORS.primary}
 							/>
-							<Text style={styles.addExerciseText}>Добавить упражнение</Text>
+							<Text style={styles.addExerciseText}>{t('workout', 'addExercise')}</Text>
 						</TouchableOpacity>
 
 						<View style={styles.notesSection}>
-							<Text style={styles.notesTitle}>Заметки</Text>
-							<TextInput
-								style={styles.notesInput}
-								placeholder='Добавьте заметки к тренировке...'
+						<Text style={styles.notesTitle}>{t('workout', 'notes')}</Text>
+						<TextInput
+							style={styles.notesInput}
+							placeholder={t('workout', 'notesPlaceholder')}
 								placeholderTextColor={COLORS.textSecondary}
 								multiline
 								numberOfLines={4}
@@ -766,13 +770,13 @@ export default function WorkoutScreen() {
 				<View style={styles.modalOverlay}>
 					<View style={styles.modalContent}>
 						<View style={styles.modalHeader}>
-							<Text style={styles.modalTitle}>
-								{selectedMuscleGroup
-									? selectedExercise
-										? 'Подтверждение'
-										: `Упражнения для ${selectedMuscleGroup.name}`
-									: 'Выберите группу мышц'}
-							</Text>
+						<Text style={styles.modalTitle}>
+							{selectedMuscleGroup
+								? selectedExercise
+									? t('workout', 'confirmExercise')
+									: `${t('workout', 'exercisesFor')} ${selectedMuscleGroup.name}`
+								: t('exercises', 'selectMuscle')}
+						</Text>
 							<TouchableOpacity
 								onPress={() => {
 									if (selectedExercise) {
@@ -816,25 +820,25 @@ export default function WorkoutScreen() {
 						) : (
 							// Шаг 3: Подтверждение
 							<View style={styles.confirmationContainer}>
-								<Text style={styles.confirmationTitle}>Вы выбрали:</Text>
-								<View style={styles.selectedExerciseCard}>
-									<Text style={styles.selectedExerciseName}>
-										{selectedExercise}
-									</Text>
-									<Text style={styles.selectedExerciseGroup}>
-										Группа: {selectedMuscleGroup?.name}
-									</Text>
-								</View>
+							<Text style={styles.confirmationTitle}>{t('workout', 'selectedExercise')}:</Text>
+							<View style={styles.selectedExerciseCard}>
+								<Text style={styles.selectedExerciseName}>
+									{selectedExercise}
+								</Text>
+								<Text style={styles.selectedExerciseGroup}>
+									{t('exercises', 'workingMuscles')}: {selectedMuscleGroup?.name}
+								</Text>
+							</View>
 
-								<TouchableOpacity
-									style={styles.confirmButton}
-									onPress={handleAddExercise}
-									activeOpacity={0.7}
-								>
-									<Text style={styles.confirmButtonText}>
-										Добавить упражнение
-									</Text>
-								</TouchableOpacity>
+							<TouchableOpacity
+								style={styles.confirmButton}
+								onPress={handleAddExercise}
+								activeOpacity={0.7}
+							>
+								<Text style={styles.confirmButtonText}>
+									{t('workout', 'addExercise')}
+								</Text>
+							</TouchableOpacity>
 							</View>
 						)}
 					</View>

@@ -14,6 +14,9 @@ interface User {
 	lastName?: string
 	avatarUrl?: string
 	isPremium: boolean
+	trialStartedAt?: string   // ISO date string, set when user starts trial
+	trialEndsAt?: string      // ISO date string = trialStartedAt + 30 days
+	isNewUser?: boolean       // true on very first login
 }
 
 interface AuthContextType {
@@ -24,6 +27,9 @@ interface AuthContextType {
 	resetAuth: () => Promise<void>
 	signOut: () => Promise<void>
 	updateUser: (user: Partial<User>) => void
+	startTrial: () => Promise<void>
+	trialDaysLeft: number       // ≥0 if in trial, -1 if not started/expired
+	isTrialActive: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -34,6 +40,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	// ❌ Убрали useDatabase отсюда — было причиной циклической зависимости
 	const [user, setUser] = useState<User | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
+
+	// ─── Trial helpers ────────────────────────────────────────────────────────
+	const trialDaysLeft = (() => {
+		if (!user?.trialEndsAt) return -1
+		const diff = new Date(user.trialEndsAt).getTime() - Date.now()
+		if (diff <= 0) return -1
+		return Math.ceil(diff / (1000 * 60 * 60 * 24))
+	})()
+
+	const isTrialActive = trialDaysLeft > 0
 
 	useEffect(() => {
 		const loadUser = async () => {
@@ -64,17 +80,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		loadUser()
 	}, [])
 
-	const saveUser = async (user: User, token: string) => {
-		console.log('[Auth] Saving user:', user.email || user.id)
+	const saveUser = async (userData: User, token: string) => {
+		console.log('[Auth] Saving user:', userData.email || userData.id)
 		try {
 			await SecureStore.setItemAsync('access_token', token)
-			await SecureStore.setItemAsync('user', JSON.stringify(user))
+			await SecureStore.setItemAsync('user', JSON.stringify(userData))
 			api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-			setUser(user)
-			router.replace('/(tabs)')
+			setUser(userData)
 			console.log('[Auth] User saved successfully')
+			// New user — must go through trial paywall first
+			if (userData.isNewUser || !userData.trialStartedAt) {
+				router.replace('/(auth)/trial-paywall')
+			} else {
+				router.replace('/(tabs)')
+			}
 		} catch (err) {
 			console.error('[Auth] Error saving user:', err)
+		}
+	}
+
+	const startTrial = async () => {
+		if (!user) return
+		const now = new Date()
+		const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+		const updated: User = {
+			...user,
+			trialStartedAt: now.toISOString(),
+			trialEndsAt: endsAt.toISOString(),
+			isNewUser: false,
+		}
+		try {
+			await SecureStore.setItemAsync('user', JSON.stringify(updated))
+			setUser(updated)
+			// Inform server
+			await api.post('/subscription/start-trial', {
+				trialStartedAt: now.toISOString(),
+				trialEndsAt: endsAt.toISOString(),
+			}).catch(() => {/* non-critical */})
+			console.log('[Auth] Trial started, ends:', endsAt.toISOString())
+		} catch (err) {
+			console.error('[Auth] startTrial error:', err)
 		}
 	}
 
@@ -169,6 +214,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				resetAuth,
 				signOut,
 				updateUser,
+				startTrial,
+				trialDaysLeft,
+				isTrialActive,
 			}}
 		>
 			{children}

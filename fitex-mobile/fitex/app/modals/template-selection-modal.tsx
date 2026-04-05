@@ -3,6 +3,7 @@
 // Модал выбора шаблона при старте тренировки
 // ─────────────────────────────────────────────
 import { useDatabase } from '@/app/contexts/database-context'
+import { useLanguage } from '@/contexts/language-context'
 import { WorkoutTemplate } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
@@ -124,6 +125,7 @@ export default function TemplateSelectionModal({
 	onStartEmpty,
 }: TemplateSelectionModalProps) {
 	const { templates, refreshTemplates, getWorkoutTemplate } = useDatabase()
+	const { t } = useLanguage()
 	const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
 	const [modalVisible, setModalVisible] = useState(false)
 	const [loading, setLoading] = useState(false)
@@ -210,7 +212,7 @@ export default function TemplateSelectionModal({
 						>
 							<Ionicons name='close' size={24} color={COLORS.text} />
 						</TouchableOpacity>
-						<Text style={styles.headerTitle}>Начать тренировку</Text>
+						<Text style={styles.headerTitle}>{t('templates', 'startWorkout')}</Text>
 						<View style={{ width: 40 }} />
 					</View>
 
@@ -227,9 +229,9 @@ export default function TemplateSelectionModal({
 							<Ionicons name='add' size={28} color={COLORS.primary} />
 						</View>
 						<View style={styles.emptyWorkoutText}>
-							<Text style={styles.emptyWorkoutTitle}>Пустая тренировка</Text>
-							<Text style={styles.emptyWorkoutSub}>
-								Добавляй упражнения самостоятельно
+						<Text style={styles.emptyWorkoutTitle}>{t('workout', 'noExercises')}</Text>
+						<Text style={styles.emptyWorkoutSub}>
+								{t('workout', 'noExercisesSubtitle')}
 							</Text>
 						</View>
 						<Ionicons
@@ -241,14 +243,14 @@ export default function TemplateSelectionModal({
 
 					{/* Templates section */}
 					<View style={styles.sectionHeader}>
-						<Text style={styles.sectionTitle}>Последние шаблоны</Text>
-						{!templatesLoading && (
-							<TouchableOpacity onPress={handleRedirectToTemplates}>
-								<Text style={styles.seeAll}>
-									Все шаблоны ({templates.length})
-								</Text>
-							</TouchableOpacity>
-						)}
+					<Text style={styles.sectionTitle}>{t('templates', 'recentTemplates')}</Text>
+					{!templatesLoading && (
+						<TouchableOpacity onPress={handleRedirectToTemplates}>
+							<Text style={styles.seeAll}>
+								{t('templates', 'allTemplates')} ({templates.length})
+							</Text>
+						</TouchableOpacity>
+					)}
 					</View>
 
 					{/* ── Скелетон / пусто / список с FadeIn ── */}
@@ -266,7 +268,7 @@ export default function TemplateSelectionModal({
 									size={48}
 									color={COLORS.textSecondary}
 								/>
-								<Text style={styles.emptyStateTitle}>Нет шаблонов</Text>
+								<Text style={styles.emptyStateTitle}>{t('templates', 'noTemplates')}</Text>
 								<Text style={styles.emptyStateSub}>
 									Создай шаблон после тренировки, чтобы быстро повторять её в
 									будущем
@@ -276,7 +278,7 @@ export default function TemplateSelectionModal({
 									onPress={handleRedirectToTemplates}
 								>
 									<Text style={styles.createFirstButtonText}>
-										Создать шаблон
+										{t('templates', 'createTemplate')}
 									</Text>
 								</TouchableOpacity>
 							</View>
@@ -318,7 +320,7 @@ export default function TemplateSelectionModal({
 												</Text>
 											) : (
 												<Text style={styles.templateDesc} numberOfLines={1}>
-													{'Нет описания'}
+													{t('templates', 'noDescription')}
 												</Text>
 											)}
 											<View style={styles.templateMeta}>
@@ -329,7 +331,7 @@ export default function TemplateSelectionModal({
 														color={COLORS.textSecondary}
 													/>
 													<Text style={styles.metaText}>
-														{item.exercises_count} упр.
+														{item.exercises_count} {t('templates', 'exercisesShort')}
 													</Text>
 												</View>
 												<View style={styles.metaItem}>
@@ -339,7 +341,7 @@ export default function TemplateSelectionModal({
 														color={COLORS.textSecondary}
 													/>
 													<Text style={styles.metaText}>
-														{item.estimated_duration} мин.
+														{item.estimated_duration} {t('templates', 'minShort')}
 													</Text>
 												</View>
 												{item.muscle_groups ? (
@@ -379,7 +381,7 @@ export default function TemplateSelectionModal({
 								onPress={handleRedirectToTemplates}
 							>
 								<Text style={styles.viewAllButtonText}>
-									Показать все шаблоны ({templates.length})
+									{t('templates', 'showAll')} ({templates.length})
 								</Text>
 								<Ionicons
 									name='arrow-forward'

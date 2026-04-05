@@ -52,4 +52,30 @@ export class SubscriptionService {
 	async getUserSubscriptions(userId: string) {
 		return this.subModel.find({ userId }).sort({ createdAt: -1 })
 	}
+
+	async startTrial(userId: string, trialStartedAt: string, trialEndsAt: string) {
+		const user = await this.userModel.findById(userId)
+		if (!user) throw new BadRequestException('User not found')
+
+		// Idempotent: ignore if trial already started
+		if (user.trialStartedAt) {
+			return {
+				success: true,
+				trialStartedAt: user.trialStartedAt,
+				trialEndsAt: user.trialEndsAt,
+				alreadyStarted: true,
+			}
+		}
+
+		const started = new Date(trialStartedAt)
+		const ends = new Date(trialEndsAt)
+
+		await this.userModel.findByIdAndUpdate(userId, {
+			trialStartedAt: started,
+			trialEndsAt: ends,
+			isNewUser: false,
+		})
+
+		return { success: true, trialStartedAt: started, trialEndsAt: ends }
+	}
 }
