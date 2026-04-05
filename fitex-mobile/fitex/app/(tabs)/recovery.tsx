@@ -1,6 +1,7 @@
 import ManBackSvg from '@/components/man-back-svg'
 import ManFrontSvg from '@/components/man-front-svg'
 import { useLanguage } from '@/contexts/language-context'
+import { translateGroupName } from '@/constants/exercise-i18n'
 import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
@@ -556,16 +557,24 @@ const MuscleCard = ({
 		svgColors[key] = liveColor
 	})
 
-	const { t } = useLanguage()
-	const MUSCLE_NAME_KEYS: Record<string, string> = {
-		'Грудь': 'chestLabel', 'Пресс': 'waistLabel', 'Бицепс': 'bicepsLabel',
-		'Плечи': 'neckLabel', 'Трапеции': 'thighLabel', 'Ноги': 'hipsLabel',
-		'Предплечья': 'calfLabel', 'Шея': 'neckLabel', 'Ягодицы': 'hipsLabel',
-		'Спина': 'bodyFatLabel', 'Трицепс': 'bicepsLabel',
+	const { t, language } = useLanguage()
+	const muscleName = translateGroupName(muscle.name, language ?? 'ru')
+
+	const getTimeLeft = () => {
+		if (liveStats.recovery >= 100) return t('recovery', 'fullyRecovered')
+		const totalHours = Math.round((100 - liveStats.recovery) / 100 * 72)
+		if (totalHours <= 0) return t('recovery', 'fullyRecovered')
+		if (totalHours < 60) {
+			const mins = totalHours * 60
+			if (mins < 60) return `${mins} ${t('profile', 'minutes')}`
+			return `${totalHours} ${t('profile', 'hours')}`
+		}
+		const days = Math.floor(totalHours / 24)
+		const hours = totalHours % 24
+		if (days > 0 && hours > 0) return `${days} ${t('rating', 'days')} ${hours} ${t('profile', 'hours')}`
+		if (days > 0) return `${days} ${t('rating', 'days')}`
+		return `${hours} ${t('profile', 'hours')}`
 	}
-	const muscleName = MUSCLE_NAME_KEYS[muscle.name]
-		? t('measurements', MUSCLE_NAME_KEYS[muscle.name] as any)
-		: muscle.name
 
 	return (
 		<TouchableOpacity
@@ -598,8 +607,13 @@ const MuscleCard = ({
 			</View>
 
 		<View style={styles.cardBody}>
-		<Text style={styles.cardName}>{muscleName}</Text>
+			<Text style={styles.cardName}>{muscleName}</Text>
 			<MuscleCardDate lastTrained={liveStats.lastTrained} />
+			<Text style={[styles.cardTimeLeft, { color: liveColor }]} numberOfLines={1}>
+				{liveStats.recovery < 100
+					? `${t('recovery', 'timeLeft')}: ${getTimeLeft()}`
+					: t('recovery', 'fullyRecovered')}
+			</Text>
 		</View>
 
 			<View style={[styles.cardBadge, { backgroundColor: liveBg }]}>
@@ -1138,6 +1152,7 @@ const styles = StyleSheet.create({
 	cardBody: { flex: 1, gap: 3 },
 	cardName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
 	cardDate: { fontSize: 12, color: COLORS.textSecondary },
+	cardTimeLeft: { fontSize: 11, fontWeight: '500' },
 	cardBadge: {
 		flexDirection: 'row',
 		alignItems: 'center',

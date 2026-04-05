@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { translateUnit } from '@/constants/exercise-i18n'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -646,41 +647,41 @@ export default function StatisticsTab() {
 	const renderChart = () => {
 		const data = measurementHistoryMap[selectedMetric]
 		if (!data || data.length === 0) {
-			return (
-				<View style={styles.emptyChart}>
-					<Ionicons name='stats-chart' size={48} color='#8E8E93' />
-					<Text style={styles.emptyChartText}>{t('progress', 'noDataChart')}</Text>
-					<Text style={styles.emptyChartSubtext}>
-						{t('progress', 'addMeasurementsFor')} «{selectedMetric}»
-					</Text>
-				</View>
-			)
-		}
-		const unit =
-			bodyMeasurements.find(m => m.name === selectedMetric)?.unit ?? ''
 		return (
-			<LineChart
-				data={{
-					labels: data.map(d => d.month),
-					datasets: [{ data: data.map(d => d.value) }],
-				}}
-				width={screenWidth - 32}
-				height={240}
-				chartConfig={{
-					backgroundGradientFrom: '#1C1C1E',
-					backgroundGradientTo: '#1C1C1E',
-					color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-					labelColor: (opacity = 1) => `rgba(255,255,255,${opacity})`,
-					strokeWidth: 2,
-					propsForDots: { r: '4', strokeWidth: '2', stroke: '#1aff92' },
-					decimalPlaces: 1,
-				}}
-				bezier
-				yAxisSuffix={` ${unit}`}
-				style={{ paddingTop: 20, paddingBottom: 5, borderRadius: 16 }}
-			/>
+			<View style={styles.emptyChart}>
+				<Ionicons name='stats-chart' size={48} color='#8E8E93' />
+				<Text style={styles.emptyChartText}>{t('progress', 'noDataChart')}</Text>
+				<Text style={styles.emptyChartSubtext}>
+					{t('progress', 'addMeasurementsFor')} «{getMeasurementDisplayName(selectedMetric)}»
+				</Text>
+			</View>
 		)
 	}
+	const rawUnit = bodyMeasurements.find(m => m.name === selectedMetric)?.unit ?? ''
+	const unit = translateUnit(rawUnit, language)
+	return (
+		<LineChart
+			data={{
+				labels: data.map(d => d.month),
+				datasets: [{ data: data.map(d => d.value) }],
+			}}
+			width={screenWidth - 32}
+			height={240}
+			chartConfig={{
+				backgroundGradientFrom: '#1C1C1E',
+				backgroundGradientTo: '#1C1C1E',
+				color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
+				labelColor: (opacity = 1) => `rgba(255,255,255,${opacity})`,
+				strokeWidth: 2,
+				propsForDots: { r: '4', strokeWidth: '2', stroke: '#1aff92' },
+				decimalPlaces: 1,
+			}}
+			bezier
+			yAxisSuffix={` ${unit}`}
+			style={{ paddingTop: 20, paddingBottom: 5, borderRadius: 16 }}
+		/>
+	)
+}
 
 	const metricKeys = Object.keys(measurementHistoryMap)
 
@@ -821,7 +822,7 @@ export default function StatisticsTab() {
 										<View style={styles.measurementGridRight}>
 											<Text style={styles.measurementValue}>
 												{item.current}
-												<Text style={styles.measurementUnit}> {item.unit}</Text>
+												<Text style={styles.measurementUnit}> {translateUnit(item.unit, language)}</Text>
 											</Text>
 											<Ionicons
 												name={
@@ -879,10 +880,10 @@ export default function StatisticsTab() {
 										<View style={styles.recordIconWrap}>
 											<Ionicons name='barbell' size={16} color='#34C759' />
 										</View>
-										<View style={styles.recordBody}>
-											<Text style={styles.recordExercise} numberOfLines={1}>
-												{record.exercise}
-											</Text>
+								<View style={styles.recordBody}>
+										<Text style={styles.recordExercise} numberOfLines={1}>
+											{translateExerciseName(record.exercise, language)}
+										</Text>
 											<Text style={styles.recordDate}>{record.date}</Text>
 										</View>
 										<View style={styles.recordRight}>
@@ -929,9 +930,9 @@ export default function StatisticsTab() {
 					<ScrollView style={styles.measurementsInputContainer}>
 						{currentMeasurements.map((measurement, index) => (
 							<View key={index} style={styles.measurementInputRow}>
-							<Text style={styles.measurementLabel}>
-								{getMeasurementDisplayName(measurement.name)} ({measurement.unit})
-							</Text>
+						<Text style={styles.measurementLabel}>
+							{getMeasurementDisplayName(measurement.name)} ({translateUnit(measurement.unit, language)})
+						</Text>
 								<TextInput
 									style={styles.measurementInput}
 									value={measurement.value}

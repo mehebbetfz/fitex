@@ -500,3 +500,38 @@ export function translateTips(exerciseRussianName: string, language: Language): 
   if (language === 'ru') return null
   return EXERCISE_TIPS[exerciseRussianName]?.[language] ?? null
 }
+
+// ─── Workout type translations ────────────────────────────────────────────────
+
+const WORKOUT_TYPES: Record<string, Record<Language, string>> = {
+  'Силовая':    { ru: 'Силовая',    en: 'Strength',   az: 'Güc' },
+  'Кардио':     { ru: 'Кардио',     en: 'Cardio',     az: 'Kardio' },
+  'Верх тела':  { ru: 'Верх тела',  en: 'Upper Body', az: 'Üst bədən' },
+  'Ноги':       { ru: 'Ноги',       en: 'Legs',       az: 'Ayaqlar' },
+  'Круговая':   { ru: 'Круговая',   en: 'Circuit',    az: 'Dövrəvi' },
+  'Грудь':      { ru: 'Грудь',      en: 'Chest',      az: 'Döş' },
+  'Спина':      { ru: 'Спина',      en: 'Back',       az: 'Arxa' },
+  'Пресс':      { ru: 'Пресс',      en: 'Abs',        az: 'Qarın əzələsi' },
+  'Руки':       { ru: 'Руки',       en: 'Arms',       az: 'Qollar' },
+  'Плечи':      { ru: 'Плечи',      en: 'Shoulders',  az: 'Çiynlər' },
+  'Бицепс':     { ru: 'Бицепс',     en: 'Biceps',     az: 'Biseps' },
+  'Трицепс':    { ru: 'Трицепс',    en: 'Triceps',    az: 'Triseps' },
+  'Ягодицы':    { ru: 'Ягодицы',    en: 'Glutes',     az: 'Kalça' },
+}
+
+export function translateWorkoutType(type: string, language: Language): string {
+  return WORKOUT_TYPES[type]?.[language] ?? type
+}
+
+// ─── Unit translations ────────────────────────────────────────────────────────
+
+const UNITS: Record<string, Record<Language, string>> = {
+  'кг':    { ru: 'кг',    en: 'kg',   az: 'kq' },
+  'см':    { ru: 'см',    en: 'cm',   az: 'sm' },
+  'кг/м²': { ru: 'кг/м²', en: 'kg/m²', az: 'kq/m²' },
+  '%':     { ru: '%',     en: '%',    az: '%' },
+}
+
+export function translateUnit(unit: string, language: Language): string {
+  return UNITS[unit]?.[language] ?? unit
+}

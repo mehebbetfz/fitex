@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { translateExerciseName } from '@/constants/exercise-i18n'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -218,7 +219,7 @@ const InitialLoadingSkeleton = () => (
 
 export default function RecordsHistoryScreen() {
 	const router = useRouter()
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const [selectedCategory, setSelectedCategory] = useState('all')
 	const [selectedRecord, setSelectedRecord] = useState<Record | null>(null)
 	const [modalVisible, setModalVisible] = useState(false)
@@ -343,7 +344,7 @@ export default function RecordsHistoryScreen() {
 			/>
 			<View style={s.recordBody}>
 				<Text style={s.exerciseName} numberOfLines={1}>
-					{item.exercise}
+					{translateExerciseName(item.exercise, language)}
 				</Text>
 				<View style={s.recordMeta}>
 					<Ionicons name='calendar-outline' size={12} color='#8E8E93' />
@@ -497,9 +498,9 @@ export default function RecordsHistoryScreen() {
 											},
 										]}
 									/>
-									<Text style={s.modalTitle} numberOfLines={1}>
-										{selectedRecord.exercise}
-									</Text>
+								<Text style={s.modalTitle} numberOfLines={1}>
+									{translateExerciseName(selectedRecord.exercise, language)}
+								</Text>
 									<TouchableOpacity onPress={() => setModalVisible(false)}>
 										<Ionicons name='close' size={22} color='#8E8E93' />
 									</TouchableOpacity>

@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { translateExerciseName, translateGroupName } from '@/constants/exercise-i18n'
 import { muscle_groups } from '@/constants/muscle-groups'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -59,7 +60,7 @@ interface ExerciseItem {
 export default function AddTemplateScreen() {
 	const router = useRouter()
 	const { createWorkoutTemplate } = useDatabase()
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 
 	const [name, setName] = useState('')
 	const [description, setDescription] = useState('')
@@ -162,50 +163,50 @@ export default function AddTemplateScreen() {
 				contentContainerStyle={s.content}
 				showsVerticalScrollIndicator={false}
 			>
-				{/* Название */}
-				<Text style={s.label}>Название *</Text>
-				<TextInput
-					style={s.input}
-					value={name}
-					onChangeText={setName}
-					placeholder={t('templates', 'namePlaceholder')}
-					placeholderTextColor='#8E8E93'
-				/>
+			{/* Название */}
+			<Text style={s.label}>{t('templates', 'nameLabel')} *</Text>
+			<TextInput
+				style={s.input}
+				value={name}
+				onChangeText={setName}
+				placeholder={t('templates', 'namePlaceholder')}
+				placeholderTextColor='#8E8E93'
+			/>
 
-				{/* Описание */}
+			{/* Описание */}
+			<Text style={s.label}>
+				{t('templates', 'descLabel')} <Text style={s.optional}>{t('templates', 'optionalSuffix')}</Text>
+			</Text>
+			<TextInput
+				style={[s.input, s.notesInput]}
+				value={description}
+				onChangeText={setDescription}
+				placeholder={t('templates', 'descPlaceholder')}
+				placeholderTextColor='#8E8E93'
+				multiline
+				numberOfLines={3}
+				textAlignVertical='top'
+			/>
+
+			{/* Длительность */}
+			<Text style={s.label}>
+				{t('templates', 'durationLabel')} <Text style={s.optional}>{t('templates', 'optionalSuffix')}</Text>
+			</Text>
+			<TextInput
+				style={[s.input, s.durationInput]}
+				value={duration}
+				onChangeText={v => setDuration(v.replace(/[^0-9]/g, ''))}
+				placeholder='60'
+				placeholderTextColor='#8E8E93'
+				keyboardType='number-pad'
+				maxLength={3}
+			/>
+
+			{/* Упражнения */}
+			<View style={s.exercisesHeader}>
 				<Text style={s.label}>
-					Описание <Text style={s.optional}>(опционально)</Text>
+					{t('templates', 'exercisesLabel')} {exercises.length > 0 && `(${exercises.length})`}
 				</Text>
-				<TextInput
-					style={[s.input, s.notesInput]}
-					value={description}
-					onChangeText={setDescription}
-					placeholder={t('templates', 'descPlaceholder')}
-					placeholderTextColor='#8E8E93'
-					multiline
-					numberOfLines={3}
-					textAlignVertical='top'
-				/>
-
-				{/* Длительность */}
-				<Text style={s.label}>
-					Длительность (мин) <Text style={s.optional}>(опционально)</Text>
-				</Text>
-				<TextInput
-					style={[s.input, s.durationInput]}
-					value={duration}
-					onChangeText={v => setDuration(v.replace(/[^0-9]/g, ''))}
-					placeholder='60'
-					placeholderTextColor='#8E8E93'
-					keyboardType='number-pad'
-					maxLength={3}
-				/>
-
-				{/* Упражнения */}
-				<View style={s.exercisesHeader}>
-					<Text style={s.label}>
-						Упражнения {exercises.length > 0 && `(${exercises.length})`}
-					</Text>
 					<TouchableOpacity
 						style={s.addExerciseBtn}
 						onPress={() => setShowExercisePicker(true)}
@@ -230,8 +231,8 @@ export default function AddTemplateScreen() {
 									<Text style={s.exerciseNumberText}>{index + 1}</Text>
 								</View>
 								<View style={s.exerciseInfo}>
-									<Text style={s.exerciseName}>{ex.name}</Text>
-									<Text style={s.exerciseMuscle}>{ex.muscle_group}</Text>
+									<Text style={s.exerciseName}>{translateExerciseName(ex.name, language ?? 'ru')}</Text>
+									<Text style={s.exerciseMuscle}>{translateGroupName(ex.muscle_group, language ?? 'ru')}</Text>
 								</View>
 								<TouchableOpacity
 									onPress={() => handleRemoveExercise(ex.id)}
@@ -371,8 +372,8 @@ export default function AddTemplateScreen() {
 								>
 									<View style={s.exercisePickerDot} />
 									<View>
-										<Text style={s.exercisePickerName}>{ex.name}</Text>
-										<Text style={s.exercisePickerGroup}>{ex.muscle_group}</Text>
+										<Text style={s.exercisePickerName}>{translateExerciseName(ex.name, language ?? 'ru')}</Text>
+										<Text style={s.exercisePickerGroup}>{translateGroupName(ex.muscle_group, language ?? 'ru')}</Text>
 									</View>
 								</TouchableOpacity>
 							))}

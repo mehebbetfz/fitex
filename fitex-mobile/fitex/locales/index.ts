@@ -119,6 +119,10 @@ export interface Translations {
     nameRequired: string
     exerciseRequired: string
     addExerciseHint: string
+    nameLabel: string
+    descLabel: string
+    durationLabel: string
+    optionalSuffix: string
     exercisesLabel: string
     sets: string
     reps: string
@@ -403,6 +407,7 @@ export interface Translations {
     edit: string
     add: string
     confirm: string
+    unitCm: string
   }
   languageSelect: {
     title: string
@@ -466,6 +471,8 @@ export interface Translations {
     legendRecovered: string
     legendRecovering: string
     legendRest: string
+    fullyRecovered: string
+    timeLeft: string
   }
   history: {
     title: string
@@ -672,6 +679,10 @@ export const ru: Translations = {
     nameRequired: 'Введите название шаблона',
     exerciseRequired: 'Добавьте хотя бы одно упражнение',
     addExerciseHint: 'Нажмите "Добавить", чтобы выбрать упражнения',
+    nameLabel: 'Название',
+    descLabel: 'Описание',
+    durationLabel: 'Длительность (мин)',
+    optionalSuffix: '(опционально)',
     exercisesLabel: 'Упражнения',
     sets: 'Подходы',
     reps: 'Повторения',
@@ -956,6 +967,7 @@ export const ru: Translations = {
     edit: 'Изменить',
     add: 'Добавить',
     confirm: 'Подтвердить',
+    unitCm: 'см',
   },
   languageSelect: {
     title: 'Выберите язык',
@@ -1019,6 +1031,8 @@ export const ru: Translations = {
     legendRecovered: 'Восстановлено',
     legendRecovering: 'Восстанавливается',
     legendRest: 'Отдых',
+    fullyRecovered: 'Восстановлен',
+    timeLeft: 'Осталось',
   },
   history: {
     title: 'Вся история',
@@ -1225,6 +1239,10 @@ export const en: Translations = {
     nameRequired: 'Enter template name',
     exerciseRequired: 'Add at least one exercise',
     addExerciseHint: 'Press "Add" to select exercises',
+    nameLabel: 'Name',
+    descLabel: 'Description',
+    durationLabel: 'Duration (min)',
+    optionalSuffix: '(optional)',
     exercisesLabel: 'Exercises',
     sets: 'Sets',
     reps: 'Reps',
@@ -1509,6 +1527,7 @@ export const en: Translations = {
     edit: 'Edit',
     add: 'Add',
     confirm: 'Confirm',
+    unitCm: 'cm',
   },
   languageSelect: {
     title: 'Choose Language',
@@ -1572,6 +1591,8 @@ export const en: Translations = {
     legendRecovered: 'Recovered',
     legendRecovering: 'Recovering',
     legendRest: 'Rest',
+    fullyRecovered: 'Recovered',
+    timeLeft: 'Left',
   },
   history: {
     title: 'Full History',
@@ -1778,6 +1799,10 @@ export const az: Translations = {
     nameRequired: 'Şablon adını daxil edin',
     exerciseRequired: 'Ən az bir hərəkət əlavə edin',
     addExerciseHint: 'Hərəkət seçmək üçün "Əlavə et" düyməsini basın',
+    nameLabel: 'Ad',
+    descLabel: 'Açıqlama',
+    durationLabel: 'Müddət (dəq)',
+    optionalSuffix: '(istəyə görə)',
     exercisesLabel: 'Hərəkətlər',
     sets: 'Yanaşmalar',
     reps: 'Təkrarlar',
@@ -2062,6 +2087,7 @@ export const az: Translations = {
     edit: 'Düzənlə',
     add: 'Əlavə et',
     confirm: 'Təsdiqlə',
+    unitCm: 'sm',
   },
   languageSelect: {
     title: 'Dil seçin',
@@ -2125,6 +2151,8 @@ export const az: Translations = {
     legendRecovered: 'Bərpa edilib',
     legendRecovering: 'Bərpa olunur',
     legendRest: 'İstirahət',
+    fullyRecovered: 'Bərpa edilib',
+    timeLeft: 'Qaldı',
   },
   history: {
     title: 'Tam tarixçə',

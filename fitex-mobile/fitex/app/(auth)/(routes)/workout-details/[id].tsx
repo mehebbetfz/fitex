@@ -1,4 +1,6 @@
 import { useLanguage } from '@/contexts/language-context'
+import { translateExerciseName, translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
+import { useDatabase } from '@/app/contexts/database-context'
 import { Ionicons } from '@expo/vector-icons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
@@ -10,175 +12,57 @@ import {
 	Text,
 	TouchableOpacity,
 	View,
+	ActivityIndicator,
 } from 'react-native'
-import { LineChart } from 'react-native-chart-kit'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Exercise, ExerciseSet, Workout } from '@/scripts/database'
 
-// Типы данных
-interface ExerciseSet {
-	setNumber: number
-	weight: number
-	reps: number
-	completed: boolean
-}
+const C = {
+	bg: '#0A0A0A',
+	card: '#1C1C1E',
+	cardLight: '#2C2C2E',
+	border: '#2C2C2E',
+	primary: '#34C759',
+	text: '#FFFFFF',
+	subtext: '#8E8E93',
+	error: '#FF3B30',
+	gold: '#FFD60A',
+	info: '#5AC8FA',
+} as const
 
-interface Exercise {
-	id: string
-	name: string
-	muscleGroup: string
-	sets: ExerciseSet[]
-	notes?: string
-	oneRepMax?: number
-	volume: number
-}
+const { width: SW } = Dimensions.get('window')
 
-interface WorkoutDetail {
-	id: string
-	date: string
-	time: string
-	duration: string
-	type: string
-	muscleGroups: string[]
-	exercises: Exercise[]
-	totalVolume: number
-	totalExercises: number
-	totalSets: number
-	rating?: number
-	notes?: string
-}
-
-// Моковые данные детальных тренировок
-const DETAILED_WORKOUTS: WorkoutDetail[] = [
-	{
-		id: '1',
-		date: 'Сегодня',
-		time: '18:30',
-		duration: '45 мин',
-		type: 'Силовая',
-		muscleGroups: ['Грудь', 'Трицепс'],
-		totalVolume: 4800,
-		totalExercises: 4,
-		totalSets: 16,
-		rating: 4,
-		notes: 'Хорошая тренировка, прогресс по жиму лежа',
-		exercises: [
-			{
-				id: 'ex1',
-				name: 'Жим штанги лежа',
-				muscleGroup: 'Грудь',
-				volume: 2000,
-				oneRepMax: 120,
-				notes: 'Прогресс на 5 кг',
-				sets: [
-					{ setNumber: 1, weight: 60, reps: 12, completed: true },
-					{ setNumber: 2, weight: 70, reps: 10, completed: true },
-					{ setNumber: 3, weight: 80, reps: 8, completed: true },
-					{ setNumber: 4, weight: 85, reps: 6, completed: true },
-				],
-			},
-			{
-				id: 'ex2',
-				name: 'Разводка гантелей',
-				muscleGroup: 'Грудь',
-				volume: 900,
-				sets: [
-					{ setNumber: 1, weight: 15, reps: 12, completed: true },
-					{ setNumber: 2, weight: 17.5, reps: 10, completed: true },
-					{ setNumber: 3, weight: 20, reps: 8, completed: true },
-					{ setNumber: 4, weight: 20, reps: 8, completed: true },
-				],
-			},
-			{
-				id: 'ex3',
-				name: 'Жим штанги узким хватом',
-				muscleGroup: 'Трицепс',
-				volume: 1200,
-				notes: 'Фокус на технике',
-				sets: [
-					{ setNumber: 1, weight: 40, reps: 12, completed: true },
-					{ setNumber: 2, weight: 45, reps: 10, completed: true },
-					{ setNumber: 3, weight: 50, reps: 8, completed: true },
-					{ setNumber: 4, weight: 50, reps: 8, completed: true },
-				],
-			},
-			{
-				id: 'ex4',
-				name: 'Разгибание рук на блоке',
-				muscleGroup: 'Трицепс',
-				volume: 700,
-				sets: [
-					{ setNumber: 1, weight: 30, reps: 15, completed: true },
-					{ setNumber: 2, weight: 35, reps: 12, completed: true },
-					{ setNumber: 3, weight: 40, reps: 10, completed: true },
-					{ setNumber: 4, weight: 40, reps: 10, completed: true },
-				],
-			},
-		],
-	},
-	{
-		id: '2',
-		date: 'Вчера',
-		time: '19:15',
-		duration: '60 мин',
-		type: 'Кардио',
-		muscleGroups: ['Ноги', 'Пресс'],
-		totalVolume: 3200,
-		totalExercises: 5,
-		totalSets: 20,
-		rating: 5,
-		notes: 'Интенсивная кардио сессия',
-		exercises: [
-			{
-				id: 'ex5',
-				name: 'Беговая дорожка',
-				muscleGroup: 'Ноги',
-				volume: 0,
-				notes: 'Интервальный бег',
-				sets: [
-					{ setNumber: 1, weight: 0, reps: 10, completed: true },
-					{ setNumber: 2, weight: 0, reps: 10, completed: true },
-					{ setNumber: 3, weight: 0, reps: 10, completed: true },
-					{ setNumber: 4, weight: 0, reps: 10, completed: true },
-				],
-			},
-			// ... другие упражнения
-		],
-	},
-	// ... другие тренировки
-]
-
-// Данные для графиков прогресса
-const PROGRESS_DATA = {
-	'Жим штанги лежа': {
-		labels: ['1 нед', '2 нед', '3 нед', '4 нед'],
-		data: [75, 80, 85, 90],
-	},
-	'Разводка гантелей': {
-		labels: ['1 нед', '2 нед', '3 нед', '4 нед'],
-		data: [12.5, 15, 17.5, 20],
-	},
-}
+type FullExercise = Exercise & { sets: ExerciseSet[] }
 
 export default function WorkoutDetailScreen() {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const { id } = useLocalSearchParams<{ id: string }>()
-	const [workout, setWorkout] = useState<WorkoutDetail | null>(null)
-	const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
-		null,
-	)
-	const [showNotes, setShowNotes] = useState(false)
+	const { getWorkoutDetails, deleteWorkout } = useDatabase()
+
+	const [workout, setWorkout] = useState<Workout | null>(null)
+	const [exercises, setExercises] = useState<FullExercise[]>([])
+	const [selectedExIdx, setSelectedExIdx] = useState(0)
+	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
-		if (id) {
-			const foundWorkout = DETAILED_WORKOUTS.find(w => w.id === id)
-			if (foundWorkout) {
-				setWorkout(foundWorkout)
-				setSelectedExercise(foundWorkout.exercises[0])
+		if (!id) return
+		const load = async () => {
+			try {
+				setLoading(true)
+				const data = await getWorkoutDetails(Number(id))
+				setWorkout(data.workout)
+				setExercises(data.exercises)
+				setSelectedExIdx(0)
+			} catch {
+				// do nothing — show not-found state
+			} finally {
+				setLoading(false)
 			}
 		}
+		load()
 	}, [id])
 
-	const handleDeleteWorkout = () => {
+	const handleDelete = () => {
 		Alert.alert(
 			t('workout', 'deleteExercise'),
 			t('workout', 'deleteSetMsg'),
@@ -187,7 +71,10 @@ export default function WorkoutDetailScreen() {
 				{
 					text: t('common', 'delete'),
 					style: 'destructive',
-					onPress: () => {
+					onPress: async () => {
+						if (workout?.id) {
+							await deleteWorkout(workout.id)
+						}
 						router.back()
 					},
 				},
@@ -195,646 +82,445 @@ export default function WorkoutDetailScreen() {
 		)
 	}
 
-	const renderExerciseCard = (exercise: Exercise) => (
-		<TouchableOpacity
-			key={exercise.id}
-			style={[
-				styles.exerciseCard,
-				selectedExercise?.id === exercise.id && styles.exerciseCardActive,
-			]}
-			onPress={() => setSelectedExercise(exercise)}
-		>
-			<View style={styles.exerciseHeader}>
-				<View style={styles.exerciseInfo}>
-					<Text style={styles.exerciseName}>{exercise.name}</Text>
-					<View style={styles.muscleTagSmall}>
-						<Text style={styles.muscleTagTextSmall}>
-							{exercise.muscleGroup}
-						</Text>
-					</View>
-				</View>
-				<View style={styles.exerciseStats}>
-				<Text style={styles.volumeText}>{exercise.volume} {t('records', 'kg')}</Text>
-				<Text style={styles.setsText}>{exercise.sets.length} {t('workout', 'sets')}</Text>
-			</View>
-			</View>
-			{exercise.notes && (
-				<Text style={styles.exerciseNotes} numberOfLines={1}>
-					{exercise.notes}
-				</Text>
-			)}
-		</TouchableOpacity>
-	)
-
-	const renderProgressChart = () => {
-		if (
-			!selectedExercise ||
-			!PROGRESS_DATA[selectedExercise.name as keyof typeof PROGRESS_DATA]
-		) {
-			return null
+	const formatDate = (dateStr: string) => {
+		try {
+			const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', az: 'az-AZ' }
+			const locale = localeMap[language] ?? 'ru-RU'
+			const d = new Date(dateStr)
+			return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+		} catch {
+			return dateStr
 		}
-
-		const data =
-			PROGRESS_DATA[selectedExercise.name as keyof typeof PROGRESS_DATA]
-
-		return (
-			<View style={styles.chartContainer}>
-					<Text style={styles.chartTitle}>{t('records', 'progress')}</Text>
-				<LineChart
-					data={{
-						labels: data.labels,
-						datasets: [{ data: data.data }],
-					}}
-					width={Dimensions.get('window').width - 80}
-					height={200}
-					chartConfig={{
-						backgroundColor: '#1C1C1E',
-						backgroundGradientFrom: '#1C1C1E',
-						backgroundGradientTo: '#1C1C1E',
-						decimalPlaces: 0,
-						color: (opacity = 1) => `rgba(0, 255, 72, ${opacity})`,
-						labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-						style: {
-							borderRadius: 16,
-						},
-						propsForDots: {
-							r: '6',
-							strokeWidth: '2',
-							stroke: '#00ff48',
-						},
-					}}
-					bezier
-					style={{
-						marginVertical: 8,
-						borderRadius: 16,
-					}}
-				/>
-			</View>
-		)
 	}
 
-	if (!workout) {
+	if (loading) {
 		return (
-			<SafeAreaView style={styles.container}>
-				<View style={styles.centerContent}>
-					<Ionicons name='barbell-outline' size={64} color='#8E8E93' />
-				<Text style={styles.notFoundText}>{t('history', 'noWorkouts')}</Text>
-				<TouchableOpacity
-					style={styles.backButton}
-					onPress={() => router.back()}
-				>
-					<Text style={styles.backButtonText}>{t('common', 'cancel')}</Text>
-				</TouchableOpacity>
+			<SafeAreaView style={s.container}>
+				<View style={s.center}>
+					<ActivityIndicator size='large' color={C.primary} />
 				</View>
 			</SafeAreaView>
 		)
 	}
 
-	return (
-		<SafeAreaView style={styles.container}>
-			<ScrollView showsVerticalScrollIndicator={false}>
-				{/* Хедер */}
-				<View style={styles.header}>
-					<TouchableOpacity
-						style={styles.backButton}
-						onPress={() => router.back()}
-					>
-						<Ionicons name='arrow-back' size={24} color='#FFFFFF' />
-					</TouchableOpacity>
-					<View style={styles.headerTitle}>
-						<Text style={styles.headerTitleText}>{t('workout', 'title')}</Text>
-						<Text style={styles.headerSubtitle}>
-							{workout.date}, {workout.time}
-						</Text>
-					</View>
-					<TouchableOpacity
-						style={styles.deleteButton}
-						onPress={handleDeleteWorkout}
-					>
-						<Ionicons name='trash-outline' size={20} color='#FF3B30' />
+	if (!workout) {
+		return (
+			<SafeAreaView style={s.container}>
+				<View style={s.center}>
+					<Ionicons name='barbell-outline' size={64} color={C.subtext} />
+					<Text style={s.notFoundText}>{t('history', 'noWorkouts')}</Text>
+					<TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+						<Text style={s.backBtnText}>{t('common', 'cancel')}</Text>
 					</TouchableOpacity>
 				</View>
+			</SafeAreaView>
+		)
+	}
 
-				{/* Основная информация */}
-				<View style={styles.overviewCard}>
-					<View style={styles.overviewHeader}>
-						<View>
-							<Text style={styles.workoutType}>{workout.type}</Text>
-							<Text style={styles.duration}>{workout.duration}</Text>
-						</View>
-						{workout.rating && (
-							<View style={styles.ratingContainer}>
-								<Ionicons name='star' size={20} color='#FFD60A' />
-								<Text style={styles.ratingText}>{workout.rating}/5</Text>
-							</View>
-						)}
-					</View>
+	const muscleGroupsList = workout.muscle_groups
+		?.split(',')
+		.map(g => g.trim())
+		.filter(Boolean) ?? []
 
-					<View style={styles.muscleGroups}>
-						{workout.muscleGroups.map((muscle, index) => (
-							<View key={index} style={styles.muscleTag}>
-								<Text style={styles.muscleTagText}>{muscle}</Text>
+	const selectedEx = exercises[selectedExIdx] ?? null
+
+	const totalVolume = exercises.reduce(
+		(sum, ex) => sum + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0),
+		0,
+	)
+
+	return (
+		<SafeAreaView style={s.container}>
+			{/* ── Header ── */}
+			<View style={s.header}>
+				<TouchableOpacity onPress={() => router.back()} style={s.headerBack}>
+					<Ionicons name='arrow-back' size={22} color={C.text} />
+				</TouchableOpacity>
+				<View style={s.headerCenter}>
+					<Text style={s.headerTitle} numberOfLines={1}>
+						{translateWorkoutType(workout.type, language)}
+					</Text>
+					<Text style={s.headerSub}>{formatDate(workout.date)}</Text>
+				</View>
+				<TouchableOpacity onPress={handleDelete} style={s.headerDelete}>
+					<Ionicons name='trash-outline' size={20} color={C.error} />
+				</TouchableOpacity>
+			</View>
+
+			<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+				{/* ── Overview stats ── */}
+				<View style={s.statsRow}>
+					<StatBox
+						value={String(workout.exercises_count)}
+						label={t('workout', 'exercises')}
+						icon='barbell'
+					/>
+					<StatBox
+						value={String(workout.sets_count)}
+						label={t('workout', 'sets')}
+						icon='repeat'
+					/>
+					<StatBox
+						value={`${workout.duration}`}
+						label={t('history', 'min')}
+						icon='time'
+					/>
+					<StatBox
+						value={totalVolume > 0 ? `${Math.round(totalVolume / 1000 * 10) / 10}k` : `${workout.volume}`}
+						label={t('workout', 'kg')}
+						icon='trending-up'
+					/>
+				</View>
+
+				{/* ── Muscle groups ── */}
+				{muscleGroupsList.length > 0 && (
+					<View style={s.tagRow}>
+						{muscleGroupsList.map((g, i) => (
+							<View key={i} style={s.muscleTag}>
+								<Text style={s.muscleTagText}>{translateGroupName(g, language)}</Text>
 							</View>
 						))}
 					</View>
+				)}
 
-					{workout.notes && (
-						<TouchableOpacity
-							style={styles.notesContainer}
-							onPress={() => setShowNotes(!showNotes)}
-						>
-							<View style={styles.notesHeader}>
-								<Ionicons
-									name='document-text-outline'
-									size={16}
-									color='#8E8E93'
-								/>
-								<Text style={styles.notesTitle}>{t('workout', 'notes')}</Text>
-								<Ionicons
-									name={showNotes ? 'chevron-up' : 'chevron-down'}
-									size={16}
-									color='#8E8E93'
-								/>
-							</View>
-							{showNotes && (
-								<Text style={styles.notesText}>{workout.notes}</Text>
-							)}
-						</TouchableOpacity>
-					)}
+				{/* ── Notes ── */}
+				{!!workout.notes && (
+					<View style={s.notesCard}>
+						<Ionicons name='document-text-outline' size={16} color={C.subtext} />
+						<Text style={s.notesText}>{workout.notes}</Text>
+					</View>
+				)}
 
-					<View style={styles.statsGrid}>
-						<View style={styles.statItem}>
-							<Text style={styles.statValue}>{workout.totalExercises}</Text>
-					<Text style={styles.statLabel}>{t('workout', 'exercises')}</Text>
-					</View>
-					<View style={styles.statItem}>
-						<Text style={styles.statValue}>{workout.totalSets}</Text>
-						<Text style={styles.statLabel}>{t('workout', 'sets')}</Text>
-					</View>
-					<View style={styles.statItem}>
-						<Text style={styles.statValue}>
-							{workout.totalVolume.toLocaleString()}
+				{/* ── Exercises ── */}
+				{exercises.length > 0 && (
+					<View style={s.section}>
+						<Text style={s.sectionTitle}>
+							{t('workout', 'exercises')} ({exercises.length})
 						</Text>
-						<Text style={styles.statLabel}>{t('progress', 'totalVolume')}</Text>
-					</View>
-					<View style={styles.statItem}>
-						<Text style={styles.statValue}>
-							{Math.round(workout.totalVolume / workout.totalSets)}
-						</Text>
-						<Text style={styles.statLabel}>{t('workout', 'weight')}/{t('workout', 'sets')}</Text>
-					</View>
-					</View>
-				</View>
-
-				{/* Список упражнений */}
-				<View style={styles.section}>
-				<Text style={styles.sectionTitle}>
-					{t('workout', 'exercises')} ({workout.exercises.length})
-				</Text>
-					<View style={styles.exercisesList}>
-						{workout.exercises.map(renderExerciseCard)}
-					</View>
-				</View>
-
-				{/* Детали выбранного упражнения */}
-				{selectedExercise && (
-					<View style={styles.section}>
-					<Text style={styles.sectionTitle}>
-						{selectedExercise.name} - {t('workout', 'sets')}
-					</Text>
-
-					<View style={styles.setsTable}>
-						<View style={styles.tableHeader}>
-							<Text style={styles.tableHeaderText}>{t('workout', 'sets')}</Text>
-							<Text style={styles.tableHeaderText}>{t('workout', 'weight')} ({t('records', 'kg')})</Text>
-							<Text style={styles.tableHeaderText}>{t('workout', 'reps')}</Text>
-							<Text style={styles.tableHeaderText}>{t('progress', 'totalVolume')}</Text>
-						</View>
-
-							{selectedExercise.sets.map((set, index) => (
-								<View key={index} style={styles.tableRow}>
-									<Text style={styles.tableCell}>{set.setNumber}</Text>
-									<Text style={styles.tableCell}>{set.weight}</Text>
-									<Text style={styles.tableCell}>{set.reps}</Text>
-									<Text style={styles.tableCell}>{set.weight * set.reps}</Text>
+						{exercises.map((ex, i) => (
+							<TouchableOpacity
+								key={ex.id ?? i}
+								style={[s.exCard, i === selectedExIdx && s.exCardActive]}
+								onPress={() => setSelectedExIdx(i)}
+								activeOpacity={0.7}
+							>
+								<View style={s.exCardLeft}>
+									<View style={[s.exIdx, i === selectedExIdx && { backgroundColor: C.primary }]}>
+										<Text style={s.exIdxText}>{i + 1}</Text>
+									</View>
+									<View style={s.exInfo}>
+										<Text style={s.exName} numberOfLines={1}>
+											{translateExerciseName(ex.name, language)}
+										</Text>
+										<Text style={s.exMuscle}>
+											{translateGroupName(ex.muscle_group, language)}
+										</Text>
+									</View>
 								</View>
-							))}
+								<View style={s.exStats}>
+									<Text style={s.exVolume}>
+										{ex.sets.reduce((sum, st) => sum + st.weight * st.reps, 0)} {t('workout', 'kg')}
+									</Text>
+									<Text style={s.exSets}>
+										{ex.sets.length} {t('workout', 'sets')}
+									</Text>
+								</View>
+							</TouchableOpacity>
+						))}
+					</View>
+				)}
 
-						<View style={styles.tableFooter}>
-							<Text style={styles.tableFooterText}>{t('common', 'all')}:</Text>
-							<Text style={styles.tableFooterText}>
-								{selectedExercise.sets.reduce(
-									(sum, set) => sum + set.weight,
-									0,
-								)}{' '}
-								{t('records', 'kg')}
-							</Text>
-								<Text style={styles.tableFooterText}>
-									{selectedExercise.sets.reduce(
-										(sum, set) => sum + set.reps,
-										0,
-									)}
+				{/* ── Selected exercise sets table ── */}
+				{selectedEx && selectedEx.sets.length > 0 && (
+					<View style={s.section}>
+						<Text style={s.sectionTitle}>
+							{translateExerciseName(selectedEx.name, language)}
+						</Text>
+
+						{/* Table header */}
+						<View style={s.tableWrap}>
+							<View style={s.tableHeader}>
+								<Text style={[s.tableHead, s.colSet]}>{t('workout', 'sets')}</Text>
+								<Text style={[s.tableHead, s.colWeight]}>{t('workout', 'weight')}</Text>
+								<Text style={[s.tableHead, s.colReps]}>{t('workout', 'reps')}</Text>
+								<Text style={[s.tableHead, s.colVol]}>{t('workout', 'volume')}</Text>
+							</View>
+
+							{selectedEx.sets.map((set, idx) => {
+								const vol = set.weight * set.reps
+								return (
+									<View
+										key={set.id ?? idx}
+										style={[s.tableRow, idx % 2 === 0 && s.tableRowAlt]}
+									>
+										<Text style={[s.tableCell, s.colSet, s.cellNum]}>{set.set_number}</Text>
+										<Text style={[s.tableCell, s.colWeight]}>
+											{set.weight} {t('workout', 'kg')}
+										</Text>
+										<Text style={[s.tableCell, s.colReps]}>{set.reps}</Text>
+										<Text style={[s.tableCell, s.colVol, { color: C.primary }]}>
+											{vol}
+										</Text>
+									</View>
+								)
+							})}
+
+							{/* Totals row */}
+							<View style={s.tableTotals}>
+								<Text style={[s.tableTotalText, s.colSet]}>Σ</Text>
+								<Text style={[s.tableTotalText, s.colWeight]}>
+									{selectedEx.sets.reduce((sum, st) => sum + st.weight, 0)} {t('workout', 'kg')}
 								</Text>
-								<Text style={styles.tableFooterText}>
-								{selectedExercise.volume} {t('records', 'kg')}
-							</Text>
+								<Text style={[s.tableTotalText, s.colReps]}>
+									{selectedEx.sets.reduce((sum, st) => sum + st.reps, 0)}
+								</Text>
+								<Text style={[s.tableTotalText, s.colVol, { color: C.primary }]}>
+									{selectedEx.sets.reduce((sum, st) => sum + st.weight * st.reps, 0)}
+								</Text>
 							</View>
 						</View>
 
-						{selectedExercise.oneRepMax && (
-							<View style={styles.oneRepMaxContainer}>
-								<Ionicons name='trophy-outline' size={16} color='#FFD60A' />
-								<Text style={styles.oneRepMaxText}>
-									1RM: {selectedExercise.oneRepMax} {t('records', 'kg')}
+						{/* 1RM */}
+						{(selectedEx.one_rep_max ?? 0) > 0 && (
+							<View style={s.oneRepRow}>
+								<Ionicons name='trophy-outline' size={16} color={C.gold} />
+								<Text style={s.oneRepText}>
+									1RM: {selectedEx.one_rep_max} {t('workout', 'kg')}
 								</Text>
 							</View>
 						)}
 
-						{selectedExercise.notes && (
-							<View style={styles.exerciseNotesFull}>
-								<Ionicons
-									name='information-circle-outline'
-									size={16}
-									color='#8E8E93'
-								/>
-								<Text style={styles.exerciseNotesFullText}>
-									{selectedExercise.notes}
-								</Text>
+						{/* Exercise notes */}
+						{!!selectedEx.notes && (
+							<View style={s.exNotesCard}>
+								<Ionicons name='information-circle-outline' size={14} color={C.subtext} />
+								<Text style={s.exNotesText}>{selectedEx.notes}</Text>
 							</View>
 						)}
 					</View>
 				)}
-
-				{/* График прогресса */}
-				{renderProgressChart()}
-
-				{/* Кнопки действий */}
-				<View style={styles.actionsContainer}>
-					<TouchableOpacity style={styles.editButton}>
-						<Ionicons name='create-outline' size={20} color='#FFFFFF' />
-					<Text style={styles.editButtonText}>{t('common', 'edit')}</Text>
-				</TouchableOpacity>
-				<TouchableOpacity style={styles.shareButton}>
-					<Ionicons name='share-outline' size={20} color='#00ff48' />
-					<Text style={styles.shareButtonText}>{t('export', 'dialogTitle')}</Text>
-				</TouchableOpacity>
-				</View>
 			</ScrollView>
 		</SafeAreaView>
 	)
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#121212',
+// ─── Helper component ─────────────────────────────────────────────────────────
+
+const StatBox = ({
+	value,
+	label,
+	icon,
+}: {
+	value: string
+	label: string
+	icon: string
+}) => (
+	<View style={s.statBox}>
+		<Ionicons name={icon as any} size={18} color={C.primary} style={{ marginBottom: 4 }} />
+		<Text style={s.statValue}>{value}</Text>
+		<Text style={s.statLabel}>{label}</Text>
+	</View>
+)
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+	container: { flex: 1, backgroundColor: C.bg },
+	center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+	notFoundText: { fontSize: 17, color: C.text, marginTop: 16, marginBottom: 24, textAlign: 'center' },
+	backBtn: {
+		backgroundColor: C.cardLight,
+		paddingHorizontal: 20,
+		paddingVertical: 10,
+		borderRadius: 12,
 	},
-	centerContent: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		padding: 20,
-	},
-	notFoundText: {
-		fontSize: 18,
-		color: '#FFFFFF',
-		marginTop: 16,
-		marginBottom: 24,
-	},
+	backBtnText: { color: C.text, fontSize: 15, fontWeight: '600' },
+
+	// Header
 	header: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingHorizontal: 10,
-		paddingTop: 20,
-		paddingBottom: 16,
+		paddingHorizontal: 16,
+		paddingTop: 8,
+		paddingBottom: 12,
+		borderBottomWidth: 1,
+		borderBottomColor: C.border,
 	},
-	backButton: {
-		padding: 4,
-		marginRight: 16,
-	},
-	headerTitle: {
-		flex: 1,
-	},
-	headerTitleText: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#FFFFFF',
-	},
-	headerSubtitle: {
-		fontSize: 14,
-		color: '#8E8E93',
-		marginTop: 2,
-	},
-	deleteButton: {
-		padding: 8,
-	},
-	overviewCard: {
-		backgroundColor: '#1C1C1E',
-		marginHorizontal: 20,
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 24,
-	},
-	overviewHeader: {
+	headerBack: { padding: 4, marginRight: 10 },
+	headerCenter: { flex: 1 },
+	headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
+	headerSub: { fontSize: 13, color: C.subtext, marginTop: 2 },
+	headerDelete: { padding: 8 },
+
+	// Stats row
+	statsRow: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 12,
-	},
-	workoutType: {
-		fontSize: 24,
-		fontWeight: 'bold',
-		color: '#FFFFFF',
-	},
-	duration: {
-		fontSize: 16,
-		color: '#8E8E93',
-		marginTop: 2,
-	},
-	ratingContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: 'rgba(255, 214, 10, 0.1)',
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 12,
-	},
-	ratingText: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: '#FFD60A',
-		marginLeft: 4,
-	},
-	muscleGroups: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		marginBottom: 16,
-	},
-	muscleTag: {
-		backgroundColor: '#2C2C2E',
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 12,
-		marginRight: 8,
-		marginBottom: 8,
-	},
-	muscleTagText: {
-		fontSize: 14,
-		color: '#8E8E93',
-		fontWeight: '500',
-	},
-	muscleTagSmall: {
-		backgroundColor: '#2C2C2E',
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 8,
-		alignSelf: 'flex-start',
-		marginTop: 4,
-	},
-	muscleTagTextSmall: {
-		fontSize: 12,
-		color: '#8E8E93',
-	},
-	notesContainer: {
-		backgroundColor: '#2C2C2E',
-		borderRadius: 12,
-		padding: 12,
-		marginBottom: 16,
-	},
-	notesHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-	},
-	notesTitle: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: '#8E8E93',
-		marginLeft: 8,
-		marginRight: 'auto',
-	},
-	notesText: {
-		fontSize: 14,
-		color: '#FFFFFF',
-		marginTop: 8,
-		lineHeight: 20,
-	},
-	statsGrid: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		justifyContent: 'space-between',
-	},
-	statItem: {
-		width: '48%',
-		backgroundColor: '#2C2C2E',
-		borderRadius: 12,
-		padding: 12,
-		marginBottom: 8,
-		alignItems: 'center',
-	},
-	statValue: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#00ff48',
-		marginBottom: 4,
-	},
-	statLabel: {
-		fontSize: 12,
-		color: '#8E8E93',
-		textAlign: 'center',
-	},
-	section: {
-		paddingHorizontal: 10,
-		marginBottom: 24,
-	},
-	sectionTitle: {
-		fontSize: 18,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		marginBottom: 12,
-	},
-	exercisesList: {
+		marginHorizontal: 16,
+		marginTop: 16,
 		gap: 8,
 	},
-	exerciseCard: {
-		backgroundColor: '#1C1C1E',
+	statBox: {
+		flex: 1,
+		backgroundColor: C.card,
+		borderRadius: 14,
+		paddingVertical: 14,
+		paddingHorizontal: 8,
+		alignItems: 'center',
+		borderWidth: 1,
+		borderColor: C.border,
+	},
+	statValue: { fontSize: 17, fontWeight: '700', color: C.text, marginBottom: 2 },
+	statLabel: { fontSize: 10, color: C.subtext, textAlign: 'center' },
+
+	// Tags
+	tagRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		marginHorizontal: 16,
+		marginTop: 12,
+		gap: 6,
+	},
+	muscleTag: {
+		backgroundColor: 'rgba(52, 199, 89, 0.12)',
+		borderWidth: 1,
+		borderColor: 'rgba(52, 199, 89, 0.3)',
+		paddingHorizontal: 10,
+		paddingVertical: 4,
+		borderRadius: 10,
+	},
+	muscleTagText: { fontSize: 12, color: C.primary, fontWeight: '500' },
+
+	// Notes
+	notesCard: {
+		flexDirection: 'row',
+		alignItems: 'flex-start',
+		backgroundColor: C.card,
+		marginHorizontal: 16,
+		marginTop: 12,
 		borderRadius: 12,
 		padding: 12,
+		gap: 8,
 		borderWidth: 1,
-		borderColor: '#2C2C2E',
+		borderColor: C.border,
 	},
-	exerciseCardActive: {
-		borderColor: '#00ff48',
-		backgroundColor: 'rgba(0, 255, 72, 0.05)',
-	},
-	exerciseHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'flex-start',
-		marginBottom: 8,
-	},
-	exerciseInfo: {
-		flex: 1,
-	},
-	exerciseName: {
+	notesText: { flex: 1, fontSize: 13, color: C.subtext, lineHeight: 18 },
+
+	// Section
+	section: { marginHorizontal: 16, marginTop: 20 },
+	sectionTitle: {
 		fontSize: 16,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		marginBottom: 4,
+		fontWeight: '700',
+		color: C.text,
+		marginBottom: 10,
+		letterSpacing: 0.2,
 	},
-	exerciseStats: {
-		alignItems: 'flex-end',
-	},
-	volumeText: {
-		fontSize: 16,
-		fontWeight: 'bold',
-		color: '#00ff48',
-		marginBottom: 2,
-	},
-	setsText: {
-		fontSize: 12,
-		color: '#8E8E93',
-	},
-	exerciseNotes: {
-		fontSize: 12,
-		color: '#8E8E93',
+
+	// Exercise cards
+	exCard: {
 		flexDirection: 'row',
 		alignItems: 'center',
+		backgroundColor: C.card,
+		borderRadius: 14,
+		padding: 12,
+		marginBottom: 8,
+		borderWidth: 1,
+		borderColor: C.border,
 	},
-	setsTable: {
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
+	exCardActive: {
+		borderColor: C.primary,
+		backgroundColor: 'rgba(52, 199, 89, 0.05)',
+	},
+	exCardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 },
+	exIdx: {
+		width: 28,
+		height: 28,
+		borderRadius: 14,
+		backgroundColor: C.cardLight,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	exIdxText: { fontSize: 13, fontWeight: '700', color: C.text },
+	exInfo: { flex: 1 },
+	exName: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 2 },
+	exMuscle: { fontSize: 12, color: C.primary },
+	exStats: { alignItems: 'flex-end' },
+	exVolume: { fontSize: 14, fontWeight: '700', color: C.text },
+	exSets: { fontSize: 12, color: C.subtext, marginTop: 2 },
+
+	// Sets table
+	tableWrap: {
+		backgroundColor: C.card,
+		borderRadius: 14,
 		overflow: 'hidden',
+		borderWidth: 1,
+		borderColor: C.border,
 	},
 	tableHeader: {
 		flexDirection: 'row',
-		backgroundColor: '#2C2C2E',
-		paddingVertical: 12,
-		paddingHorizontal: 16,
+		backgroundColor: C.cardLight,
+		paddingVertical: 10,
+		paddingHorizontal: 12,
 	},
-	tableHeaderText: {
-		flex: 1,
-		fontSize: 14,
+	tableHead: {
+		fontSize: 12,
 		fontWeight: '600',
-		color: '#8E8E93',
+		color: C.subtext,
 		textAlign: 'center',
 	},
 	tableRow: {
 		flexDirection: 'row',
-		paddingVertical: 12,
-		paddingHorizontal: 16,
+		paddingVertical: 11,
+		paddingHorizontal: 12,
 		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
+		borderBottomColor: 'rgba(44,44,46,0.6)',
 	},
-	tableCell: {
-		flex: 1,
-		fontSize: 16,
-		color: '#FFFFFF',
-		textAlign: 'center',
-	},
-	tableFooter: {
+	tableRowAlt: { backgroundColor: 'rgba(28,28,30,0.4)' },
+	tableCell: { fontSize: 14, color: C.text, textAlign: 'center' },
+	cellNum: { fontWeight: '700', color: C.subtext },
+	tableTotals: {
 		flexDirection: 'row',
-		backgroundColor: '#2C2C2E',
-		paddingVertical: 12,
-		paddingHorizontal: 16,
+		backgroundColor: C.cardLight,
+		paddingVertical: 10,
+		paddingHorizontal: 12,
 	},
-	tableFooterText: {
-		flex: 1,
-		fontSize: 16,
-		fontWeight: 'bold',
-		color: '#00ff48',
+	tableTotalText: {
+		fontSize: 13,
+		fontWeight: '700',
+		color: C.text,
 		textAlign: 'center',
 	},
-	oneRepMaxContainer: {
+	// Column widths
+	colSet: { flex: 0.6 },
+	colWeight: { flex: 1.2 },
+	colReps: { flex: 0.9 },
+	colVol: { flex: 1.1 },
+
+	// 1RM
+	oneRepRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: 'rgba(255, 214, 10, 0.1)',
+		gap: 6,
+		marginTop: 10,
+		backgroundColor: 'rgba(255, 214, 10, 0.08)',
+		borderRadius: 10,
 		paddingHorizontal: 12,
 		paddingVertical: 8,
-		borderRadius: 8,
-		marginTop: 12,
-		alignSelf: 'flex-start',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 214, 10, 0.2)',
 	},
-	oneRepMaxText: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: '#FFD60A',
-		marginLeft: 8,
-	},
-	exerciseNotesFull: {
+	oneRepText: { fontSize: 14, fontWeight: '600', color: C.gold },
+
+	// Exercise notes
+	exNotesCard: {
 		flexDirection: 'row',
 		alignItems: 'flex-start',
-		backgroundColor: '#2C2C2E',
-		padding: 12,
-		borderRadius: 8,
-		marginTop: 12,
-	},
-	exerciseNotesFullText: {
-		flex: 1,
-		fontSize: 14,
-		color: '#FFFFFF',
-		marginLeft: 8,
-		lineHeight: 20,
-	},
-	chartContainer: {
-		backgroundColor: '#1C1C1E',
-		marginHorizontal: 20,
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 24,
-		alignItems: 'center',
-	},
-	chartTitle: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		marginBottom: 8,
-		alignSelf: 'flex-start',
-	},
-	actionsContainer: {
-		flexDirection: 'row',
-		paddingHorizontal: 10,
-		marginBottom: 32,
-		gap: 12,
-	},
-	editButton: {
-		flex: 1,
-		flexDirection: 'row',
-		backgroundColor: '#2C2C2E',
-		paddingVertical: 14,
-		paddingHorizontal: 10,
-		borderRadius: 12,
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	editButtonText: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		marginLeft: 8,
-	},
-	shareButton: {
-		flex: 1,
-		flexDirection: 'row',
-		backgroundColor: 'rgba(0, 255, 72, 0.1)',
-		paddingVertical: 14,
-		paddingHorizontal: 10,
-		borderRadius: 12,
-		alignItems: 'center',
-		justifyContent: 'center',
+		gap: 6,
+		marginTop: 8,
+		backgroundColor: C.card,
+		borderRadius: 10,
+		padding: 10,
 		borderWidth: 1,
-		borderColor: '#00ff48',
+		borderColor: C.border,
 	},
-	shareButtonText: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: '#00ff48',
-		marginLeft: 8,
-	},
-	backButtonText: {
-		fontSize: 16,
-		color: '#00ff48',
-		fontWeight: '600',
-		paddingHorizontal: 10,
-		paddingVertical: 10,
-	},
+	exNotesText: { flex: 1, fontSize: 13, color: C.subtext, lineHeight: 18 },
 })

@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
 import { Workout } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -362,23 +363,23 @@ export default function FullHistoryScreen() {
 							{dayOfWeek}, {time || item.time}
 						</Text>
 					</View>
-					<View
-						style={[
-							styles.workoutTypeBadge,
-							{ backgroundColor: getTypeColor(item.type) },
-						]}
-					>
-						<Text style={styles.workoutTypeText}>{item.type}</Text>
-					</View>
+				<View
+					style={[
+						styles.workoutTypeBadge,
+						{ backgroundColor: getTypeColor(item.type) },
+					]}
+				>
+					<Text style={styles.workoutTypeText}>{translateWorkoutType(item.type, language)}</Text>
 				</View>
+			</View>
 
-				{muscleGroupsList.length > 0 && (
-					<View style={styles.muscleGroups}>
-						{muscleGroupsList.map((muscle: string, index: number) => (
-							<View key={index} style={styles.muscleTag}>
-								<Text style={styles.muscleTagText}>{muscle}</Text>
-							</View>
-						))}
+			{muscleGroupsList.length > 0 && (
+				<View style={styles.muscleGroups}>
+					{muscleGroupsList.map((muscle: string, index: number) => (
+						<View key={index} style={styles.muscleTag}>
+							<Text style={styles.muscleTagText}>{translateGroupName(muscle, language)}</Text>
+						</View>
+					))}
 					</View>
 				)}
 
@@ -442,7 +443,7 @@ export default function FullHistoryScreen() {
 
 	const getFilterLabel = (filter: string) => {
 		if (filter === 'all') return t('history', 'allMuscles')
-		return filter
+		return translateGroupName(filter, language)
 	}
 
 	// Показываем полный скелетон при первой загрузке

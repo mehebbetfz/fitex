@@ -11,6 +11,7 @@ import {
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
 import { muscle_groups } from '@/constants/muscle-groups'
+import { translateExerciseName, translateGroupName } from '@/constants/exercise-i18n'
 import { useLanguage } from '@/contexts/language-context'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
@@ -402,7 +403,7 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 		onShowHistory,
 		onShowExerciseDetails,
 	}) => {
-		const { t } = useLanguage()
+		const { t, language } = useLanguage()
 		const [showHistoryModal, setShowHistoryModal] = useState(false)
 		const [showDetailsModal, setShowDetailsModal] = useState(false)
 		const [exerciseDetail, setExerciseDetail] = useState<ExerciseDetail | null>(
@@ -435,15 +436,15 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 							size={20}
 							color={COLORS.primary}
 						/>
-						<View style={styles.exerciseInfo}>
-							<Text style={styles.exerciseName}>{exercise.name}</Text>
-							<View style={styles.exerciseMeta}>
-								<View style={{ flexDirection: 'row' }}>
-									<View style={styles.muscleGroupTag}>
-										<Text style={styles.muscleGroupText}>
-											{exercise.muscleGroup}
-										</Text>
-									</View>
+					<View style={styles.exerciseInfo}>
+						<Text style={styles.exerciseName}>{translateExerciseName(exercise.name, language ?? 'ru')}</Text>
+						<View style={styles.exerciseMeta}>
+							<View style={{ flexDirection: 'row' }}>
+								<View style={styles.muscleGroupTag}>
+									<Text style={styles.muscleGroupText}>
+										{translateGroupName(exercise.muscleGroup, language ?? 'ru')}
+									</Text>
+								</View>
 									<View style={styles.setsIndicator}>
 										<Ionicons
 											name='barbell-outline'
