@@ -3,6 +3,7 @@ import { mains } from '@/constants/images'
 import { Ionicons } from '@expo/vector-icons'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { Image } from 'expo-image'
+import { router } from 'expo-router'
 import React, { useState } from 'react'
 import {
 	ActivityIndicator,
@@ -121,6 +122,17 @@ export default function LoginScreen() {
 						)}
 					</View>
 				)}
+
+				{/* Кнопка Email */}
+				<TouchableOpacity
+					style={[styles.button, styles.emailButton]}
+					onPress={() => router.push('/(auth)/email-login' as any)}
+					disabled={loading !== null}
+					activeOpacity={0.8}
+				>
+					<Ionicons name='mail-outline' size={20} color={COLORS.text} />
+					<Text style={styles.buttonText}>{t('login', 'signInEmail')}</Text>
+				</TouchableOpacity>
 			</View>
 
 		{/* Нижний текст с условиями */}
@@ -207,6 +219,10 @@ const styles = StyleSheet.create({
 	},
 	googleButton: {
 		backgroundColor: COLORS.google,
+	},
+	emailButton: {
+		backgroundColor: '#3A3A3C',
+		marginTop: 4,
 	},
 	buttonText: {
 		color: COLORS.text,

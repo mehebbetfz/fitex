@@ -417,7 +417,50 @@ export interface Translations {
   login: {
     subtitle: string
     signInGoogle: string
+    signInEmail: string
     terms: string
+  }
+  register: {
+    title: string
+    subtitle: string
+    firstName: string
+    lastName: string
+    email: string
+    password: string
+    confirmPassword: string
+    submit: string
+    haveAccount: string
+    signIn: string
+    passwordMismatch: string
+    passwordTooShort: string
+    successTitle: string
+    successMessage: string
+  }
+  verify: {
+    title: string
+    subtitle: string
+    codeSent: string
+    code: string
+    submit: string
+    resend: string
+    resendIn: string
+    wrongEmail: string
+  }
+  emailLogin: {
+    title: string
+    subtitle: string
+    email: string
+    password: string
+    submit: string
+    noAccount: string
+    register: string
+    forgotPassword: string
+    resetTitle: string
+    resetSubtitle: string
+    resetCode: string
+    newPassword: string
+    resetSubmit: string
+    backToLogin: string
   }
   tabs: {
     progress: string
@@ -977,7 +1020,50 @@ export const ru: Translations = {
   login: {
     subtitle: 'Войди, чтобы сохранять прогресс',
     signInGoogle: 'Войти через Google',
+    signInEmail: 'Войти по Email',
     terms: 'Продолжая, вы соглашаетесь с Условиями использования и Политикой конфиденциальности',
+  },
+  register: {
+    title: 'Создать аккаунт',
+    subtitle: 'Начни свой фитнес путь',
+    firstName: 'Имя',
+    lastName: 'Фамилия (необязательно)',
+    email: 'Email',
+    password: 'Пароль',
+    confirmPassword: 'Подтвердите пароль',
+    submit: 'Создать аккаунт',
+    haveAccount: 'Уже есть аккаунт?',
+    signIn: 'Войти',
+    passwordMismatch: 'Пароли не совпадают',
+    passwordTooShort: 'Пароль должен быть минимум 6 символов',
+    successTitle: 'Проверьте почту',
+    successMessage: 'Мы отправили код подтверждения на',
+  },
+  verify: {
+    title: 'Подтверждение Email',
+    subtitle: 'Введите 6-значный код из письма',
+    codeSent: 'Код отправлен на',
+    code: 'Код подтверждения',
+    submit: 'Подтвердить',
+    resend: 'Отправить заново',
+    resendIn: 'Повтор через',
+    wrongEmail: 'Неверный email?',
+  },
+  emailLogin: {
+    title: 'Войти',
+    subtitle: 'Введите данные аккаунта',
+    email: 'Email',
+    password: 'Пароль',
+    submit: 'Войти',
+    noAccount: 'Нет аккаунта?',
+    register: 'Зарегистрироваться',
+    forgotPassword: 'Забыли пароль?',
+    resetTitle: 'Сбросить пароль',
+    resetSubtitle: 'Введите код из письма и новый пароль',
+    resetCode: 'Код из письма',
+    newPassword: 'Новый пароль',
+    resetSubmit: 'Сбросить пароль',
+    backToLogin: 'Вернуться ко входу',
   },
   tabs: {
     progress: 'Прогресс',
@@ -1537,7 +1623,50 @@ export const en: Translations = {
   login: {
     subtitle: 'Sign in to save your progress',
     signInGoogle: 'Sign in with Google',
+    signInEmail: 'Sign in with Email',
     terms: 'By continuing, you agree to our Terms of Service and Privacy Policy',
+  },
+  register: {
+    title: 'Create Account',
+    subtitle: 'Start your fitness journey',
+    firstName: 'First Name',
+    lastName: 'Last Name (optional)',
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    submit: 'Create Account',
+    haveAccount: 'Already have an account?',
+    signIn: 'Sign In',
+    passwordMismatch: 'Passwords do not match',
+    passwordTooShort: 'Password must be at least 6 characters',
+    successTitle: 'Check your email',
+    successMessage: 'We sent a verification code to',
+  },
+  verify: {
+    title: 'Verify Email',
+    subtitle: 'Enter the 6-digit code from the email',
+    codeSent: 'Code sent to',
+    code: 'Verification Code',
+    submit: 'Verify',
+    resend: 'Resend Code',
+    resendIn: 'Resend in',
+    wrongEmail: 'Wrong email?',
+  },
+  emailLogin: {
+    title: 'Sign In',
+    subtitle: 'Enter your account details',
+    email: 'Email',
+    password: 'Password',
+    submit: 'Sign In',
+    noAccount: 'No account?',
+    register: 'Register',
+    forgotPassword: 'Forgot Password?',
+    resetTitle: 'Reset Password',
+    resetSubtitle: 'Enter the code from the email and new password',
+    resetCode: 'Reset Code',
+    newPassword: 'New Password',
+    resetSubmit: 'Reset Password',
+    backToLogin: 'Back to Sign In',
   },
   tabs: {
     progress: 'Progress',
@@ -2097,7 +2226,50 @@ export const az: Translations = {
   login: {
     subtitle: 'İrəliləyişinizi saxlamaq üçün daxil olun',
     signInGoogle: 'Google ilə daxil ol',
+    signInEmail: 'Email ilə daxil ol',
     terms: 'Davam edərək İstifadə Şərtləri və Məxfilik Siyasətini qəbul edirsiniz',
+  },
+  register: {
+    title: 'Hesab yarat',
+    subtitle: 'Fitness səyahətinə başla',
+    firstName: 'Ad',
+    lastName: 'Soyad (isteğe bağlı)',
+    email: 'E-poçt',
+    password: 'Şifrə',
+    confirmPassword: 'Şifrəni təsdiqlə',
+    submit: 'Hesab yarat',
+    haveAccount: 'Artıq hesabınız var?',
+    signIn: 'Daxil ol',
+    passwordMismatch: 'Şifrələr uyğun gəlmir',
+    passwordTooShort: 'Şifrə ən az 6 simvol olmalıdır',
+    successTitle: 'Poçtunuzu yoxlayın',
+    successMessage: 'Doğrulama kodu göndərildi',
+  },
+  verify: {
+    title: 'E-poçtu doğrula',
+    subtitle: 'E-poçtdan 6 rəqəmli kodu daxil edin',
+    codeSent: 'Kod göndərildi:',
+    code: 'Doğrulama kodu',
+    submit: 'Doğrula',
+    resend: 'Yenidən göndər',
+    resendIn: 'Yenidən göndərmə',
+    wrongEmail: 'Yanlış e-poçt?',
+  },
+  emailLogin: {
+    title: 'Daxil ol',
+    subtitle: 'Hesab məlumatlarınızı daxil edin',
+    email: 'E-poçt',
+    password: 'Şifrə',
+    submit: 'Daxil ol',
+    noAccount: 'Hesabınız yoxdur?',
+    register: 'Qeydiyyat',
+    forgotPassword: 'Şifrəni unutdunuz?',
+    resetTitle: 'Şifrəni sıfırla',
+    resetSubtitle: 'E-poçtdan kodu və yeni şifrəni daxil edin',
+    resetCode: 'Sıfırlama kodu',
+    newPassword: 'Yeni şifrə',
+    resetSubmit: 'Şifrəni sıfırla',
+    backToLogin: 'Girişə qayıt',
   },
   tabs: {
     progress: 'Tərəqqi',

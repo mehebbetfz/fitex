@@ -412,26 +412,27 @@ Both should have:
 |------|----------|
 | **Sign-in required** | ✅ Yes |
 | **User name** | `reviewer@fitex.app` |
-| **Password** | `FitExDemo2024!` |
+| **Password** | `Reviewer2024!` |
 
-> ⚠️ Этот аккаунт создаётся автоматически на сервере при первом входе через кнопку **"Demo Account"**, которая находится **в самом низу экрана входа** (под текстом условий использования, маленькая серая надпись). Apple ревьюеры должны нажать её для входа — она не требует Google/Apple авторизации.
+> ⚠️ Аккаунт ревьюера создан через систему Email/Password регистрации. Для входа нужно нажать кнопку **"Sign in with Email"** (третья кнопка в карточке входа), затем ввести email и пароль.
 
 ### Как войти (Notes for Reviewer)
-Заполни это поле в App Store Connect в поле **"Notes"** (необязательно, но очень помогает):
+Заполни это поле в App Store Connect в поле **"Notes"**:
 
 ```
-To sign in for review, please use the "Demo Account" button at the very bottom
-of the login screen (small grey text below the Terms of Use).
+To sign in for review:
+1. On the login screen, tap "Sign in with Email" (the third button in the card).
+2. Enter the credentials below:
+     Email:    reviewer@fitex.app
+     Password: Reviewer2024!
+3. Tap "Sign In".
 
-Tap "Demo Account" — it will log you in automatically with a pre-configured
-Premium account (no Google or Apple ID required).
+This is a pre-verified Premium account — no email confirmation needed.
+The account has full Premium access so you can test all features:
+workout tracking, exercise library, recovery map, progress charts, and history.
 
-Demo credentials (used internally):
-  Username: reviewer@fitex.app
-  Password: FitExDemo2024!
-
-The demo account has Premium access enabled so you can test all features
-including workout tracking, recovery map, charts, and history.
+Note: Google/Apple Sign-In buttons require real OAuth credentials and
+should not be used for review purposes.
 ```
 
 ### Contact Information

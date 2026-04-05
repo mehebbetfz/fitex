@@ -17,7 +17,7 @@ export class User {
 	@Prop()
 	avatarUrl?: string
 
-	@Prop({ enum: ['apple', 'google', 'demo'], required: true })
+	@Prop({ enum: ['apple', 'google', 'demo', 'email'], required: true })
 	provider: string
 
 	@Prop({ required: true })
@@ -40,6 +40,25 @@ export class User {
 
 	@Prop({ type: Object, default: {} })
 	settings: Record<string, any>
+
+	// Email/password auth
+	@Prop()
+	passwordHash?: string
+
+	@Prop({ default: false })
+	isEmailVerified: boolean
+
+	@Prop()
+	emailVerificationToken?: string
+
+	@Prop()
+	emailVerificationExpires?: Date
+
+	@Prop()
+	passwordResetToken?: string
+
+	@Prop()
+	passwordResetExpires?: Date
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

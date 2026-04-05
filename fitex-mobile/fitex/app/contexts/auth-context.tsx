@@ -25,12 +25,20 @@ interface AuthContextType {
 	signInWithGoogle: () => Promise<void>
 	signInWithApple: () => Promise<void>
 	signInDemo: () => Promise<void>
+	registerWithEmail: (email: string, password: string, firstName: string, lastName?: string) => Promise<void>
+	loginWithEmail: (email: string, password: string) => Promise<void>
+	verifyEmail: (email: string, code: string) => Promise<void>
+	resendVerification: (email: string) => Promise<void>
+	requestPasswordReset: (email: string) => Promise<void>
+	resetPassword: (email: string, code: string, newPassword: string) => Promise<void>
 	resetAuth: () => Promise<void>
 	signOut: () => Promise<void>
 	updateUser: (user: Partial<User>) => void
 	startTrial: () => Promise<void>
 	trialDaysLeft: number       // ≥0 if in trial, -1 if not started/expired
 	isTrialActive: boolean
+	pendingVerificationEmail: string | null
+	setPendingVerificationEmail: (email: string | null) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -41,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	// ❌ Убрали useDatabase отсюда — было причиной циклической зависимости
 	const [user, setUser] = useState<User | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
+	const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null)
 
 	// ─── Trial helpers ────────────────────────────────────────────────────────
 	const trialDaysLeft = (() => {
@@ -194,6 +203,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		}
 	}
 
+	const registerWithEmail = async (email: string, password: string, firstName: string, lastName?: string) => {
+		await api.post('/auth/register', { email, password, firstName, lastName })
+		setPendingVerificationEmail(email)
+		router.push('/(auth)/verify-email' as any)
+	}
+
+	const loginWithEmail = async (email: string, password: string) => {
+		const response = await api.post('/auth/login-email', { email, password })
+		const { access_token, user } = response.data
+		await saveUser(user, access_token)
+	}
+
+	const verifyEmail = async (email: string, code: string) => {
+		const response = await api.post('/auth/verify-email', { email, code })
+		const { access_token, user } = response.data
+		setPendingVerificationEmail(null)
+		await saveUser(user, access_token)
+	}
+
+	const resendVerification = async (email: string) => {
+		await api.post('/auth/resend-verification', { email })
+	}
+
+	const requestPasswordReset = async (email: string) => {
+		await api.post('/auth/request-password-reset', { email })
+	}
+
+	const resetPassword = async (email: string, code: string, newPassword: string) => {
+		await api.post('/auth/reset-password', { email, code, newPassword })
+	}
+
 	const signOut = async () => {
 		console.log('[Auth] Starting sign out...')
 		try {
@@ -224,12 +264,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			signInWithGoogle,
 			signInWithApple,
 			signInDemo,
+			registerWithEmail,
+			loginWithEmail,
+			verifyEmail,
+			resendVerification,
+			requestPasswordReset,
+			resetPassword,
 			resetAuth,
-				signOut,
-				updateUser,
-				startTrial,
-				trialDaysLeft,
-				isTrialActive,
+			signOut,
+			updateUser,
+			startTrial,
+			trialDaysLeft,
+			isTrialActive,
+			pendingVerificationEmail,
+			setPendingVerificationEmail,
 			}}
 		>
 			{children}
