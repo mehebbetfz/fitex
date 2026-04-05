@@ -1,0 +1,60 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+**/node_modules/
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
+**/dist/
+**/build/
+**/.expo/
+**/web-build/
+**/*.tsbuildinfo
+
+# ── Environment & Secrets ─────────────────────────────────────────────────────
+**/.env
+**/.env.*
+# BUT allow .env.example files (no real secrets inside)
+!**/.env.example
+
+# ── Google OAuth client secrets ───────────────────────────────────────────────
+**/client_secret*.json
+**/google-play-key.json
+**/google-services.json
+**/GoogleService-Info.plist
+
+# ── iOS / Android native ──────────────────────────────────────────────────────
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+**/ios/
+**/android/
+**/.kotlin/
+
+# ── macOS / Windows ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.sublime-workspace
+
+# ── Test & Coverage ───────────────────────────────────────────────────────────
+/coverage/
+/.nyc_output/
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+.temp
+.tmp
+.metro-health-check*
+expo-env.d.ts

@@ -1,0 +1,23 @@
+# Auto-detect text files and normalise line endings to LF in the repository
+* text=auto eol=lf
+
+# Force LF for shell scripts (important for Docker/Linux deployment)
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary files — don't touch line endings
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.mp4 binary
+*.rar binary
+*.zip binary

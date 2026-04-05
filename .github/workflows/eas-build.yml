@@ -1,0 +1,80 @@
+name: 📱 EAS Build (App Store + Play Market)
+
+on:
+  # Запускать вручную из GitHub UI с выбором платформы
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Target platform"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+      profile:
+        description: "Build profile"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - preview
+
+  # Или автоматически при создании релизного тега (v1.2.3)
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+    name: EAS Build & Submit
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: fitex-mobile/fitex/package-lock.json
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        working-directory: fitex-mobile/fitex
+        run: npm ci
+
+      # Determine platform from input or default to "all" for tag builds
+      - name: Set platform
+        id: platform
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "platform=all" >> $GITHUB_OUTPUT
+            echo "profile=production" >> $GITHUB_OUTPUT
+          else
+            echo "platform=${{ inputs.platform }}" >> $GITHUB_OUTPUT
+            echo "profile=${{ inputs.profile }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: EAS Build
+        working-directory: fitex-mobile/fitex
+        run: |
+          eas build \
+            --platform ${{ steps.platform.outputs.platform }} \
+            --profile ${{ steps.platform.outputs.profile }} \
+            --non-interactive \
+            --auto-submit
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Env vars передаются через EAS Secrets (не здесь):
+          # eas secret:push --scope project --env-file .env

@@ -1,0 +1,83 @@
+name: 🚀 Deploy Server to Hetzner
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "fitex-server/**"
+      - ".github/workflows/deploy-server.yml"
+
+  workflow_dispatch:        # ручной запуск из GitHub UI
+
+jobs:
+  deploy:
+    name: Build & Deploy NestJS API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Smoke-test: проверяем что TypeScript компилируется ─────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: fitex-server/fitex/package-lock.json
+
+      - name: Install & build (CI check)
+        working-directory: fitex-server/fitex
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+
+      # ── Deploy via SSH ─────────────────────────────────────────────────────
+      - name: Deploy to Hetzner
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            set -e
+
+            APP_DIR="/opt/fitex"
+
+            # Clone on first run, pull on subsequent
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone https://github.com/${{ github.repository }}.git "$APP_DIR"
+            else
+              cd "$APP_DIR"
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            cd "$APP_DIR/fitex-server/fitex"
+
+            # Rebuild and restart container
+            docker compose build --no-cache
+            docker compose up -d --force-recreate
+
+            # Wait for health check
+            echo "Waiting for API to be healthy..."
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost:3000/health > /dev/null; then
+                echo "✅ API is healthy"
+                break
+              fi
+              echo "  attempt $i/12..."
+              sleep 5
+            done
+
+            # Cleanup old images
+            docker image prune -f
+
+      - name: Notify success
+        if: success()
+        run: echo "✅ Server deployed successfully"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Deployment failed — check logs above"
