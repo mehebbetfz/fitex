@@ -6,9 +6,11 @@ import {
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
 import {
+	translateDescription,
 	translateEquipment,
 	translateExerciseName,
 	translateMuscleName,
+	translateTips,
 } from '@/constants/exercise-i18n'
 import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -480,9 +482,9 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 									</View>
 								)}
 
-							<Text style={styles.exerciseDetailDescriptionFull}>
-								{exerciseDetail.description}
-							</Text>
+						<Text style={styles.exerciseDetailDescriptionFull}>
+							{translateDescription(exerciseDetail.name, language ?? 'ru') ?? exerciseDetail.description}
+						</Text>
 
 							<View style={styles.detailStats}>
 								<View style={styles.detailStat}>
@@ -567,23 +569,22 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 
 							<View style={styles.section}>
 								<Text style={styles.sectionTitle}>{t('exercises', 'technique')}</Text>
-								<View style={styles.tipsList}>
-									{exerciseDetail.tips.map((tip, index) => (
-										<View
-											key={index}
-											style={{
-												...styles.tipItem,
-												borderBottomWidth:
-													index !== exerciseDetail.tips.length - 1 ? 1 : 0,
-												borderBottomColor: COLORS.border,
-											}}
-										>
-											<View style={styles.tipNumber}>
-												<Text style={styles.tipNumberText}>{index + 1}</Text>
-											</View>
-											<Text style={styles.tipText}>{tip}</Text>
+							<View style={styles.tipsList}>
+								{(translateTips(exerciseDetail.name, language ?? 'ru') ?? exerciseDetail.tips).map((tip, index, arr) => (
+									<View
+										key={index}
+										style={{
+											...styles.tipItem,
+											borderBottomWidth: index !== arr.length - 1 ? 1 : 0,
+											borderBottomColor: COLORS.border,
+										}}
+									>
+										<View style={styles.tipNumber}>
+											<Text style={styles.tipNumberText}>{index + 1}</Text>
 										</View>
-									))}
+										<Text style={styles.tipText}>{tip}</Text>
+									</View>
+								))}
 								</View>
 							</View>
 
