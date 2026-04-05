@@ -6,11 +6,13 @@ import {
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
 import {
+	translateDescription,
 	translateDifficulty,
 	translateEquipment,
 	translateExerciseName,
 	translateGroupName,
 	translateMuscleName,
+	translateTips,
 } from '@/constants/exercise-i18n'
 import { muscle_groups } from '@/constants/muscle-groups'
 import { useLanguage } from '@/contexts/language-context'
@@ -785,9 +787,9 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						/>
 					</TouchableOpacity>
 				</View>
-				<Text style={modalStyles.exerciseListDescription} numberOfLines={2}>
-					{item.description}
-				</Text>
+			<Text style={modalStyles.exerciseListDescription} numberOfLines={2}>
+				{translateDescription(item.name, language ?? 'ru') ?? item.description}
+			</Text>
 			<View style={modalStyles.exerciseListTags}>
 				<View style={modalStyles.difficultyTag}>
 					<Text style={modalStyles.difficultyText}>
@@ -960,9 +962,9 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 								</View>
 							)}
 
-							<Text style={modalStyles.exerciseDetailDescriptionFull}>
-								{selectedExercise.description}
-							</Text>
+						<Text style={modalStyles.exerciseDetailDescriptionFull}>
+							{translateDescription(selectedExercise.name, language ?? 'ru') ?? selectedExercise.description}
+						</Text>
 
 							<View style={modalStyles.detailStats}>
 								<View style={modalStyles.detailStat}>
@@ -1051,22 +1053,21 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						<View style={modalStyles.section}>
 							<Text style={modalStyles.sectionTitle}>{t('exercises', 'technique')}</Text>
 							<View style={modalStyles.tipsList}>
-								{selectedExercise.tips.map((tip, i) => (
-									<View
-										key={i}
-										style={{
-											...modalStyles.tipItem,
-											borderBottomWidth:
-												i !== selectedExercise.tips.length - 1 ? 1 : 0,
-											borderBottomColor: COLORS.border,
-										}}
-									>
-										<View style={modalStyles.tipNumber}>
-											<Text style={modalStyles.tipNumberText}>{i + 1}</Text>
-										</View>
-										<Text style={modalStyles.tipText}>{tip}</Text>
+							{(translateTips(selectedExercise.name, language ?? 'ru') ?? selectedExercise.tips).map((tip, i, arr) => (
+								<View
+									key={i}
+									style={{
+										...modalStyles.tipItem,
+										borderBottomWidth: i !== arr.length - 1 ? 1 : 0,
+										borderBottomColor: COLORS.border,
+									}}
+								>
+									<View style={modalStyles.tipNumber}>
+										<Text style={modalStyles.tipNumberText}>{i + 1}</Text>
 									</View>
-								))}
+									<Text style={modalStyles.tipText}>{tip}</Text>
+								</View>
+							))}
 								<View style={{ height: 40 }} />
 							</View>
 						</View>
