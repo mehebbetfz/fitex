@@ -151,7 +151,9 @@ interface Props {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate = (d: string, todayStr: string, yesterdayStr: string) => {
+const LOCALE_MAP: Record<string, string> = { ru: 'ru-RU', en: 'en-US', az: 'az-AZ' }
+
+const fmtDate = (d: string, todayStr: string, yesterdayStr: string, lang = 'ru') => {
 	try {
 		const date = new Date(d)
 		const today = new Date()
@@ -159,7 +161,7 @@ const fmtDate = (d: string, todayStr: string, yesterdayStr: string) => {
 		yesterday.setDate(today.getDate() - 1)
 		if (date.toDateString() === today.toDateString()) return todayStr
 		if (date.toDateString() === yesterday.toDateString()) return yesterdayStr
-		return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+		return date.toLocaleDateString(LOCALE_MAP[lang] ?? 'ru-RU', { day: 'numeric', month: 'short' })
 	} catch {
 		return d
 	}
@@ -274,31 +276,31 @@ const SetCompareRow = ({
 			)}
 			</View>
 
-			{/* Diff pills */}
-			{previous && (
-				<View style={cmp.pills}>
-					{wDiff !== null && <DiffPill value={wDiff} unit='кг' />}
-					{rDiff !== null && <DiffPill value={rDiff} unit=' пов' />}
-					{vDiff !== null && vDiff !== 0 && (
-						<View
-							style={[
-								dp.pill,
-								{
-									backgroundColor: (vDiff > 0 ? C.primary : C.error) + '22',
-									borderColor: (vDiff > 0 ? C.primary : C.error) + '55',
-								},
-							]}
+		{/* Diff pills */}
+		{previous && (
+			<View style={cmp.pills}>
+				{wDiff !== null && <DiffPill value={wDiff} unit={t('workout', 'kg')} />}
+				{rDiff !== null && <DiffPill value={rDiff} unit={` ${t('exercises', 'repsShort')}`} />}
+				{vDiff !== null && vDiff !== 0 && (
+					<View
+						style={[
+							dp.pill,
+							{
+								backgroundColor: (vDiff > 0 ? C.primary : C.error) + '22',
+								borderColor: (vDiff > 0 ? C.primary : C.error) + '55',
+							},
+						]}
+					>
+						<Text
+							style={[dp.text, { color: vDiff > 0 ? C.primary : C.error }]}
 						>
-							<Text
-								style={[dp.text, { color: vDiff > 0 ? C.primary : C.error }]}
-							>
-								{vDiff > 0 ? '+' : ''}
-								{vDiff}кг объём
-							</Text>
-						</View>
-					)}
-				</View>
-			)}
+							{vDiff > 0 ? '+' : ''}
+							{vDiff}{t('workout', 'kg')} {t('exercises', 'volumeLabel')}
+						</Text>
+					</View>
+				)}
+			</View>
+		)}
 		</View>
 	)
 }
@@ -341,7 +343,8 @@ const HistoryCard = ({
 	entry: any
 	isLatest: boolean
 }) => {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
+	const lang = language ?? 'ru'
 	const sets: Array<{ weight: number; reps: number; set_number?: number }> =
 		entry.sets ?? []
 	const maxW = sets.length ? Math.max(...sets.map(s => s.weight)) : 0
@@ -354,28 +357,28 @@ const HistoryCard = ({
 					{isLatest && (
 						<View style={[hc.dot, { backgroundColor: C.warning }]} />
 					)}
-					<Text style={hc.date}>{fmtDate(entry.date, t('exercises', 'today'), t('exercises', 'yesterday'))}</Text>
+					<Text style={hc.date}>{fmtDate(entry.date, t('exercises', 'today'), t('exercises', 'yesterday'), lang)}</Text>
 					{entry.time ? <Text style={hc.time}>{entry.time}</Text> : null}
 				</View>
-				<View style={{ flexDirection: 'row', gap: 8 }}>
-					<View style={hc.pill}>
-						<Ionicons name='barbell-outline' size={11} color={C.textSec} />
-						<Text style={hc.pillTxt}>{maxW} кг макс</Text>
-					</View>
-					<View style={hc.pill}>
-						<Ionicons name='layers-outline' size={11} color={C.textSec} />
-						<Text style={hc.pillTxt}>{vol.toFixed(0)} кг</Text>
-					</View>
+			<View style={{ flexDirection: 'row', gap: 8 }}>
+				<View style={hc.pill}>
+					<Ionicons name='barbell-outline' size={11} color={C.textSec} />
+					<Text style={hc.pillTxt}>{maxW} {t('workout', 'kg')} {t('exercises', 'maxLabel')}</Text>
 				</View>
+				<View style={hc.pill}>
+					<Ionicons name='layers-outline' size={11} color={C.textSec} />
+					<Text style={hc.pillTxt}>{vol.toFixed(0)} {t('workout', 'kg')}</Text>
+				</View>
+			</View>
 			</View>
 			{/* Sets as chips */}
 			<View style={hc.chips}>
 				{sets.map((s, i) => (
 					<View key={i} style={hc.chip}>
 						<Text style={hc.chipNum}>{s.set_number ?? i + 1}</Text>
-						<Text style={hc.chipVal}>
-							{s.weight} кг × {s.reps}
-						</Text>
+				<Text style={hc.chipVal}>
+					{s.weight} {t('workout', 'kg')} × {s.reps}
+				</Text>
 						<Text style={hc.chipVol}>{(s.weight * s.reps).toFixed(0)}</Text>
 					</View>
 				))}
@@ -462,7 +465,8 @@ export default function ExerciseHistoryModal({
 	currentSets,
 }: Props) {
 	const { fetchExerciseHistory, getExerciseRecords } = useDatabase()
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
+	const lang = language ?? 'ru'
 
 	const [history, setHistory] = useState<any[]>([])
 	const [records, setRecords] = useState<any>(null)
@@ -569,8 +573,8 @@ export default function ExerciseHistoryModal({
 									{ color: volDiff >= 0 ? C.primary : C.error },
 								]}
 							>
-								{volDiff >= 0 ? '+' : ''}
-								{volDiff.toFixed(0)} кг объём
+						{volDiff >= 0 ? '+' : ''}
+						{volDiff.toFixed(0)} {t('workout', 'kg')} {t('exercises', 'volumeLabel')}
 							</Text>
 						</View>
 					)}
@@ -603,7 +607,7 @@ export default function ExerciseHistoryModal({
 											{bestSet.weight} {t('workout', 'kg')} × {bestSet.reps}
 										</Text>
 									</Text>
-									<Text style={ms.bestDate}>{fmtDate(bestSet.date, t('exercises', 'today'), t('exercises', 'yesterday'))}</Text>
+									<Text style={ms.bestDate}>{fmtDate(bestSet.date, t('exercises', 'today'), t('exercises', 'yesterday'), lang)}</Text>
 								</View>
 							)}
 
@@ -611,7 +615,7 @@ export default function ExerciseHistoryModal({
 							{currentSets.length > 0 && lastSets.length > 0 && (
 								<>
 							<SectionLabel
-									label={fmtDate(records.lastWorkout.date, t('exercises', 'today'), t('exercises', 'yesterday'))}
+									label={fmtDate(records.lastWorkout.date, t('exercises', 'today'), t('exercises', 'yesterday'), lang)}
 								/>
 									<View style={ms.card}>
 										{currentSets.map((cur, i) => {
@@ -646,8 +650,8 @@ export default function ExerciseHistoryModal({
 														<Text style={[ms.volVal, { color: C.primary }]}>
 															{currentVol} {t('workout', 'kg')}
 														</Text>
-														{volDiff !== null && (
-															<DiffPill value={volDiff} unit=' кг' />
+						{volDiff !== null && (
+							<DiffPill value={volDiff} unit={` ${t('workout', 'kg')}`} />
 														)}
 													</View>
 												</View>

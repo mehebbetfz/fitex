@@ -645,9 +645,9 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 					color={COLORS.text}
 				/>
 			</TouchableOpacity>
-			<Text style={modalStyles.headerTitle} numberOfLines={1}>
-				{selectedExercise ? selectedExercise.name : t('exercises', 'title')}
-			</Text>
+		<Text style={modalStyles.headerTitle} numberOfLines={1}>
+			{selectedExercise ? translateExerciseName(selectedExercise.name, language ?? 'ru') : t('exercises', 'title')}
+		</Text>
 		</View>
 	)
 

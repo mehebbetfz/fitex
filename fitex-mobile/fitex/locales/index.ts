@@ -84,6 +84,9 @@ export interface Translations {
     muscleBiceps: string
     muscleDeltoids: string
     videoUnavailable: string
+    repsShort: string
+    volumeLabel: string
+    maxLabel: string
   }
   templates: {
     title: string
@@ -634,6 +637,9 @@ export const ru: Translations = {
     muscleBiceps: 'Бицепс',
     muscleDeltoids: 'Дельты',
     videoUnavailable: 'Видео недоступно',
+    repsShort: 'пов',
+    volumeLabel: 'объём',
+    maxLabel: 'макс',
   },
   templates: {
     title: 'Шаблоны',
@@ -1184,6 +1190,9 @@ export const en: Translations = {
     muscleBiceps: 'Biceps',
     muscleDeltoids: 'Deltoids',
     videoUnavailable: 'Video unavailable',
+    repsShort: 'reps',
+    volumeLabel: 'vol',
+    maxLabel: 'max',
   },
   templates: {
     title: 'Templates',
@@ -1734,6 +1743,9 @@ export const az: Translations = {
     muscleBiceps: 'Biseps',
     muscleDeltoids: 'Deltoid',
     videoUnavailable: 'Video mövcud deyil',
+    repsShort: 'dəfə',
+    volumeLabel: 'həcm',
+    maxLabel: 'maks',
   },
   templates: {
     title: 'Şablonlar',

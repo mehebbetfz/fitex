@@ -141,6 +141,7 @@ const EXERCISE_NAMES: Record<string, Record<Language, string>> = {
 
 const DIFFICULTY_LABELS: Record<string, Record<Language, string>> = {
   'Начинающий':  { ru: 'Начинающий', en: 'Beginner',     az: 'Başlanğıc' },
+  'Новичок':     { ru: 'Новичок',    en: 'Beginner',     az: 'Başlanğıc' },
   'Средний':     { ru: 'Средний',    en: 'Intermediate', az: 'Orta' },
   'Продвинутый': { ru: 'Продвинутый',en: 'Advanced',     az: 'İrəliləmiş' },
   'Базовый':     { ru: 'Базовый',    en: 'Basic',        az: 'Əsas' },
