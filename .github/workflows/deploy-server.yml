@@ -44,10 +44,11 @@ jobs:
             set -e
 
             APP_DIR="/opt/fitex"
+            REPO="https://github.com/${{ github.repository }}.git"
 
             # Clone on first run, pull on subsequent
             if [ ! -d "$APP_DIR/.git" ]; then
-              git clone https://github.com/${{ github.repository }}.git "$APP_DIR"
+              git clone "$REPO" "$APP_DIR"
             else
               cd "$APP_DIR"
               git fetch origin main
@@ -56,22 +57,27 @@ jobs:
 
             cd "$APP_DIR/fitex-server/fitex"
 
+            # .env must already exist on server (copied manually once)
+            if [ ! -f ".env" ]; then
+              echo "ERROR: .env file not found at $APP_DIR/fitex-server/fitex/.env"
+              exit 1
+            fi
+
             # Rebuild and restart container
             docker compose build --no-cache
             docker compose up -d --force-recreate
 
-            # Wait for health check
-            echo "Waiting for API to be healthy..."
+            # Wait for health check (up to 60s)
+            echo "Waiting for API..."
             for i in $(seq 1 12); do
-              if curl -sf http://localhost:3000/health > /dev/null; then
-                echo "✅ API is healthy"
+              if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+                echo "API is healthy"
                 break
               fi
-              echo "  attempt $i/12..."
               sleep 5
             done
 
-            # Cleanup old images
+            docker compose ps
             docker image prune -f
 
       - name: Notify success

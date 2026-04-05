@@ -37,7 +37,10 @@
 						"CFBundleURLSchemes": ["fitex"]
 					}
 				],
-				"ITSAppUsesNonExemptEncryption": false
+				"ITSAppUsesNonExemptEncryption": false,
+				"NSAppTransportSecurity": {
+					"NSAllowsArbitraryLoads": true
+				}
 			}
 		},
 		"android": {

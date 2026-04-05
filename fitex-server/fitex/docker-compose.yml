@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "127.0.0.1:3000:3000"    # expose only to localhost — nginx proxies externally
+      - "0.0.0.0:3000:3000"      # open to world — no domain needed, access via http://IP:3000
     networks:
       - fitex-net
     logging:
