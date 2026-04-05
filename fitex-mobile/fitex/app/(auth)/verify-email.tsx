@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from '../contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
