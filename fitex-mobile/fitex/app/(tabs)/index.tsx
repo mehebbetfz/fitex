@@ -1,5 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
-import { translateUnit } from '@/constants/exercise-i18n'
+import { translateUnit, translateExerciseName } from '@/constants/exercise-i18n'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
