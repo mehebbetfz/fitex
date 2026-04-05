@@ -5,6 +5,13 @@ import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
+import {
+	translateDifficulty,
+	translateEquipment,
+	translateExerciseName,
+	translateGroupName,
+	translateMuscleName,
+} from '@/constants/exercise-i18n'
 import { muscle_groups } from '@/constants/muscle-groups'
 import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -364,7 +371,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	onClose,
 	onSelectExercise,
 }) => {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const [selectedMuscleGroup, setSelectedMuscleGroup] =
 		useState<MuscleGroup | null>(null)
 	const [selectedExercise, setSelectedExercise] =
@@ -685,19 +692,19 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 									)}
 								</View>
 							</View>
-							<Text
-								style={[
-									modalStyles.groupName,
-									isSelected && modalStyles.groupNameActive,
-								]}
-							>
-								{item.name}
-							</Text>
-							<Text style={modalStyles.groupCount}>
-								{item.subgroups.reduce(
-									(acc, sg) => acc + sg.exercises.length,
-									0,
-								)}
+						<Text
+							style={[
+								modalStyles.groupName,
+								isSelected && modalStyles.groupNameActive,
+							]}
+						>
+							{translateGroupName(item.name, language ?? 'ru')}
+						</Text>
+						<Text style={modalStyles.groupCount}>
+							{item.subgroups.reduce(
+								(acc, sg) => acc + sg.exercises.length,
+								0,
+							)}
 							</Text>
 						</TouchableOpacity>
 					)
@@ -758,7 +765,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 			<View style={modalStyles.exerciseListContent}>
 				<View style={modalStyles.exerciseListHeader}>
 					<Text style={modalStyles.exerciseListName} numberOfLines={1}>
-						{item.name}
+						{translateExerciseName(item.name, language ?? 'ru')}
 					</Text>
 					<TouchableOpacity
 						onPress={e => {
@@ -781,18 +788,20 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 				<Text style={modalStyles.exerciseListDescription} numberOfLines={2}>
 					{item.description}
 				</Text>
-				<View style={modalStyles.exerciseListTags}>
-					<View style={modalStyles.difficultyTag}>
-						<Text style={modalStyles.difficultyText}>{item.difficulty}</Text>
-					</View>
-					<View style={modalStyles.equipmentTag}>
-						<Text style={modalStyles.equipmentText}>
-							{item.equipment.length > 1
-								? `${item.equipment[0]} +${item.equipment.length - 1}`
-								: item.equipment[0]}
-						</Text>
-					</View>
+			<View style={modalStyles.exerciseListTags}>
+				<View style={modalStyles.difficultyTag}>
+					<Text style={modalStyles.difficultyText}>
+						{translateDifficulty(item.difficulty, language ?? 'ru')}
+					</Text>
 				</View>
+				<View style={modalStyles.equipmentTag}>
+					<Text style={modalStyles.equipmentText}>
+						{item.equipment.length > 1
+							? `${translateEquipment(item.equipment[0], language ?? 'ru')} +${item.equipment.length - 1}`
+							: translateEquipment(item.equipment[0], language ?? 'ru')}
+					</Text>
+				</View>
+			</View>
 			</View>
 			<Ionicons name='chevron-forward' size={20} color={COLORS.textSecondary} />
 		</TouchableOpacity>
@@ -908,9 +917,9 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 					<View style={modalStyles.exerciseDetailContent}>
 						<View style={modalStyles.exerciseHeader}>
 							<View style={modalStyles.exerciseTitleContainer}>
-								<Text style={modalStyles.exerciseDetailTitle}>
-									{selectedExercise.name}
-								</Text>
+						<Text style={modalStyles.exerciseDetailTitle}>
+								{translateExerciseName(selectedExercise.name, language ?? 'ru')}
+							</Text>
 							</View>
 
 							{selectedExercise.videoUrl && (
@@ -962,9 +971,9 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 									</View>
 									<View>
 										<Text style={modalStyles.detailStatLabel}>{t('exercises', 'difficulty')}</Text>
-										<Text style={modalStyles.detailStatValue}>
-											{selectedExercise.difficulty}
-										</Text>
+									<Text style={modalStyles.detailStatValue}>
+										{translateDifficulty(selectedExercise.difficulty, language ?? 'ru')}
+									</Text>
 									</View>
 								</View>
 								<View style={modalStyles.detailStat}>
@@ -979,11 +988,11 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 										<Text style={modalStyles.detailStatLabel}>
 											{t('exercises', 'equipment')}
 										</Text>
-										{selectedExercise.equipment.map((item, index) => (
-											<Text key={index} style={modalStyles.detailStatValue}>
-												{item}
-											</Text>
-										))}
+									{selectedExercise.equipment.map((item, index) => (
+										<Text key={index} style={modalStyles.detailStatValue}>
+											{translateEquipment(item, language ?? 'ru')}
+										</Text>
+									))}
 									</View>
 								</View>
 							</View>
@@ -997,12 +1006,12 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 										<Ionicons name='star' size={16} color={COLORS.primary} />
 										<Text style={modalStyles.muscleGroupLabel}>{t('exercises', 'primaryMuscles')}</Text>
 									</View>
-									{selectedExercise.primaryMuscles.map((m, i) => (
-										<View key={i} style={modalStyles.muscleItem}>
-											<View style={modalStyles.muscleDot} />
-											<Text style={modalStyles.muscleText}>{m}</Text>
-										</View>
-									))}
+								{selectedExercise.primaryMuscles.map((m, i) => (
+									<View key={i} style={modalStyles.muscleItem}>
+										<View style={modalStyles.muscleDot} />
+										<Text style={modalStyles.muscleText}>{translateMuscleName(m, language ?? 'ru')}</Text>
+									</View>
+								))}
 								</View>
 								{selectedExercise.secondaryMuscles.length > 0 && (
 									<View style={modalStyles.muscleGroupItem}>
@@ -1016,12 +1025,12 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 												{t('exercises', 'secondaryMuscles')}
 											</Text>
 										</View>
-										{selectedExercise.secondaryMuscles.map((m, i) => (
-											<View key={i} style={modalStyles.muscleItem}>
-												<View style={modalStyles.muscleDotSecondary} />
-												<Text style={modalStyles.muscleTextSecondary}>{m}</Text>
-											</View>
-										))}
+									{selectedExercise.secondaryMuscles.map((m, i) => (
+										<View key={i} style={modalStyles.muscleItem}>
+											<View style={modalStyles.muscleDotSecondary} />
+											<Text style={modalStyles.muscleTextSecondary}>{translateMuscleName(m, language ?? 'ru')}</Text>
+										</View>
+									))}
 									</View>
 								)}
 							</View>

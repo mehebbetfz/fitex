@@ -5,6 +5,11 @@ import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
+import {
+	translateEquipment,
+	translateExerciseName,
+	translateMuscleName,
+} from '@/constants/exercise-i18n'
 import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
@@ -315,7 +320,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 	onClose,
 	exerciseDetail,
 }) => {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
 	const [modalVisible, setModalVisible] = useState(false)
 
@@ -432,9 +437,9 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 						>
 							<Ionicons name='close' size={24} color={COLORS.text} />
 						</TouchableOpacity>
-						<Text style={styles.headerTitle} numberOfLines={1}>
-							{exerciseDetail.name}
-						</Text>
+					<Text style={styles.headerTitle} numberOfLines={1}>
+						{translateExerciseName(exerciseDetail.name, language ?? 'ru')}
+					</Text>
 					</View>
 
 					<ScrollView
@@ -443,9 +448,9 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 					>
 						<View style={styles.exerciseDetailContent}>
 							<View style={styles.exerciseTitleContainer}>
-								<Text style={styles.exerciseDetailTitle}>
-									{exerciseDetail.name}
-								</Text>
+							<Text style={styles.exerciseDetailTitle}>
+								{translateExerciseName(exerciseDetail.name, language ?? 'ru')}
+							</Text>
 							</View>
 
 							{exerciseDetail.videoUrl && (
@@ -501,11 +506,11 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 									</View>
 									<View>
 										<Text style={styles.detailStatLabel}>{t('exercises', 'equipment')}</Text>
-										{exerciseDetail.equipment.map((item, index) => (
-											<Text key={index} style={styles.detailStatValue}>
-												{item}
-											</Text>
-										))}
+									{exerciseDetail.equipment.map((item, index) => (
+										<Text key={index} style={styles.detailStatValue}>
+											{translateEquipment(item, language ?? 'ru')}
+										</Text>
+									))}
 									</View>
 								</View>
 							</View>
@@ -518,12 +523,12 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 											<Ionicons name='star' size={16} color={COLORS.primary} />
 											<Text style={styles.muscleGroupLabel}>{t('exercises', 'primaryMuscles')}</Text>
 										</View>
-										{exerciseDetail.primaryMuscles.map((m, i) => (
-											<View key={i} style={styles.muscleItem}>
-												<View style={styles.muscleDot} />
-												<Text style={styles.muscleText}>{m}</Text>
-											</View>
-										))}
+									{exerciseDetail.primaryMuscles.map((m, i) => (
+										<View key={i} style={styles.muscleItem}>
+											<View style={styles.muscleDot} />
+											<Text style={styles.muscleText}>{translateMuscleName(m, language ?? 'ru')}</Text>
+										</View>
+									))}
 									</View>
 									{exerciseDetail.secondaryMuscles.length > 0 && (
 										<View style={styles.muscleGroupItem}>
@@ -537,12 +542,12 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 												{t('exercises', 'secondaryMuscles')}
 												</Text>
 											</View>
-											{exerciseDetail.secondaryMuscles.map((m, i) => (
-												<View key={i} style={styles.muscleItem}>
-													<View style={styles.muscleDotSecondary} />
-													<Text style={styles.muscleTextSecondary}>{m}</Text>
-												</View>
-											))}
+										{exerciseDetail.secondaryMuscles.map((m, i) => (
+											<View key={i} style={styles.muscleItem}>
+												<View style={styles.muscleDotSecondary} />
+												<Text style={styles.muscleTextSecondary}>{translateMuscleName(m, language ?? 'ru')}</Text>
+											</View>
+										))}
 										</View>
 									)}
 								</View>
