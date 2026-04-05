@@ -1,4 +1,5 @@
 // src/dtos/sync-upload.dto.ts
+import { IsArray, IsOptional } from 'class-validator'
 
 export class WorkoutSyncDto {
 	id: number
@@ -47,7 +48,15 @@ export class PersonalRecordSyncDto {
 }
 
 export class SyncUploadDto {
+	@IsOptional()
+	@IsArray()
 	workouts?: WorkoutSyncDto[]
+
+	@IsOptional()
+	@IsArray()
 	bodyMeasurements?: BodyMeasurementSyncDto[]
+
+	@IsOptional()
+	@IsArray()
 	personalRecords?: PersonalRecordSyncDto[]
 }
