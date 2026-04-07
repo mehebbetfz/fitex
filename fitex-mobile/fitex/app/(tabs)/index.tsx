@@ -704,7 +704,7 @@ export default function StatisticsTab() {
 						</TouchableOpacity>
 						<TouchableOpacity
 							style={styles.headerIconBtn}
-							onPress={() => router.push('/(auth)/(routes)/achievements')}
+							onPress={() => router.push('/(auth)/(routes)/rating')}
 							activeOpacity={0.7}
 						>
 							<Ionicons name='ribbon-outline' size={22} color='#8E8E93' />
