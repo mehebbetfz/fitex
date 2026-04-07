@@ -361,7 +361,7 @@ const AchievementsSection = ({ data }: { data: RatingData }) => {
 	const { achievements } = data
 
 	const earnedCount = achievements.filter(a => a.earned).length
-	const preview = achievements.slice(0, 20)
+	const preview = achievements.slice(0, 5)
 
 	const getAchievementInfo = (id: string) => ({
 		title: t('rating', `ach_${id}_title` as Parameters<typeof t>[1]),

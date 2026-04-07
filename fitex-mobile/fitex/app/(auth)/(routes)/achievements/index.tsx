@@ -1,5 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
-import { Achievement, AchievementCategory, computeRating } from '@/services/rating'
+import { Achievement, computeRating } from '@/services/rating'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -9,7 +9,6 @@ import {
 	FlatList,
 	Modal,
 	Pressable,
-	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -18,6 +17,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width: SW } = Dimensions.get('window')
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const C = {
 	bg: '#121212',
@@ -29,15 +30,6 @@ const C = {
 	primary: '#34C759',
 	earned: '#34C759',
 } as const
-
-// ─── Category filter tabs ─────────────────────────────────────────────────────
-
-type FilterCat = AchievementCategory | 'all'
-
-const ALL_CATS: FilterCat[] = [
-	'all', 'workouts', 'streak', 'volume', 'sets',
-	'records', 'duration', 'time', 'score', 'tier', 'intensity', 'special',
-]
 
 // ─── Progress ring (SVG-based) ────────────────────────────────────────────────
 
@@ -269,56 +261,12 @@ const StatsBar = ({
 	)
 }
 
-// ─── Category pill ────────────────────────────────────────────────────────────
-
-const CatPill = ({
-	cat,
-	active,
-	count,
-	onPress,
-}: {
-	cat: FilterCat
-	active: boolean
-	count: number
-	onPress: () => void
-}) => {
-	const { t } = useLanguage()
-
-	const label =
-		cat === 'all'       ? t('rating', 'catAll')
-		: cat === 'workouts'  ? t('rating', 'catWorkouts')
-		: cat === 'streak'    ? t('rating', 'catStreak')
-		: cat === 'volume'    ? t('rating', 'catVolume')
-		: cat === 'sets'      ? t('rating', 'catSets')
-		: cat === 'records'   ? t('rating', 'catRecords')
-		: cat === 'duration'  ? t('rating', 'catDuration')
-		: cat === 'time'      ? t('rating', 'catTime')
-		: cat === 'score'     ? t('rating', 'catScore')
-		: cat === 'tier'      ? t('rating', 'catTier')
-		: cat === 'intensity' ? t('rating', 'catIntensity')
-		: t('rating', 'catSpecial')
-
-	return (
-		<TouchableOpacity
-			style={[s.pill, active && s.pillActive]}
-			onPress={onPress}
-			activeOpacity={0.7}
-		>
-			<Text style={[s.pillText, active && s.pillTextActive]}>
-				{label}
-				{count > 0 && <Text style={s.pillCount}> {count}</Text>}
-			</Text>
-		</TouchableOpacity>
-	)
-}
-
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function AchievementsScreen() {
 	const { t } = useLanguage()
 	const [achievements, setAchievements] = useState<Achievement[]>([])
 	const [loading, setLoading] = useState(true)
-	const [activeCat, setActiveCat] = useState<FilterCat>('all')
 	const [selectedAch, setSelectedAch] = useState<Achievement | null>(null)
 	const [showModal, setShowModal] = useState(false)
 
@@ -334,17 +282,8 @@ export default function AchievementsScreen() {
 
 	useEffect(() => { load() }, [load])
 
-	const filtered = activeCat === 'all'
-		? achievements
-		: achievements.filter(a => a.category === activeCat)
-
-	const earnedAll    = achievements.filter(a => a.earned).length
-	const earnedPct    = achievements.length > 0 ? Math.round((earnedAll / achievements.length) * 100) : 0
-
-	const catCount = (cat: FilterCat): number => {
-		if (cat === 'all') return achievements.filter(a => a.earned).length
-		return achievements.filter(a => a.category === cat && a.earned).length
-	}
+	const earnedAll = achievements.filter(a => a.earned).length
+	const earnedPct = achievements.length > 0 ? Math.round((earnedAll / achievements.length) * 100) : 0
 
 	const handlePress = (a: Achievement) => {
 		setSelectedAch(a)
@@ -374,26 +313,9 @@ export default function AchievementsScreen() {
 						<StatsBar total={achievements.length} earned={earnedAll} pct={earnedPct} />
 					</View>
 
-					{/* Category filter */}
-					<ScrollView
-						horizontal
-						showsHorizontalScrollIndicator={false}
-						contentContainerStyle={s.filterRow}
-					>
-						{ALL_CATS.map(cat => (
-							<CatPill
-								key={cat}
-								cat={cat}
-								active={activeCat === cat}
-								count={catCount(cat)}
-								onPress={() => setActiveCat(cat)}
-							/>
-						))}
-					</ScrollView>
-
 					{/* List */}
 					<FlatList
-						data={filtered}
+						data={achievements}
 						keyExtractor={item => item.id}
 						contentContainerStyle={s.listContent}
 						showsVerticalScrollIndicator={false}
@@ -462,18 +384,6 @@ const s = StyleSheet.create({
 	statsBarInner: {
 		height: 6, backgroundColor: C.primary, borderRadius: 3,
 	},
-
-	// Filter
-	filterRow: { paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
-	pill: {
-		paddingHorizontal: 14, paddingVertical: 7,
-		borderRadius: 20, backgroundColor: C.card,
-		borderWidth: 1, borderColor: C.border,
-	},
-	pillActive: { backgroundColor: C.primary, borderColor: C.primary },
-	pillText: { fontSize: 13, color: C.sub, fontWeight: '600' },
-	pillTextActive: { color: '#000' },
-	pillCount: { fontSize: 11, fontWeight: '800' },
 
 	// List
 	listContent: { paddingHorizontal: 16, paddingBottom: 32 },
