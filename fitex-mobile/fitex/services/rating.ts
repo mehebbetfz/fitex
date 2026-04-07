@@ -31,6 +31,84 @@ export const getTierByScore = (score: number): Tier => {
 
 const getTierByName = (name: TierName): Tier => TIERS.find(t => t.name === name) ?? TIERS[0]
 
+// ─── 50-level system ──────────────────────────────────────────────────────────
+
+export interface Level {
+	level: number       // 1–50
+	tierName: TierName
+	minScore: number
+}
+
+// 10 + 10 + 10 + 10 + 7 + 3 = 50 levels
+export const LEVELS: Level[] = [
+	// Beginner L1-L10  (0–499, step 50)
+	{ level:  1, tierName: 'beginner', minScore:     0 },
+	{ level:  2, tierName: 'beginner', minScore:    50 },
+	{ level:  3, tierName: 'beginner', minScore:   100 },
+	{ level:  4, tierName: 'beginner', minScore:   150 },
+	{ level:  5, tierName: 'beginner', minScore:   200 },
+	{ level:  6, tierName: 'beginner', minScore:   250 },
+	{ level:  7, tierName: 'beginner', minScore:   300 },
+	{ level:  8, tierName: 'beginner', minScore:   350 },
+	{ level:  9, tierName: 'beginner', minScore:   400 },
+	{ level: 10, tierName: 'beginner', minScore:   450 },
+	// Bronze  L11-L20 (500–1499, step 100)
+	{ level: 11, tierName: 'bronze',   minScore:   500 },
+	{ level: 12, tierName: 'bronze',   minScore:   600 },
+	{ level: 13, tierName: 'bronze',   minScore:   700 },
+	{ level: 14, tierName: 'bronze',   minScore:   800 },
+	{ level: 15, tierName: 'bronze',   minScore:   900 },
+	{ level: 16, tierName: 'bronze',   minScore:  1000 },
+	{ level: 17, tierName: 'bronze',   minScore:  1100 },
+	{ level: 18, tierName: 'bronze',   minScore:  1200 },
+	{ level: 19, tierName: 'bronze',   minScore:  1300 },
+	{ level: 20, tierName: 'bronze',   minScore:  1400 },
+	// Silver  L21-L30 (1500–3999, step 250)
+	{ level: 21, tierName: 'silver',   minScore:  1500 },
+	{ level: 22, tierName: 'silver',   minScore:  1750 },
+	{ level: 23, tierName: 'silver',   minScore:  2000 },
+	{ level: 24, tierName: 'silver',   minScore:  2250 },
+	{ level: 25, tierName: 'silver',   minScore:  2500 },
+	{ level: 26, tierName: 'silver',   minScore:  2750 },
+	{ level: 27, tierName: 'silver',   minScore:  3000 },
+	{ level: 28, tierName: 'silver',   minScore:  3250 },
+	{ level: 29, tierName: 'silver',   minScore:  3500 },
+	{ level: 30, tierName: 'silver',   minScore:  3750 },
+	// Gold    L31-L40 (4000–9999, step 600)
+	{ level: 31, tierName: 'gold',     minScore:  4000 },
+	{ level: 32, tierName: 'gold',     minScore:  4600 },
+	{ level: 33, tierName: 'gold',     minScore:  5200 },
+	{ level: 34, tierName: 'gold',     minScore:  5800 },
+	{ level: 35, tierName: 'gold',     minScore:  6400 },
+	{ level: 36, tierName: 'gold',     minScore:  7000 },
+	{ level: 37, tierName: 'gold',     minScore:  7600 },
+	{ level: 38, tierName: 'gold',     minScore:  8200 },
+	{ level: 39, tierName: 'gold',     minScore:  8800 },
+	{ level: 40, tierName: 'gold',     minScore:  9400 },
+	// Platinum L41-L47 (10000–24999, step ≈2143)
+	{ level: 41, tierName: 'platinum', minScore: 10000 },
+	{ level: 42, tierName: 'platinum', minScore: 12143 },
+	{ level: 43, tierName: 'platinum', minScore: 14286 },
+	{ level: 44, tierName: 'platinum', minScore: 16429 },
+	{ level: 45, tierName: 'platinum', minScore: 18571 },
+	{ level: 46, tierName: 'platinum', minScore: 20714 },
+	{ level: 47, tierName: 'platinum', minScore: 22857 },
+	// Elite   L48-L50 (25000+)
+	{ level: 48, tierName: 'elite',    minScore: 25000 },
+	{ level: 49, tierName: 'elite',    minScore: 30000 },
+	{ level: 50, tierName: 'elite',    minScore: 37500 },
+]
+
+export const getLevelByScore = (score: number): Level => {
+	for (let i = LEVELS.length - 1; i >= 0; i--) {
+		if (score >= LEVELS[i].minScore) return LEVELS[i]
+	}
+	return LEVELS[0]
+}
+
+export const getNextLevel = (currentLevel: Level): Level | null =>
+	currentLevel.level < 50 ? LEVELS[currentLevel.level] : null // LEVELS is 0-indexed, level 1 → index 0
+
 // ─── Category thresholds ──────────────────────────────────────────────────────
 
 export const CATEGORY_THRESHOLDS: Record<string, number[]> = {
@@ -726,6 +804,10 @@ export interface RatingData {
 	prCount: number
 	achievements: Achievement[]
 	categoryTiers: Record<string, Tier>
+	// Level system
+	currentLevel: Level
+	nextLevel: Level | null
+	levelProgressPercent: number
 }
 
 export const computeRating = async (): Promise<RatingData> => {
@@ -783,6 +865,14 @@ export const computeRating = async (): Promise<RatingData> => {
 		records:     getCategoryTier(prCount, CATEGORY_THRESHOLDS.records),
 	}
 
+	const currentLevel = getLevelByScore(totalScore)
+	const nextLevel    = getNextLevel(currentLevel)
+	const levelProgressPercent = nextLevel
+		? Math.min(100, Math.round(
+			((totalScore - currentLevel.minScore) / (nextLevel.minScore - currentLevel.minScore)) * 100,
+		))
+		: 100
+
 	return {
 		totalScore,
 		tier,
@@ -793,5 +883,8 @@ export const computeRating = async (): Promise<RatingData> => {
 		prCount,
 		achievements,
 		categoryTiers,
+		currentLevel,
+		nextLevel,
+		levelProgressPercent,
 	}
 }

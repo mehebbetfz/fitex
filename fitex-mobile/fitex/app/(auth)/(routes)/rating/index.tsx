@@ -1,6 +1,6 @@
 import { useAuth } from '@/app/contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
-import { Achievement, computeRating, RatingData, Tier, TIERS, TierName } from '@/services/rating'
+import { Achievement, computeRating, LEVELS, RatingData, Tier, TIERS, TierName } from '@/services/rating'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -114,21 +114,56 @@ const TIER_ICONS: Record<TierName, { name: string; color: string }> = {
 
 // ─── Level card ───────────────────────────────────────────────────────────────
 
+// Dots showing levels within the current tier
+const TierLevelDots = ({ tierName, currentLevel }: { tierName: TierName; currentLevel: number }) => {
+	const tierLevels = LEVELS.filter(l => l.tierName === tierName)
+	const tier = TIERS.find(t => t.name === tierName)!
+	return (
+		<View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: 10 }}>
+			{tierLevels.map(lv => {
+				const done    = lv.level < currentLevel
+				const active  = lv.level === currentLevel
+				return (
+					<View
+						key={lv.level}
+						style={{
+							width: active ? 24 : 8, height: 8,
+							borderRadius: 4,
+							backgroundColor: done || active
+								? tier.color
+								: '#2C2C2E',
+							opacity: active ? 1 : done ? 0.7 : 0.3,
+						}}
+					/>
+				)
+			})}
+		</View>
+	)
+}
+
 const LevelCard = ({ data }: { data: RatingData }) => {
 	const { t } = useLanguage()
 	const tierLabel = useTierLabel()
-	const { tier, nextTier, progressPercent, totalScore } = data
+	const { tier, nextTier, totalScore, currentLevel, nextLevel, levelProgressPercent } = data
 	const icon = TIER_ICONS[tier.name]
 
 	return (
 		<View style={[styles.card, { borderColor: `${tier.color}40`, borderWidth: 1.5 }]}>
+			{/* Top row: icon + level number + score badge */}
 			<View style={styles.levelCardHeader}>
 				<View style={[styles.tierIconWrap, { backgroundColor: `${tier.color}15`, borderColor: `${tier.color}40` }]}>
-					<Ionicons name={icon.name as any} size={36} color={icon.color} />
+					<Ionicons name={icon.name as any} size={32} color={icon.color} />
 				</View>
-				<View style={{ flex: 1, marginLeft: 16 }}>
-					<Text style={[styles.levelName, { color: tier.color }]}>
-						{tierLabel(tier.name).toUpperCase()}
+				<View style={{ flex: 1, marginLeft: 14 }}>
+					{/* Big level number */}
+					<View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+						<Text style={[styles.levelNum, { color: tier.color }]}>
+							{t('rating', 'levelLabel')} {currentLevel.level}
+						</Text>
+						<Text style={styles.levelTotal}>/50</Text>
+					</View>
+					<Text style={[styles.tierName, { color: tier.color }]}>
+						{tierLabel(tier.name)}
 					</Text>
 					<Text style={styles.scoreText}>
 						{totalScore.toLocaleString()} {t('rating', 'pts')}
@@ -141,14 +176,15 @@ const LevelCard = ({ data }: { data: RatingData }) => {
 				</View>
 			</View>
 
-			<View style={{ marginTop: 16 }}>
-				<ProgressBar percent={progressPercent} color={tier.color} height={10} />
+			{/* Level progress bar */}
+			<View style={{ marginTop: 14 }}>
+				<ProgressBar percent={levelProgressPercent} color={tier.color} height={10} />
 				<View style={styles.progressLabelRow}>
-					<Text style={styles.progressLabel}>{progressPercent}%</Text>
-					{nextTier ? (
+					<Text style={styles.progressLabel}>{levelProgressPercent}%</Text>
+					{nextLevel ? (
 						<Text style={styles.progressLabel}>
-							{t('rating', 'progressTo')} {tierLabel(nextTier.name)}:{' '}
-							{(nextTier.minScore - totalScore).toLocaleString()} {t('rating', 'pointsLeft')}
+							→ {t('rating', 'levelLabel')} {nextLevel.level}:{' '}
+							{(nextLevel.minScore - totalScore).toLocaleString()} {t('rating', 'pointsLeft')}
 						</Text>
 					) : (
 						<Text style={[styles.progressLabel, { color: tier.color }]}>
@@ -158,30 +194,33 @@ const LevelCard = ({ data }: { data: RatingData }) => {
 				</View>
 			</View>
 
+			{/* Tier-level dots */}
+			<TierLevelDots tierName={tier.name} currentLevel={currentLevel.level} />
+
 			{/* Tier ladder */}
 			<View style={styles.tierLadder}>
 				{TIERS.map((t2, i) => {
-					const isActive = t2.name === tier.name
+					const isActive  = t2.name === tier.name
+					const isPassed  = i < TIERS.findIndex(x => x.name === tier.name)
 					const ic = TIER_ICONS[t2.name]
 					return (
 						<View key={t2.name} style={styles.tierStep}>
-							<View style={[styles.tierStepIcon, isActive && { borderColor: ic.color, backgroundColor: `${ic.color}15` }]}>
+							<View style={[
+								styles.tierStepIcon,
+								isActive && { borderColor: ic.color, backgroundColor: `${ic.color}15` },
+								isPassed && { borderColor: ic.color + '70', backgroundColor: `${ic.color}08` },
+							]}>
 								<Ionicons
 									name={ic.name as any}
 									size={isActive ? 18 : 13}
-									color={isActive ? ic.color : '#444'}
+									color={isActive ? ic.color : isPassed ? ic.color + 'AA' : '#444'}
 								/>
 							</View>
 							{i < TIERS.length - 1 && (
 								<View
 									style={[
 										styles.tierConnector,
-										{
-											backgroundColor:
-												i < TIERS.findIndex(x => x.name === tier.name)
-													? tier.color
-													: C.border,
-										},
+										{ backgroundColor: isPassed ? tier.color : C.border },
 									]}
 								/>
 							)}
@@ -333,7 +372,7 @@ const AchievementBadge = ({
 			>
 				<Ionicons
 					name={achievement.icon as any}
-					size={24}
+					size={Math.round(ACH_BADGE_SIZE * 0.44)}
 					color={achievement.earned ? achievement.iconColor : '#444'}
 				/>
 				{achievement.earned && (
@@ -361,7 +400,14 @@ const AchievementsSection = ({ data }: { data: RatingData }) => {
 	const { achievements } = data
 
 	const earnedCount = achievements.filter(a => a.earned).length
-	const preview = achievements.slice(0, 5)
+
+	// Sort: earned first, then by progress % descending, show top 20
+	const preview = [...achievements]
+		.sort((a, b) => {
+			if (a.earned !== b.earned) return a.earned ? -1 : 1
+			return b.progressPercent - a.progressPercent
+		})
+		.slice(0, 20)
 
 	const getAchievementInfo = (id: string) => ({
 		title: t('rating', `ach_${id}_title` as Parameters<typeof t>[1]),
@@ -379,7 +425,7 @@ const AchievementsSection = ({ data }: { data: RatingData }) => {
 				</Text>
 			</View>
 
-			<View style={styles.achievementsGrid}>
+			<View style={styles.achievementsGrid5}>
 				{preview.map(a => (
 					<AchievementBadge key={a.id} achievement={a} onPress={setSelected} />
 				))}
@@ -588,6 +634,11 @@ const CARD_GAP = 10
 const CATEGORY_COLS = 3
 const CATEGORY_CARD_WIDTH = (SCREEN_WIDTH - 40 - CARD_GAP * (CATEGORY_COLS - 1)) / CATEGORY_COLS
 
+const ACH_COLS = 5
+const ACH_GAP  = 8
+// card horizontal padding = 16, scroll horizontal padding = 20
+const ACH_BADGE_SIZE = Math.floor((SCREEN_WIDTH - 40 - 32 - ACH_GAP * (ACH_COLS - 1)) / ACH_COLS)
+
 const styles = StyleSheet.create({
 	safeArea: { flex: 1, backgroundColor: C.background },
 	header: {
@@ -604,12 +655,15 @@ const styles = StyleSheet.create({
 	// Level card
 	levelCardHeader: { flexDirection: 'row', alignItems: 'center' },
 	tierIconWrap: {
-		width: 64, height: 64, borderRadius: 18,
+		width: 60, height: 60, borderRadius: 16,
 		alignItems: 'center', justifyContent: 'center',
 		borderWidth: 1.5,
 	},
+	levelNum:  { fontSize: 26, fontWeight: '900', letterSpacing: 0.5 },
+	levelTotal: { fontSize: 14, color: C.textSecondary, fontWeight: '600' },
+	tierName:  { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, marginTop: 1 },
 	levelName: { fontSize: 22, fontWeight: '800', letterSpacing: 1 },
-	scoreText: { fontSize: 14, color: C.textSecondary, marginTop: 2 },
+	scoreText: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
 	scoreBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
 	scoreBadgeText: { fontSize: 11, fontWeight: '600' },
 	progressLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
@@ -661,8 +715,12 @@ const styles = StyleSheet.create({
 	},
 	achievementsCount: { fontSize: 12, color: C.textSecondary },
 	achievementsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+	achievementsGrid5: {
+		flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+		justifyContent: 'flex-start',
+	},
 	achievementBadge: {
-		width: 56, height: 56, borderRadius: 16,
+		width: ACH_BADGE_SIZE, height: ACH_BADGE_SIZE, borderRadius: 14,
 		alignItems: 'center', justifyContent: 'center', position: 'relative',
 	},
 	achievementEarned: {

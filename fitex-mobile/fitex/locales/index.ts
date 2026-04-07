@@ -321,6 +321,7 @@ export interface Translations {
     progressTo: string
     pointsLeft: string
     maxLevel: string
+    levelLabel: string
     scoreBreakdown: string
     workoutPts: string
     setPts: string
@@ -1726,6 +1727,7 @@ export const en: Translations = {
     progressTo: 'To',
     pointsLeft: 'points',
     maxLevel: 'Maximum level reached!',
+    levelLabel: 'Level',
     scoreBreakdown: 'How your rating is calculated',
     workoutPts: 'Workouts',
     setPts: 'Sets',
