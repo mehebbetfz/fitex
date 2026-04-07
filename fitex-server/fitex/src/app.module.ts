@@ -6,6 +6,7 @@ import { AppService } from './app.service'
 import { AuthModule } from './modules/auth/auth.module'
 import { GymPassModule } from './modules/gym-pass/gym-pass.module'
 import { IapModule } from './modules/iap/iap.module'
+import { LeaderboardModule } from './modules/leaderboard/leaderboard.module'
 import { MarketplaceModule } from './modules/marketplace/marketplace.module'
 import { SubscriptionModule } from './modules/subscription/subscription.module'
 import { SyncModule } from './modules/sync/sync.module'
@@ -35,6 +36,7 @@ import configuration from './strategies/configuration'
     IapModule,
     MarketplaceModule,
     GymPassModule,
+    LeaderboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

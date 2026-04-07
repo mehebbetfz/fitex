@@ -14,10 +14,10 @@ import { PersonalRecord, PersonalRecordSchema } from 'src/models/personal-record
 @Module({
 	imports: [
 		MongooseModule.forFeature([
-			{ name: Workout.name, schema: WorkoutSchema },
-			{ name: User.name, schema: UserSchema },
-			{ name: BodyMeasurement.name, schema: BodyMeasurementSchema },
-			{ name: PersonalRecord.name, schema: PersonalRecordSchema },
+			{ name: Workout.name,            schema: WorkoutSchema },
+			{ name: User.name,               schema: UserSchema },
+			{ name: BodyMeasurement.name,    schema: BodyMeasurementSchema },
+			{ name: PersonalRecord.name,     schema: PersonalRecordSchema },
 		]),
 		UserModule,
 		WorkoutModule,

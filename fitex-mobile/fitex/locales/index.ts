@@ -498,6 +498,22 @@ export interface Translations {
     cta: string
     later: string
   }
+  leaderboard: {
+    title: string
+    subtitle: string
+    myRank: string
+    rank: string
+    score: string
+    workouts: string
+    volume: string
+    streak: string
+    you: string
+    noData: string
+    noDataSub: string
+    premium: string
+    topPlayers: string
+    syncHint: string
+  }
   languageSelect: {
     title: string
     subtitle: string
@@ -1178,6 +1194,22 @@ export const ru: Translations = {
     featureRecovery: 'Восстановление',
     cta: 'Получить Premium →',
     later: 'Позже',
+  },
+  leaderboard: {
+    title: 'Таблица лидеров',
+    subtitle: 'Топ спортсменов FitEx',
+    myRank: 'Мой ранг',
+    rank: 'Ранг',
+    score: 'Очки',
+    workouts: 'Трен.',
+    volume: 'Объём',
+    streak: 'Серия',
+    you: 'Вы',
+    noData: 'Нет данных',
+    noDataSub: 'Синхронизируйте тренировки чтобы попасть в рейтинг',
+    premium: 'Premium',
+    topPlayers: 'Топ игроков',
+    syncHint: 'Синхронизируйте данные чтобы обновить рейтинг',
   },
   languageSelect: {
     title: 'Выберите язык',
@@ -1860,6 +1892,22 @@ export const en: Translations = {
     cta: 'Get Premium →',
     later: 'Maybe later',
   },
+  leaderboard: {
+    title: 'Leaderboard',
+    subtitle: 'Top FitEx Athletes',
+    myRank: 'My Rank',
+    rank: 'Rank',
+    score: 'Score',
+    workouts: 'Wrkts',
+    volume: 'Volume',
+    streak: 'Streak',
+    you: 'You',
+    noData: 'No data',
+    noDataSub: 'Sync your workouts to appear on the leaderboard',
+    premium: 'Premium',
+    topPlayers: 'Top Players',
+    syncHint: 'Sync your data to update the leaderboard',
+  },
   languageSelect: {
     title: 'Choose Language',
     subtitle: 'Select the language you want to use in the app',
@@ -2540,6 +2588,22 @@ export const az: Translations = {
     featureRecovery: 'Bərpa',
     cta: 'Premium al →',
     later: 'Sonra',
+  },
+  leaderboard: {
+    title: 'Liderlik cədvəli',
+    subtitle: 'Ən yaxşı FitEx idmançıları',
+    myRank: 'Mənim reytinqim',
+    rank: 'Yer',
+    score: 'Xal',
+    workouts: 'Məşq',
+    volume: 'Həcm',
+    streak: 'Seriya',
+    you: 'Siz',
+    noData: 'Məlumat yoxdur',
+    noDataSub: 'Liderlik cədvəlinə girmək üçün məşqləri sinxronizasiya edin',
+    premium: 'Premium',
+    topPlayers: 'Ən yaxşılar',
+    syncHint: 'Reytinqi yeniləmək üçün məlumatları sinxronizasiya edin',
   },
   languageSelect: {
     title: 'Dil seçin',

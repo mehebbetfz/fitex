@@ -690,9 +690,25 @@ export default function StatisticsTab() {
 			<ScrollView showsVerticalScrollIndicator={false}>
 				{/* Header */}
 				<View style={styles.header}>
-					<View>
+					<View style={{ flex: 1 }}>
 						<Text style={styles.greeting}>{t('progress', 'title')}</Text>
 						<Text style={styles.subtitle}>{t('progress', 'subtitle')}</Text>
+					</View>
+					<View style={styles.headerIcons}>
+						<TouchableOpacity
+							style={styles.headerIconBtn}
+							onPress={() => router.push('/(auth)/(routes)/leaderboard')}
+							activeOpacity={0.7}
+						>
+							<Ionicons name='podium-outline' size={22} color='#8E8E93' />
+						</TouchableOpacity>
+						<TouchableOpacity
+							style={styles.headerIconBtn}
+							onPress={() => router.push('/(auth)/(routes)/achievements')}
+							activeOpacity={0.7}
+						>
+							<Ionicons name='ribbon-outline' size={22} color='#8E8E93' />
+						</TouchableOpacity>
 					</View>
 				</View>
 
@@ -980,6 +996,19 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 10,
 		paddingTop: 20,
 		paddingBottom: 10,
+	},
+	headerIcons: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+	},
+	headerIconBtn: {
+		width: 38,
+		height: 38,
+		borderRadius: 12,
+		backgroundColor: '#1C1C1E',
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	greeting: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' },
 	subtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 4 },

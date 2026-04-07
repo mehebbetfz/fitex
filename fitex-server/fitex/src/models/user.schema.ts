@@ -59,6 +59,28 @@ export class User {
 
 	@Prop()
 	passwordResetExpires?: Date
+
+	// Leaderboard stats (updated on sync)
+	@Prop({ default: 0 })
+	totalScore: number
+
+	@Prop({ default: 0 })
+	totalWorkouts: number
+
+	@Prop({ default: 0 })
+	totalVolume: number
+
+	@Prop({ default: 0 })
+	totalSets: number
+
+	@Prop({ default: 0 })
+	streakDays: number
+
+	@Prop({ default: 0 })
+	prCount: number
+
+	@Prop({ default: true })
+	showOnLeaderboard: boolean
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)
