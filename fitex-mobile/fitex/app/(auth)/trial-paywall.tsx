@@ -265,10 +265,10 @@ export default function TrialPaywallScreen() {
 
 				{/* Features */}
 				<View style={styles.featuresSection}>
-					<Text style={styles.sectionTitle}>{t('trial', 'featuresTitle')}</Text>
-					{FEATURES.map(f => (
-						<FeatureRow key={f.icon} icon={f.icon} text={t('subscription', f.key as any)} />
-					))}
+				<Text style={styles.sectionTitle}>{t('trial', 'featuresTitle')}</Text>
+				{FEATURES.map(f => (
+					<FeatureRow key={f.icon} icon={f.icon} text={t('subscription', f.key as any)} color={f.color} />
+				))}
 				</View>
 
 				{/* Plan selector */}
@@ -357,21 +357,23 @@ export default function TrialPaywallScreen() {
 
 // ── Feature list ──────────────────────────────────────────────────────────────
 const FEATURES = [
-	{ icon: 'trophy-outline', key: 'feature1' },
-	{ icon: 'analytics-outline', key: 'feature2' },
-	{ icon: 'barbell-outline', key: 'feature3' },
-	{ icon: 'nutrition-outline', key: 'feature4' },
-	{ icon: 'star-outline', key: 'feature5' },
+	{ icon: 'ribbon-outline',       key: 'feature1', color: '#FFD700' },
+	{ icon: 'podium-outline',        key: 'feature4', color: '#FF9500' },
+	{ icon: 'cloud-upload-outline',  key: 'feature2', color: '#5AC8FA' },
+	{ icon: 'analytics-outline',     key: 'feature3', color: '#AF52DE' },
+	{ icon: 'body-outline',          key: 'feature5', color: '#34C759' },
 ]
 
-function FeatureRow({ icon, text }: { icon: string; text: string }) {
+function FeatureRow({ icon, text, color }: { icon: string; text: string; color: string }) {
 	return (
 		<View style={styles.featureRow}>
-			<View style={styles.featureIconWrap}>
-				<Ionicons name={icon as any} size={20} color={COLORS.primary} />
+			<View style={[styles.featureIconWrap, { backgroundColor: `${color}20` }]}>
+				<Ionicons name={icon as any} size={20} color={color} />
 			</View>
 			<Text style={styles.featureText}>{text}</Text>
-			<Ionicons name='checkmark' size={18} color={COLORS.primary} />
+			<View style={[styles.featureCheck, { backgroundColor: `${color}18` }]}>
+				<Ionicons name='checkmark' size={14} color={color} />
+			</View>
 		</View>
 	)
 }
@@ -495,6 +497,10 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginRight: 12,
+	},
+	featureCheck: {
+		width: 26, height: 26, borderRadius: 8,
+		alignItems: 'center', justifyContent: 'center',
 	},
 	featureText: {
 		flex: 1,

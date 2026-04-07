@@ -1,4 +1,5 @@
 import { useAuth } from '@/app/contexts/auth-context'
+import SharedPremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
 import { Achievement, computeRating, LEVELS, RatingData, Tier, TIERS, TierName } from '@/services/rating'
 import { Ionicons } from '@expo/vector-icons'
@@ -514,56 +515,6 @@ const RatingSkeleton = () => (
 )
 
 // ─── Premium gate ─────────────────────────────────────────────────────────────
-
-const PremiumGate = () => {
-	const { t } = useLanguage()
-	return (
-		<View style={gateStyles.container}>
-			<View style={gateStyles.card}>
-				<View style={gateStyles.iconWrap}>
-					<Ionicons name='trophy' size={48} color='#FFD700' />
-				</View>
-				<Text style={gateStyles.title}>{t('rating', 'premiumGateTitle')}</Text>
-				<Text style={gateStyles.subtitle}>{t('rating', 'premiumGateSubtitle')}</Text>
-				<TouchableOpacity
-					style={gateStyles.button}
-					onPress={() => router.push('/(tabs)/profile')}
-				>
-					<Ionicons name='diamond' size={18} color='#000' />
-					<Text style={gateStyles.buttonText}>{t('rating', 'premiumGateBtn')}</Text>
-				</TouchableOpacity>
-				<TouchableOpacity onPress={() => router.back()} style={gateStyles.back}>
-					<Text style={gateStyles.backText}>{t('common', 'cancel')}</Text>
-				</TouchableOpacity>
-			</View>
-		</View>
-	)
-}
-
-const gateStyles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212', justifyContent: 'center', padding: 24 },
-	card: {
-		backgroundColor: '#1C1C1E', borderRadius: 24, padding: 32, alignItems: 'center',
-		borderWidth: 1.5, borderColor: 'rgba(255,215,0,0.3)',
-	},
-	iconWrap: {
-		width: 88, height: 88, borderRadius: 22,
-		backgroundColor: 'rgba(255,215,0,0.1)',
-		borderWidth: 1.5, borderColor: 'rgba(255,215,0,0.3)',
-		alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-	},
-	title: { fontSize: 22, fontWeight: '800', color: '#fff', textAlign: 'center', marginBottom: 10 },
-	subtitle: { fontSize: 14, color: '#8E8E93', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
-	button: {
-		flexDirection: 'row', alignItems: 'center', gap: 8,
-		backgroundColor: '#FFD700', borderRadius: 14,
-		paddingHorizontal: 28, paddingVertical: 14, marginBottom: 12,
-	},
-	buttonText: { color: '#000', fontWeight: '800', fontSize: 16 },
-	back: { paddingVertical: 8 },
-	backText: { color: '#8E8E93', fontSize: 14 },
-})
-
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function RatingScreen() {
@@ -587,7 +538,7 @@ export default function RatingScreen() {
 
 	useEffect(() => { load() }, [load])
 
-	if (!user?.isPremium) return <PremiumGate />
+	if (!user?.isPremium) return <SharedPremiumGate featureIcon='ribbon-outline' featureColor='#FFD700' />
 
 	return (
 		<SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -694,7 +645,7 @@ const styles = StyleSheet.create({
 	// Category grid
 	categoryGrid: {
 		flexDirection: 'row', flexWrap: 'wrap', gap: CARD_GAP,
-		paddingHorizontal: 20, marginTop: 12,
+		paddingHorizontal: 0, marginTop: 12,
 	},
 	categoryCard: {
 		width: CATEGORY_CARD_WIDTH, backgroundColor: C.card, borderRadius: 12,

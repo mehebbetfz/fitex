@@ -1,6 +1,7 @@
 import { useDatabase } from '@/app/contexts/database-context'
 import { SyncMeta, SyncHistoryEntry, SYNC_META_KEY } from '@/app/contexts/database-context'
 import { useAuth } from '@/app/contexts/auth-context'
+import PremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
 import { api } from '@/services/api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -268,6 +269,8 @@ export default function SyncStatsScreen() {
 	}, [])
 
 	useEffect(() => { loadData() }, [loadData])
+
+	if (!user?.isPremium) return <PremiumGate featureIcon='cloud-upload-outline' featureColor='#5AC8FA' />
 
 	const onRefresh = () => { setRefreshing(true); loadData() }
 

@@ -344,6 +344,9 @@ export interface Translations {
     pointsLeft: string
     maxLevel: string
     levelLabel: string
+    premiumGateTitle: string
+    premiumGateSubtitle: string
+    premiumGateBtn: string
     scoreBreakdown: string
     workoutPts: string
     setPts: string
@@ -518,6 +521,8 @@ export interface Translations {
     featureSync: string
     featureAnalytics: string
     featureRecovery: string
+    featureRating: string
+    featureLeaderboard: string
     cta: string
     later: string
   }
@@ -944,11 +949,11 @@ export const ru: Translations = {
     restoreSuccess: 'Покупки восстановлены',
     restoreEmpty: 'Активных покупок не найдено',
     alreadyPremium: 'У вас уже есть Premium',
-    feature1: 'Система рейтинга и достижений',
+    feature1: 'Рейтинг, уровни и 100+ достижений',
     feature2: 'Синхронизация с облаком',
-    feature3: 'Расширенная аналитика',
-    feature4: 'Маркетплейс тренеров',
-    feature5: 'FitEx Pass — абонемент в залы',
+    feature3: 'Расширенная аналитика и графики',
+    feature4: 'Таблица лидеров — сравни себя с другими',
+    feature5: 'Отслеживание восстановления мышц',
     cancelAnytime: 'Отмена в любое время',
   },
   sync: {
@@ -1073,6 +1078,10 @@ export const ru: Translations = {
     progressTo: 'До',
     pointsLeft: 'очков',
     maxLevel: 'Максимальный уровень достигнут!',
+    levelLabel: 'Уровень',
+    premiumGateTitle: 'Доступно только Premium',
+    premiumGateSubtitle: 'Рейтинги, уровни, достижения, лидерборд и синхронизация — всё в одной подписке.',
+    premiumGateBtn: 'Открыть Premium',
     scoreBreakdown: 'Из чего складывается рейтинг',
     workoutPts: 'Тренировки',
     setPts: 'Подходы',
@@ -1232,10 +1241,12 @@ export const ru: Translations = {
   upsell: {
     title: 'Разблокируй FitEx Premium',
     titleTrial: 'дн. осталось в пробном периоде',
-    subtitle: 'Облачная синхронизация, аналитика, отслеживание восстановления и многое другое.',
+    subtitle: 'Рейтинг, достижения, лидерборд, синхронизация и многое другое.',
     featureSync: 'Синхронизация',
     featureAnalytics: 'Аналитика',
     featureRecovery: 'Восстановление',
+    featureRating: 'Рейтинг',
+    featureLeaderboard: 'Лидерборд',
     cta: 'Получить Premium →',
     later: 'Позже',
   },
@@ -1662,11 +1673,11 @@ export const en: Translations = {
     restoreSuccess: 'Purchases Restored',
     restoreEmpty: 'No active purchases found',
     alreadyPremium: 'You already have Premium',
-    feature1: 'Rating system & achievements',
-    feature2: 'Cloud sync',
-    feature3: 'Advanced analytics',
-    feature4: 'Trainer marketplace',
-    feature5: 'FitEx Pass — gym membership',
+    feature1: 'Ratings, levels & 100+ achievements',
+    feature2: 'Cloud sync across devices',
+    feature3: 'Advanced analytics & charts',
+    feature4: 'Leaderboard — compete with others',
+    feature5: 'Muscle recovery tracking',
     cancelAnytime: 'Cancel anytime',
   },
   sync: {
@@ -1792,6 +1803,9 @@ export const en: Translations = {
     pointsLeft: 'points',
     maxLevel: 'Maximum level reached!',
     levelLabel: 'Level',
+    premiumGateTitle: 'Premium Only',
+    premiumGateSubtitle: 'Ratings, levels, achievements, leaderboard and cloud sync — all in one subscription.',
+    premiumGateBtn: 'Unlock Premium',
     scoreBreakdown: 'How your rating is calculated',
     workoutPts: 'Workouts',
     setPts: 'Sets',
@@ -1951,10 +1965,12 @@ export const en: Translations = {
   upsell: {
     title: 'Unlock FitEx Premium',
     titleTrial: 'days left in trial',
-    subtitle: 'Cloud sync, advanced analytics, recovery tracking and more.',
+    subtitle: 'Ratings, achievements, leaderboard, cloud sync and more.',
     featureSync: 'Cloud Sync',
     featureAnalytics: 'Analytics',
     featureRecovery: 'Recovery',
+    featureRating: 'Rating',
+    featureLeaderboard: 'Leaderboard',
     cta: 'Get Premium →',
     later: 'Maybe later',
   },
@@ -2381,11 +2397,11 @@ export const az: Translations = {
     restoreSuccess: 'Alışlar bərpa edildi',
     restoreEmpty: 'Aktiv alış tapılmadı',
     alreadyPremium: 'Artıq Premiuminiz var',
-    feature1: 'Reytinq sistemi və nailiyyətlər',
-    feature2: 'Bulud sinxronizasiyası',
-    feature3: 'Ətraflı analitika',
-    feature4: 'Məşqçi bazarı',
-    feature5: 'FitEx Pass — zal abunəsi',
+    feature1: 'Reytinq, səviyyələr və 100+ nailiyyət',
+    feature2: 'Cihazlar arası bulud sinxronizasiyası',
+    feature3: 'Ətraflı analitika və qrafiklər',
+    feature4: 'Liderlik cədvəli — başqalarıyla rəqabət',
+    feature5: 'Əzələ bərpasının izlənməsi',
     cancelAnytime: 'İstənilən vaxt ləğv edin',
   },
   sync: {
@@ -2510,6 +2526,10 @@ export const az: Translations = {
     progressTo: 'Qədər',
     pointsLeft: 'bal',
     maxLevel: 'Maksimum səviyyəyə çatıldı!',
+    levelLabel: 'Səviyyə',
+    premiumGateTitle: 'Yalnız Premium üçün',
+    premiumGateSubtitle: 'Reytinq, səviyyələr, nailiyyətlər, liderlik cədvəli və sinxronizasiya — bir abunədə hər şey.',
+    premiumGateBtn: 'Premium-u açın',
     scoreBreakdown: 'Reytinq necə hesablanır',
     workoutPts: 'Məşqlər',
     setPts: 'Yanaşmalar',
@@ -2669,10 +2689,12 @@ export const az: Translations = {
   upsell: {
     title: 'FitEx Premium-u açın',
     titleTrial: 'sınaq müddəti qalıb',
-    subtitle: 'Bulud sinxronizasiyası, analitika, bərpa izlənməsi və daha çox.',
+    subtitle: 'Reytinq, nailiyyətlər, liderlik cədvəli, sinxronizasiya və daha çox.',
     featureSync: 'Sinxronizasiya',
     featureAnalytics: 'Analitika',
     featureRecovery: 'Bərpa',
+    featureRating: 'Reytinq',
+    featureLeaderboard: 'Liderlik',
     cta: 'Premium al →',
     later: 'Sonra',
   },

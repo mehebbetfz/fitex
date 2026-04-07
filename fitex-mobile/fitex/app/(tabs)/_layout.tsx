@@ -254,21 +254,25 @@ export default function TabsLayout() {
 					</Text>
 					<Text style={us.subtitle}>{t('upsell', 'subtitle')}</Text>
 
-					{/* Features row */}
-					<View style={us.featRow}>
-						{[
-							{ icon: 'cloud-upload-outline', key: 'featureSync' as const },
-							{ icon: 'analytics-outline', key: 'featureAnalytics' as const },
-							{ icon: 'body-outline', key: 'featureRecovery' as const },
-						].map(f => (
-							<View key={f.icon} style={us.featItem}>
-								<Ionicons name={f.icon as any} size={22} color='#34C759' />
-								<Text style={us.featLabel}>{t('upsell', f.key)}</Text>
+				{/* Features grid */}
+				<View style={us.featGrid}>
+					{([
+						{ icon: 'ribbon-outline',         key: 'featureRating',      color: '#FFD700' },
+						{ icon: 'podium-outline',          key: 'featureLeaderboard', color: '#FF9500' },
+						{ icon: 'cloud-upload-outline',    key: 'featureSync',        color: '#5AC8FA' },
+						{ icon: 'analytics-outline',       key: 'featureAnalytics',   color: '#AF52DE' },
+						{ icon: 'body-outline',            key: 'featureRecovery',    color: '#34C759' },
+					] as const).map(f => (
+						<View key={f.icon} style={us.featItem}>
+							<View style={[us.featIconWrap, { backgroundColor: `${f.color}18` }]}>
+								<Ionicons name={f.icon as any} size={18} color={f.color} />
 							</View>
-						))}
-					</View>
+						<Text style={us.featLabel}>{t('upsell', f.key)}</Text>
+						</View>
+					))}
+				</View>
 
-					<TouchableOpacity style={us.ctaBtn} onPress={goToPremium} activeOpacity={0.85}>
+				<TouchableOpacity style={us.ctaBtn} onPress={goToPremium} activeOpacity={0.85}>
 						<Text style={us.ctaText}>{t('upsell', 'cta')}</Text>
 					</TouchableOpacity>
 
@@ -332,19 +336,31 @@ const us = StyleSheet.create({
 		marginBottom: 24,
 		paddingHorizontal: 8,
 	},
-	featRow: {
+	featGrid: {
 		flexDirection: 'row',
-		gap: 24,
-		marginBottom: 28,
+		flexWrap: 'wrap',
+		gap: 10,
+		marginBottom: 24,
+		justifyContent: 'center',
 	},
 	featItem: {
+		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 6,
+		gap: 8,
+		width: '45%',
+	},
+	featIconWrap: {
+		width: 32,
+		height: 32,
+		borderRadius: 9,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	featLabel: {
-		fontSize: 11,
-		color: '#8E8E93',
+		fontSize: 12,
+		color: '#FFFFFF',
 		fontWeight: '500',
+		flex: 1,
 	},
 	ctaBtn: {
 		backgroundColor: '#34C759',

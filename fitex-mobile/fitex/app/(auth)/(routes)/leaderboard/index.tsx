@@ -1,4 +1,5 @@
 import { useAuth } from '@/app/contexts/auth-context'
+import PremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
 import { TIERS, TierName } from '@/services/rating'
 import { api } from '@/services/api'
@@ -375,6 +376,8 @@ export default function LeaderboardScreen() {
 	}, [])
 
 	useEffect(() => { load() }, [load])
+
+	if (!user?.isPremium) return <PremiumGate featureIcon='podium-outline' featureColor='#FF9500' />
 
 	const onRefresh = () => {
 		setRefreshing(true)
