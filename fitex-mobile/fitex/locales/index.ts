@@ -336,48 +336,23 @@ export interface Translations {
     catDuration: string
     catRecords: string
     achievements: string
+    achPageTitle: string
+    viewAll: string
     earned: string
     locked: string
+    progress: string
+    catAll: string
+    catIntensity: string
+    catTime: string
+    catScore: string
+    catTier: string
+    catSpecial: string
     tierBeginner: string
     tierBronze: string
     tierSilver: string
     tierGold: string
     tierPlatinum: string
     tierElite: string
-    ach_first_workout_title: string
-    ach_first_workout_desc: string
-    ach_workouts_5_title: string
-    ach_workouts_5_desc: string
-    ach_workouts_30_title: string
-    ach_workouts_30_desc: string
-    ach_workouts_100_title: string
-    ach_workouts_100_desc: string
-    ach_workouts_365_title: string
-    ach_workouts_365_desc: string
-    ach_streak_7_title: string
-    ach_streak_7_desc: string
-    ach_streak_30_title: string
-    ach_streak_30_desc: string
-    ach_streak_90_title: string
-    ach_streak_90_desc: string
-    ach_volume_1t_title: string
-    ach_volume_1t_desc: string
-    ach_volume_10t_title: string
-    ach_volume_10t_desc: string
-    ach_volume_100t_title: string
-    ach_volume_100t_desc: string
-    ach_sets_100_title: string
-    ach_sets_100_desc: string
-    ach_sets_1000_title: string
-    ach_sets_1000_desc: string
-    ach_sets_10000_title: string
-    ach_sets_10000_desc: string
-    ach_pr_first_title: string
-    ach_pr_first_desc: string
-    ach_pr_10_title: string
-    ach_pr_10_desc: string
-    ach_pr_50_title: string
-    ach_pr_50_desc: string
     pts: string
     kg: string
     days: string
@@ -385,6 +360,110 @@ export interface Translations {
     premiumGateTitle: string
     premiumGateSubtitle: string
     premiumGateBtn: string
+    // workouts
+    ach_workouts_1_title: string;     ach_workouts_1_desc: string
+    ach_workouts_5_title: string;     ach_workouts_5_desc: string
+    ach_workouts_10_title: string;    ach_workouts_10_desc: string
+    ach_workouts_25_title: string;    ach_workouts_25_desc: string
+    ach_workouts_50_title: string;    ach_workouts_50_desc: string
+    ach_workouts_75_title: string;    ach_workouts_75_desc: string
+    ach_workouts_100_title: string;   ach_workouts_100_desc: string
+    ach_workouts_200_title: string;   ach_workouts_200_desc: string
+    ach_workouts_300_title: string;   ach_workouts_300_desc: string
+    ach_workouts_365_title: string;   ach_workouts_365_desc: string
+    ach_workouts_500_title: string;   ach_workouts_500_desc: string
+    ach_workouts_750_title: string;   ach_workouts_750_desc: string
+    ach_workouts_1000_title: string;  ach_workouts_1000_desc: string
+    // streak
+    ach_streak_3_title: string;    ach_streak_3_desc: string
+    ach_streak_7_title: string;    ach_streak_7_desc: string
+    ach_streak_14_title: string;   ach_streak_14_desc: string
+    ach_streak_21_title: string;   ach_streak_21_desc: string
+    ach_streak_30_title: string;   ach_streak_30_desc: string
+    ach_streak_45_title: string;   ach_streak_45_desc: string
+    ach_streak_60_title: string;   ach_streak_60_desc: string
+    ach_streak_90_title: string;   ach_streak_90_desc: string
+    ach_streak_180_title: string;  ach_streak_180_desc: string
+    ach_streak_365_title: string;  ach_streak_365_desc: string
+    // volume
+    ach_volume_500_title: string;   ach_volume_500_desc: string
+    ach_volume_1k_title: string;    ach_volume_1k_desc: string
+    ach_volume_2500_title: string;  ach_volume_2500_desc: string
+    ach_volume_5k_title: string;    ach_volume_5k_desc: string
+    ach_volume_10k_title: string;   ach_volume_10k_desc: string
+    ach_volume_25k_title: string;   ach_volume_25k_desc: string
+    ach_volume_50k_title: string;   ach_volume_50k_desc: string
+    ach_volume_100k_title: string;  ach_volume_100k_desc: string
+    ach_volume_250k_title: string;  ach_volume_250k_desc: string
+    ach_volume_500k_title: string;  ach_volume_500k_desc: string
+    // sets
+    ach_sets_25_title: string;     ach_sets_25_desc: string
+    ach_sets_50_title: string;     ach_sets_50_desc: string
+    ach_sets_100_title: string;    ach_sets_100_desc: string
+    ach_sets_250_title: string;    ach_sets_250_desc: string
+    ach_sets_500_title: string;    ach_sets_500_desc: string
+    ach_sets_1000_title: string;   ach_sets_1000_desc: string
+    ach_sets_2500_title: string;   ach_sets_2500_desc: string
+    ach_sets_5000_title: string;   ach_sets_5000_desc: string
+    ach_sets_10000_title: string;  ach_sets_10000_desc: string
+    // records
+    ach_pr_1_title: string;    ach_pr_1_desc: string
+    ach_pr_5_title: string;    ach_pr_5_desc: string
+    ach_pr_10_title: string;   ach_pr_10_desc: string
+    ach_pr_20_title: string;   ach_pr_20_desc: string
+    ach_pr_30_title: string;   ach_pr_30_desc: string
+    ach_pr_50_title: string;   ach_pr_50_desc: string
+    ach_pr_75_title: string;   ach_pr_75_desc: string
+    ach_pr_100_title: string;  ach_pr_100_desc: string
+    // duration
+    ach_duration_20_title: string;   ach_duration_20_desc: string
+    ach_duration_30_title: string;   ach_duration_30_desc: string
+    ach_duration_45_title: string;   ach_duration_45_desc: string
+    ach_duration_60_title: string;   ach_duration_60_desc: string
+    ach_duration_75_title: string;   ach_duration_75_desc: string
+    ach_duration_90_title: string;   ach_duration_90_desc: string
+    ach_duration_120_title: string;  ach_duration_120_desc: string
+    // time
+    ach_time_5h_title: string;    ach_time_5h_desc: string
+    ach_time_10h_title: string;   ach_time_10h_desc: string
+    ach_time_25h_title: string;   ach_time_25h_desc: string
+    ach_time_50h_title: string;   ach_time_50h_desc: string
+    ach_time_100h_title: string;  ach_time_100h_desc: string
+    ach_time_200h_title: string;  ach_time_200h_desc: string
+    ach_time_500h_title: string;  ach_time_500h_desc: string
+    // score
+    ach_score_100_title: string;   ach_score_100_desc: string
+    ach_score_500_title: string;   ach_score_500_desc: string
+    ach_score_1k_title: string;    ach_score_1k_desc: string
+    ach_score_2500_title: string;  ach_score_2500_desc: string
+    ach_score_5k_title: string;    ach_score_5k_desc: string
+    ach_score_10k_title: string;   ach_score_10k_desc: string
+    ach_score_25k_title: string;   ach_score_25k_desc: string
+    ach_score_50k_title: string;   ach_score_50k_desc: string
+    // tier
+    ach_tier_bronze_title: string;    ach_tier_bronze_desc: string
+    ach_tier_silver_title: string;    ach_tier_silver_desc: string
+    ach_tier_gold_title: string;      ach_tier_gold_desc: string
+    ach_tier_platinum_title: string;  ach_tier_platinum_desc: string
+    ach_tier_elite_title: string;     ach_tier_elite_desc: string
+    // intensity
+    ach_avg_vol_500_title: string;  ach_avg_vol_500_desc: string
+    ach_avg_vol_1k_title: string;   ach_avg_vol_1k_desc: string
+    ach_avg_vol_2k_title: string;   ach_avg_vol_2k_desc: string
+    ach_avg_sets_8_title: string;   ach_avg_sets_8_desc: string
+    ach_avg_sets_15_title: string;  ach_avg_sets_15_desc: string
+    ach_avg_sets_25_title: string;  ach_avg_sets_25_desc: string
+    // special
+    ach_devoted_title: string;       ach_devoted_desc: string
+    ach_iron_man_title: string;      ach_iron_man_desc: string
+    ach_powerhouse_title: string;    ach_powerhouse_desc: string
+    ach_champion_title: string;      ach_champion_desc: string
+    ach_legend_title: string;        ach_legend_desc: string
+    ach_all_rounder_title: string;   ach_all_rounder_desc: string
+    ach_pr_hunter_title: string;     ach_pr_hunter_desc: string
+    ach_consistent_title: string;    ach_consistent_desc: string
+    ach_volume_king_title: string;   ach_volume_king_desc: string
+    ach_marathon_man_title: string;  ach_marathon_man_desc: string
   }
   common: {
     error: string
@@ -949,48 +1028,23 @@ export const ru: Translations = {
     catDuration: 'Время',
     catRecords: 'Рекорды',
     achievements: 'Достижения',
+    achPageTitle: 'Все достижения',
+    viewAll: 'Смотреть все',
     earned: 'получено',
     locked: 'заблок.',
+    progress: 'Прогресс',
+    catAll: 'Все',
+    catIntensity: 'Интенсивность',
+    catTime: 'Время',
+    catScore: 'Очки',
+    catTier: 'Ранг',
+    catSpecial: 'Особые',
     tierBeginner: 'Новичок',
     tierBronze: 'Бронза',
     tierSilver: 'Серебро',
     tierGold: 'Золото',
     tierPlatinum: 'Платина',
     tierElite: 'Элита',
-    ach_first_workout_title: 'Первый шаг',
-    ach_first_workout_desc: 'Выполни первую тренировку',
-    ach_workouts_5_title: 'В форме',
-    ach_workouts_5_desc: '5 тренировок выполнено',
-    ach_workouts_30_title: 'Ритм найден',
-    ach_workouts_30_desc: '30 тренировок',
-    ach_workouts_100_title: 'Сотня',
-    ach_workouts_100_desc: '100 тренировок выполнено',
-    ach_workouts_365_title: 'Год силы',
-    ach_workouts_365_desc: '365 тренировок',
-    ach_streak_7_title: 'Неделя огня',
-    ach_streak_7_desc: '7 дней подряд',
-    ach_streak_30_title: 'Месяц молнии',
-    ach_streak_30_desc: '30 дней подряд',
-    ach_streak_90_title: 'Легенда серии',
-    ach_streak_90_desc: '90 дней подряд',
-    ach_volume_1t_title: 'Первая тонна',
-    ach_volume_1t_desc: 'Суммарный объём 1 000 кг',
-    ach_volume_10t_title: '10 тонн',
-    ach_volume_10t_desc: 'Суммарный объём 10 000 кг',
-    ach_volume_100t_title: 'Железный человек',
-    ach_volume_100t_desc: 'Суммарный объём 100 000 кг',
-    ach_sets_100_title: 'Сотня подходов',
-    ach_sets_100_desc: '100 подходов выполнено',
-    ach_sets_1000_title: 'Тысяча подходов',
-    ach_sets_1000_desc: '1 000 подходов',
-    ach_sets_10000_title: 'Мастер подходов',
-    ach_sets_10000_desc: '10 000 подходов',
-    ach_pr_first_title: 'Первый рекорд',
-    ach_pr_first_desc: 'Установи личный рекорд',
-    ach_pr_10_title: 'Рекордсмен',
-    ach_pr_10_desc: '10 личных рекордов',
-    ach_pr_50_title: 'Чемпион',
-    ach_pr_50_desc: '50 личных рекордов',
     pts: 'оч.',
     kg: 'кг',
     days: 'дн.',
@@ -998,6 +1052,99 @@ export const ru: Translations = {
     premiumGateTitle: 'Рейтинг — только для Premium',
     premiumGateSubtitle: 'Отслеживайте уровень, достижения и разбивку очков с Premium-доступом',
     premiumGateBtn: 'Получить Premium',
+    ach_workouts_1_title: 'Первый шаг',            ach_workouts_1_desc: 'Выполни первую тренировку',
+    ach_workouts_5_title: 'В форме',               ach_workouts_5_desc: '5 тренировок выполнено',
+    ach_workouts_10_title: 'Начало пути',          ach_workouts_10_desc: '10 тренировок выполнено',
+    ach_workouts_25_title: 'Стабильность',         ach_workouts_25_desc: '25 тренировок выполнено',
+    ach_workouts_50_title: 'Полвека',              ach_workouts_50_desc: '50 тренировок выполнено',
+    ach_workouts_75_title: 'Неустрашимый',         ach_workouts_75_desc: '75 тренировок выполнено',
+    ach_workouts_100_title: 'Центурия',            ach_workouts_100_desc: '100 тренировок выполнено',
+    ach_workouts_200_title: 'Двойная сотня',       ach_workouts_200_desc: '200 тренировок выполнено',
+    ach_workouts_300_title: 'Железная дисциплина', ach_workouts_300_desc: '300 тренировок выполнено',
+    ach_workouts_365_title: 'Год силы',            ach_workouts_365_desc: '365 тренировок — настоящий атлет',
+    ach_workouts_500_title: 'Пятьсот',             ach_workouts_500_desc: '500 тренировок выполнено',
+    ach_workouts_750_title: 'Элитный спортсмен',   ach_workouts_750_desc: '750 тренировок выполнено',
+    ach_workouts_1000_title: 'Легенда',            ach_workouts_1000_desc: '1000 тренировок — ты легенда',
+    ach_streak_3_title: 'Горячий старт',       ach_streak_3_desc: '3 дня тренировок подряд',
+    ach_streak_7_title: 'Неделя огня',         ach_streak_7_desc: '7 дней подряд',
+    ach_streak_14_title: 'Две недели',         ach_streak_14_desc: '14 дней подряд',
+    ach_streak_21_title: 'Привычка',           ach_streak_21_desc: '21 день — привычка сформирована',
+    ach_streak_30_title: 'Месяц молнии',       ach_streak_30_desc: '30 дней подряд',
+    ach_streak_45_title: 'Неудержимый',        ach_streak_45_desc: '45 дней подряд',
+    ach_streak_60_title: 'Два месяца',         ach_streak_60_desc: '60 дней подряд',
+    ach_streak_90_title: 'Непреодолимый',      ach_streak_90_desc: '90 дней подряд',
+    ach_streak_180_title: 'Полгода в деле',    ach_streak_180_desc: '180 дней подряд',
+    ach_streak_365_title: 'Год без остановок', ach_streak_365_desc: '365 дней подряд — ты непобедим',
+    ach_volume_500_title: 'Тяжёлый подъём',    ach_volume_500_desc: 'Суммарный объём 500 кг',
+    ach_volume_1k_title: 'Тонный рубеж',       ach_volume_1k_desc: 'Суммарный объём 1 000 кг',
+    ach_volume_2500_title: 'Сильное тело',     ach_volume_2500_desc: 'Суммарный объём 2 500 кг',
+    ach_volume_5k_title: 'Мощный',             ach_volume_5k_desc: 'Суммарный объём 5 000 кг',
+    ach_volume_10k_title: 'Железная воля',     ach_volume_10k_desc: 'Суммарный объём 10 000 кг',
+    ach_volume_25k_title: 'Титан',             ach_volume_25k_desc: 'Суммарный объём 25 000 кг',
+    ach_volume_50k_title: 'Атлант',            ach_volume_50k_desc: 'Суммарный объём 50 000 кг',
+    ach_volume_100k_title: 'Геркулес',         ach_volume_100k_desc: 'Суммарный объём 100 000 кг',
+    ach_volume_250k_title: 'Колосс',           ach_volume_250k_desc: 'Суммарный объём 250 000 кг',
+    ach_volume_500k_title: 'Бог силы',         ach_volume_500k_desc: 'Суммарный объём 500 000 кг',
+    ach_sets_25_title: 'Стартовый набор',      ach_sets_25_desc: '25 подходов выполнено',
+    ach_sets_50_title: 'Пятьдесят',            ach_sets_50_desc: '50 подходов выполнено',
+    ach_sets_100_title: 'Сотня подходов',      ach_sets_100_desc: '100 подходов выполнено',
+    ach_sets_250_title: 'Упорный',             ach_sets_250_desc: '250 подходов выполнено',
+    ach_sets_500_title: 'Пятьсот подходов',    ach_sets_500_desc: '500 подходов выполнено',
+    ach_sets_1000_title: 'Тысячный рубеж',     ach_sets_1000_desc: '1 000 подходов выполнено',
+    ach_sets_2500_title: 'Машина',             ach_sets_2500_desc: '2 500 подходов выполнено',
+    ach_sets_5000_title: 'Неудержимый',        ach_sets_5000_desc: '5 000 подходов выполнено',
+    ach_sets_10000_title: 'Клуб 10 000',       ach_sets_10000_desc: '10 000 подходов выполнено',
+    ach_pr_1_title: 'Первый рекорд',           ach_pr_1_desc: 'Установи первый личный рекорд',
+    ach_pr_5_title: 'Охотник за рекордами',    ach_pr_5_desc: '5 личных рекордов',
+    ach_pr_10_title: 'Рекордсмен',             ach_pr_10_desc: '10 личных рекордов',
+    ach_pr_20_title: 'Разрушитель пределов',   ach_pr_20_desc: '20 личных рекордов',
+    ach_pr_30_title: 'Атлет высшего класса',   ach_pr_30_desc: '30 личных рекордов',
+    ach_pr_50_title: 'Элитный результат',      ach_pr_50_desc: '50 личных рекордов',
+    ach_pr_75_title: 'Легенда рекордов',       ach_pr_75_desc: '75 личных рекордов',
+    ach_pr_100_title: 'Вечные рекорды',        ach_pr_100_desc: '100 личных рекордов',
+    ach_duration_20_title: 'Активный старт',       ach_duration_20_desc: 'Средняя тренировка 20+ мин',
+    ach_duration_30_title: '30-минутный атлет',    ach_duration_30_desc: 'Средняя тренировка 30+ мин',
+    ach_duration_45_title: 'Серьёзный тренинг',    ach_duration_45_desc: 'Средняя тренировка 45+ мин',
+    ach_duration_60_title: 'Час силы',             ach_duration_60_desc: 'Средняя тренировка 60+ мин',
+    ach_duration_75_title: 'Расширенный сеанс',    ach_duration_75_desc: 'Средняя тренировка 75+ мин',
+    ach_duration_90_title: 'Мастер полутора часов',ach_duration_90_desc: 'Средняя тренировка 90+ мин',
+    ach_duration_120_title: 'Двухчасовой марафон', ach_duration_120_desc: 'Средняя тренировка 2+ часа',
+    ach_time_5h_title: 'Инвестор времени',    ach_time_5h_desc: 'Суммарно 5 часов тренировок',
+    ach_time_10h_title: 'Преданный делу',     ach_time_10h_desc: 'Суммарно 10 часов тренировок',
+    ach_time_25h_title: 'Четверть сотни',     ach_time_25h_desc: 'Суммарно 25 часов тренировок',
+    ach_time_50h_title: 'Пятьдесят часов',   ach_time_50h_desc: 'Суммарно 50 часов тренировок',
+    ach_time_100h_title: 'Сотня часов',      ach_time_100h_desc: 'Суммарно 100 часов тренировок',
+    ach_time_200h_title: 'Двести часов',     ach_time_200h_desc: 'Суммарно 200 часов тренировок',
+    ach_time_500h_title: 'Пятьсот часов',   ach_time_500h_desc: 'Суммарно 500 часов тренировок',
+    ach_score_100_title: 'Первые очки',        ach_score_100_desc: '100 очков рейтинга',
+    ach_score_500_title: 'Охотник за очками',  ach_score_500_desc: '500 очков рейтинга',
+    ach_score_1k_title: 'Тысяча очков',       ach_score_1k_desc: '1 000 очков рейтинга',
+    ach_score_2500_title: 'Восходящая звезда', ach_score_2500_desc: '2 500 очков рейтинга',
+    ach_score_5k_title: 'Высококлассный',      ach_score_5k_desc: '5 000 очков рейтинга',
+    ach_score_10k_title: 'Мастер очков',       ach_score_10k_desc: '10 000 очков рейтинга',
+    ach_score_25k_title: 'Элитный рейтинг',    ach_score_25k_desc: '25 000 очков рейтинга',
+    ach_score_50k_title: 'Легендарный рейтинг',ach_score_50k_desc: '50 000 очков рейтинга',
+    ach_tier_bronze_title: 'Бронзовый воин',   ach_tier_bronze_desc: 'Достигнут уровень Бронза',
+    ach_tier_silver_title: 'Серебряный атлет', ach_tier_silver_desc: 'Достигнут уровень Серебро',
+    ach_tier_gold_title: 'Золотой чемпион',    ach_tier_gold_desc: 'Достигнут уровень Золото',
+    ach_tier_platinum_title: 'Платиновый',     ach_tier_platinum_desc: 'Достигнут уровень Платина',
+    ach_tier_elite_title: 'Легенда элиты',     ach_tier_elite_desc: 'Достигнут уровень Элита',
+    ach_avg_vol_500_title: 'Твёрдая основа',   ach_avg_vol_500_desc: 'Среднее 500+ кг за тренировку',
+    ach_avg_vol_1k_title: 'Силовой работяга',  ach_avg_vol_1k_desc: 'Среднее 1 000+ кг за тренировку',
+    ach_avg_vol_2k_title: 'Сила природы',      ach_avg_vol_2k_desc: 'Среднее 2 000+ кг за тренировку',
+    ach_avg_sets_8_title: 'Структурный тренинг',ach_avg_sets_8_desc: 'Среднее 8+ подходов за тренировку',
+    ach_avg_sets_15_title: 'Высокий объём',    ach_avg_sets_15_desc: 'Среднее 15+ подходов за тренировку',
+    ach_avg_sets_25_title: 'Мастер объёма',    ach_avg_sets_25_desc: 'Среднее 25+ подходов за тренировку',
+    ach_devoted_title: 'Преданный атлет',         ach_devoted_desc: '50+ тренировок и серия 30+ дней',
+    ach_iron_man_title: 'Железный человек',        ach_iron_man_desc: '200+ тренировок и 60+ мин в среднем',
+    ach_powerhouse_title: 'Силовая станция',       ach_powerhouse_desc: '50 000+ кг объёма и 2 500+ подходов',
+    ach_champion_title: 'Чемпион',                 ach_champion_desc: '10 000+ очков и 25+ рекордов',
+    ach_legend_title: 'Легенда',                   ach_legend_desc: '365+ тренировок и серия 180+ дней',
+    ach_all_rounder_title: 'Универсальный атлет',  ach_all_rounder_desc: 'Топ по всем показателям',
+    ach_pr_hunter_title: 'Охотник за рекордами',   ach_pr_hunter_desc: '25+ рекордов и 50+ тренировок',
+    ach_consistent_title: 'Последовательный',      ach_consistent_desc: '100+ тренировок и 45+ мин в среднем',
+    ach_volume_king_title: 'Король объёма',        ach_volume_king_desc: '100 000+ кг и 200+ тренировок',
+    ach_marathon_man_title: 'Марафонец',           ach_marathon_man_desc: '50 тренировок и 50+ суммарных часов',
   },
   common: {
     error: 'Ошибка',
@@ -1562,48 +1709,23 @@ export const en: Translations = {
     catDuration: 'Duration',
     catRecords: 'Records',
     achievements: 'Achievements',
+    achPageTitle: 'All Achievements',
+    viewAll: 'View all',
     earned: 'earned',
     locked: 'locked',
+    progress: 'Progress',
+    catAll: 'All',
+    catIntensity: 'Intensity',
+    catTime: 'Time',
+    catScore: 'Score',
+    catTier: 'Tier',
+    catSpecial: 'Special',
     tierBeginner: 'Beginner',
     tierBronze: 'Bronze',
     tierSilver: 'Silver',
     tierGold: 'Gold',
     tierPlatinum: 'Platinum',
     tierElite: 'Elite',
-    ach_first_workout_title: 'First Step',
-    ach_first_workout_desc: 'Complete your first workout',
-    ach_workouts_5_title: 'Getting Fit',
-    ach_workouts_5_desc: '5 workouts completed',
-    ach_workouts_30_title: 'Finding the Rhythm',
-    ach_workouts_30_desc: '30 workouts',
-    ach_workouts_100_title: 'Century',
-    ach_workouts_100_desc: '100 workouts completed',
-    ach_workouts_365_title: 'Year of Strength',
-    ach_workouts_365_desc: '365 workouts',
-    ach_streak_7_title: 'Week on Fire',
-    ach_streak_7_desc: '7 days in a row',
-    ach_streak_30_title: 'Lightning Month',
-    ach_streak_30_desc: '30 days in a row',
-    ach_streak_90_title: 'Streak Legend',
-    ach_streak_90_desc: '90 days in a row',
-    ach_volume_1t_title: 'First Ton',
-    ach_volume_1t_desc: 'Total volume 1,000 kg',
-    ach_volume_10t_title: '10 Tons',
-    ach_volume_10t_desc: 'Total volume 10,000 kg',
-    ach_volume_100t_title: 'Iron Man',
-    ach_volume_100t_desc: 'Total volume 100,000 kg',
-    ach_sets_100_title: 'Hundred Sets',
-    ach_sets_100_desc: '100 sets completed',
-    ach_sets_1000_title: 'Thousand Sets',
-    ach_sets_1000_desc: '1,000 sets',
-    ach_sets_10000_title: 'Sets Master',
-    ach_sets_10000_desc: '10,000 sets',
-    ach_pr_first_title: 'First Record',
-    ach_pr_first_desc: 'Set a personal record',
-    ach_pr_10_title: 'Record Setter',
-    ach_pr_10_desc: '10 personal records',
-    ach_pr_50_title: 'Champion',
-    ach_pr_50_desc: '50 personal records',
     pts: 'pts',
     kg: 'kg',
     days: 'days',
@@ -1611,6 +1733,99 @@ export const en: Translations = {
     premiumGateTitle: 'Rating is Premium only',
     premiumGateSubtitle: 'Track your level, achievements and score breakdown with Premium access',
     premiumGateBtn: 'Get Premium',
+    ach_workouts_1_title: 'First Step',              ach_workouts_1_desc: 'Complete your first workout',
+    ach_workouts_5_title: 'Getting Fit',             ach_workouts_5_desc: '5 workouts completed',
+    ach_workouts_10_title: 'Getting Started',        ach_workouts_10_desc: '10 workouts completed',
+    ach_workouts_25_title: 'Consistent',             ach_workouts_25_desc: '25 workouts completed',
+    ach_workouts_50_title: 'Half-Century',           ach_workouts_50_desc: '50 workouts completed',
+    ach_workouts_75_title: 'Relentless',             ach_workouts_75_desc: '75 workouts completed',
+    ach_workouts_100_title: 'Century',               ach_workouts_100_desc: '100 workouts completed',
+    ach_workouts_200_title: 'Double Century',        ach_workouts_200_desc: '200 workouts completed',
+    ach_workouts_300_title: 'Iron Discipline',       ach_workouts_300_desc: '300 workouts completed',
+    ach_workouts_365_title: 'Year-Round Athlete',    ach_workouts_365_desc: '365 workouts — a true athlete',
+    ach_workouts_500_title: 'Five Hundred',          ach_workouts_500_desc: '500 workouts completed',
+    ach_workouts_750_title: 'Elite Athlete',         ach_workouts_750_desc: '750 workouts completed',
+    ach_workouts_1000_title: 'Legend',               ach_workouts_1000_desc: '1000 workouts — you are a legend',
+    ach_streak_3_title: 'Hot Start',             ach_streak_3_desc: '3 consecutive training days',
+    ach_streak_7_title: 'Week on Fire',          ach_streak_7_desc: '7 days in a row',
+    ach_streak_14_title: 'Two Weeks Strong',     ach_streak_14_desc: '14 days in a row',
+    ach_streak_21_title: 'Habit Builder',        ach_streak_21_desc: '21 days — habit formed',
+    ach_streak_30_title: 'Lightning Month',      ach_streak_30_desc: '30 days in a row',
+    ach_streak_45_title: 'Unstoppable',          ach_streak_45_desc: '45 days in a row',
+    ach_streak_60_title: 'Two Month Streak',     ach_streak_60_desc: '60 days in a row',
+    ach_streak_90_title: 'Unstoppable Force',    ach_streak_90_desc: '90 days in a row',
+    ach_streak_180_title: 'Half Year Grind',     ach_streak_180_desc: '180 days in a row',
+    ach_streak_365_title: 'Full Year Streak',    ach_streak_365_desc: '365 days in a row — unbeatable',
+    ach_volume_500_title: 'Heavy Lifter',        ach_volume_500_desc: 'Total volume 500 kg',
+    ach_volume_1k_title: 'Ton Milestone',        ach_volume_1k_desc: 'Total volume 1,000 kg',
+    ach_volume_2500_title: 'Strong Body',        ach_volume_2500_desc: 'Total volume 2,500 kg',
+    ach_volume_5k_title: 'Power House',          ach_volume_5k_desc: 'Total volume 5,000 kg',
+    ach_volume_10k_title: 'Iron Will',           ach_volume_10k_desc: 'Total volume 10,000 kg',
+    ach_volume_25k_title: 'Titan',               ach_volume_25k_desc: 'Total volume 25,000 kg',
+    ach_volume_50k_title: 'Atlas',               ach_volume_50k_desc: 'Total volume 50,000 kg',
+    ach_volume_100k_title: 'Herculean',          ach_volume_100k_desc: 'Total volume 100,000 kg',
+    ach_volume_250k_title: 'Colossus',           ach_volume_250k_desc: 'Total volume 250,000 kg',
+    ach_volume_500k_title: 'God of Strength',    ach_volume_500k_desc: 'Total volume 500,000 kg',
+    ach_sets_25_title: 'Starter Pack',           ach_sets_25_desc: '25 sets completed',
+    ach_sets_50_title: 'Fifty Moves',            ach_sets_50_desc: '50 sets completed',
+    ach_sets_100_title: 'Century Set',           ach_sets_100_desc: '100 sets completed',
+    ach_sets_250_title: 'Grinder',               ach_sets_250_desc: '250 sets completed',
+    ach_sets_500_title: 'Five Hundred Sets',     ach_sets_500_desc: '500 sets completed',
+    ach_sets_1000_title: 'Milestone',            ach_sets_1000_desc: '1,000 sets completed',
+    ach_sets_2500_title: 'Machine',              ach_sets_2500_desc: '2,500 sets completed',
+    ach_sets_5000_title: 'Powerhouse',           ach_sets_5000_desc: '5,000 sets completed',
+    ach_sets_10000_title: 'Ten Thousand Club',   ach_sets_10000_desc: '10,000 sets completed',
+    ach_pr_1_title: 'First Record',              ach_pr_1_desc: 'Set your first personal record',
+    ach_pr_5_title: 'Record Seeker',             ach_pr_5_desc: '5 personal records',
+    ach_pr_10_title: 'Record Maker',             ach_pr_10_desc: '10 personal records',
+    ach_pr_20_title: 'Breaking Limits',          ach_pr_20_desc: '20 personal records',
+    ach_pr_30_title: 'Performance Beast',        ach_pr_30_desc: '30 personal records',
+    ach_pr_50_title: 'Elite Performer',          ach_pr_50_desc: '50 personal records',
+    ach_pr_75_title: 'Record Legend',            ach_pr_75_desc: '75 personal records',
+    ach_pr_100_title: 'Immortal Records',        ach_pr_100_desc: '100 personal records',
+    ach_duration_20_title: 'Active Starter',        ach_duration_20_desc: 'Average workout 20+ min',
+    ach_duration_30_title: 'Thirty-Minute Athlete', ach_duration_30_desc: 'Average workout 30+ min',
+    ach_duration_45_title: 'Serious Training',      ach_duration_45_desc: 'Average workout 45+ min',
+    ach_duration_60_title: 'Hour Strong',           ach_duration_60_desc: 'Average workout 60+ min',
+    ach_duration_75_title: 'Extended Session',      ach_duration_75_desc: 'Average workout 75+ min',
+    ach_duration_90_title: 'Ninety-Min Master',     ach_duration_90_desc: 'Average workout 90+ min',
+    ach_duration_120_title: 'Two-Hour Grind',       ach_duration_120_desc: 'Average workout 2+ hours',
+    ach_time_5h_title: 'Time Investor',      ach_time_5h_desc: '5 total hours of training',
+    ach_time_10h_title: 'Dedicated',         ach_time_10h_desc: '10 total hours of training',
+    ach_time_25h_title: 'Quarter Hundred',   ach_time_25h_desc: '25 total hours of training',
+    ach_time_50h_title: 'Fifty Hours',       ach_time_50h_desc: '50 total hours of training',
+    ach_time_100h_title: 'Century of Hours', ach_time_100h_desc: '100 total hours of training',
+    ach_time_200h_title: 'Two Hundred Hours',ach_time_200h_desc: '200 total hours of training',
+    ach_time_500h_title: 'Five Hundred Hours',ach_time_500h_desc: '500 total hours of training',
+    ach_score_100_title: 'First Points',        ach_score_100_desc: '100 rating points',
+    ach_score_500_title: 'Point Collector',     ach_score_500_desc: '500 rating points',
+    ach_score_1k_title: 'Thousand Points',      ach_score_1k_desc: '1,000 rating points',
+    ach_score_2500_title: 'Rising Star',        ach_score_2500_desc: '2,500 rating points',
+    ach_score_5k_title: 'High Scorer',          ach_score_5k_desc: '5,000 rating points',
+    ach_score_10k_title: 'Points Master',       ach_score_10k_desc: '10,000 rating points',
+    ach_score_25k_title: 'Elite Scorer',        ach_score_25k_desc: '25,000 rating points',
+    ach_score_50k_title: 'Legendary Score',     ach_score_50k_desc: '50,000 rating points',
+    ach_tier_bronze_title: 'Bronze Warrior',    ach_tier_bronze_desc: 'Reached Bronze tier',
+    ach_tier_silver_title: 'Silver Athlete',    ach_tier_silver_desc: 'Reached Silver tier',
+    ach_tier_gold_title: 'Gold Champion',       ach_tier_gold_desc: 'Reached Gold tier',
+    ach_tier_platinum_title: 'Platinum Elite',  ach_tier_platinum_desc: 'Reached Platinum tier',
+    ach_tier_elite_title: 'Elite Legend',       ach_tier_elite_desc: 'Reached Elite tier',
+    ach_avg_vol_500_title: 'Solid Foundation',   ach_avg_vol_500_desc: 'Average 500+ kg per workout',
+    ach_avg_vol_1k_title: 'Power Worker',        ach_avg_vol_1k_desc: 'Average 1,000+ kg per workout',
+    ach_avg_vol_2k_title: 'Force of Nature',     ach_avg_vol_2k_desc: 'Average 2,000+ kg per workout',
+    ach_avg_sets_8_title: 'Set Builder',         ach_avg_sets_8_desc: 'Average 8+ sets per workout',
+    ach_avg_sets_15_title: 'High Volume',        ach_avg_sets_15_desc: 'Average 15+ sets per workout',
+    ach_avg_sets_25_title: 'Volume Master',      ach_avg_sets_25_desc: 'Average 25+ sets per workout',
+    ach_devoted_title: 'Devoted Athlete',          ach_devoted_desc: '50+ workouts and 30+ day streak',
+    ach_iron_man_title: 'Iron Man',                ach_iron_man_desc: '200+ workouts and 60+ min avg',
+    ach_powerhouse_title: 'Powerhouse',            ach_powerhouse_desc: '50,000+ kg volume and 2,500+ sets',
+    ach_champion_title: 'Champion',                ach_champion_desc: '10,000+ points and 25+ records',
+    ach_legend_title: 'Legend',                    ach_legend_desc: '365+ workouts and 180+ day streak',
+    ach_all_rounder_title: 'All-Rounder',          ach_all_rounder_desc: 'Top performance across all metrics',
+    ach_pr_hunter_title: 'PR Hunter',              ach_pr_hunter_desc: '25+ records and 50+ workouts',
+    ach_consistent_title: 'Consistent',            ach_consistent_desc: '100+ workouts and 45+ min avg',
+    ach_volume_king_title: 'Volume King',          ach_volume_king_desc: '100,000+ kg and 200+ workouts',
+    ach_marathon_man_title: 'Marathon Man',        ach_marathon_man_desc: '50 workouts and 50+ total hours',
   },
   common: {
     error: 'Error',
@@ -2175,48 +2390,23 @@ export const az: Translations = {
     catDuration: 'Vaxt',
     catRecords: 'Rekordlar',
     achievements: 'Nailiyyətlər',
+    achPageTitle: 'Bütün nailiyyətlər',
+    viewAll: 'Hamısına bax',
     earned: 'qazanılıb',
     locked: 'kilidli',
+    progress: 'İrəliləyiş',
+    catAll: 'Hamısı',
+    catIntensity: 'İntensivlik',
+    catTime: 'Vaxt',
+    catScore: 'Xal',
+    catTier: 'Dərəcə',
+    catSpecial: 'Xüsusi',
     tierBeginner: 'Yeni başlayan',
     tierBronze: 'Bürünc',
     tierSilver: 'Gümüş',
     tierGold: 'Qızıl',
     tierPlatinum: 'Platinium',
     tierElite: 'Elit',
-    ach_first_workout_title: 'İlk addım',
-    ach_first_workout_desc: 'İlk məşqini tamamla',
-    ach_workouts_5_title: 'Formada',
-    ach_workouts_5_desc: '5 məşq tamamlandı',
-    ach_workouts_30_title: 'Ritm tapıldı',
-    ach_workouts_30_desc: '30 məşq',
-    ach_workouts_100_title: 'Yüzlük',
-    ach_workouts_100_desc: '100 məşq tamamlandı',
-    ach_workouts_365_title: 'Güc ili',
-    ach_workouts_365_desc: '365 məşq',
-    ach_streak_7_title: 'Od həftəsi',
-    ach_streak_7_desc: 'Ardıcıl 7 gün',
-    ach_streak_30_title: 'İldırım ayı',
-    ach_streak_30_desc: 'Ardıcıl 30 gün',
-    ach_streak_90_title: 'Seriya əfsanəsi',
-    ach_streak_90_desc: 'Ardıcıl 90 gün',
-    ach_volume_1t_title: 'İlk ton',
-    ach_volume_1t_desc: 'Ümumi həcm 1 000 kq',
-    ach_volume_10t_title: '10 ton',
-    ach_volume_10t_desc: 'Ümumi həcm 10 000 kq',
-    ach_volume_100t_title: 'Dəmir insan',
-    ach_volume_100t_desc: 'Ümumi həcm 100 000 kq',
-    ach_sets_100_title: 'Yüz yanaşma',
-    ach_sets_100_desc: '100 yanaşma tamamlandı',
-    ach_sets_1000_title: 'Min yanaşma',
-    ach_sets_1000_desc: '1 000 yanaşma',
-    ach_sets_10000_title: 'Yanaşma ustası',
-    ach_sets_10000_desc: '10 000 yanaşma',
-    ach_pr_first_title: 'İlk rekord',
-    ach_pr_first_desc: 'Şəxsi rekord qur',
-    ach_pr_10_title: 'Rekordçu',
-    ach_pr_10_desc: '10 şəxsi rekord',
-    ach_pr_50_title: 'Çempion',
-    ach_pr_50_desc: '50 şəxsi rekord',
     pts: 'bal',
     kg: 'kq',
     days: 'gün',
@@ -2224,6 +2414,99 @@ export const az: Translations = {
     premiumGateTitle: 'Reytinq — yalnız Premium üçün',
     premiumGateSubtitle: 'Premium girişlə səviyyənizi, nailiyyətlərinizi və xal bölgüsünü izləyin',
     premiumGateBtn: 'Premium al',
+    ach_workouts_1_title: 'İlk addım',              ach_workouts_1_desc: 'İlk məşqini tamamla',
+    ach_workouts_5_title: 'Formada',                ach_workouts_5_desc: '5 məşq tamamlandı',
+    ach_workouts_10_title: 'Başlanğıc',             ach_workouts_10_desc: '10 məşq tamamlandı',
+    ach_workouts_25_title: 'Sabitlik',              ach_workouts_25_desc: '25 məşq tamamlandı',
+    ach_workouts_50_title: 'Yarım əsr',             ach_workouts_50_desc: '50 məşq tamamlandı',
+    ach_workouts_75_title: 'Yorulmaz',              ach_workouts_75_desc: '75 məşq tamamlandı',
+    ach_workouts_100_title: 'Yüzlük',              ach_workouts_100_desc: '100 məşq tamamlandı',
+    ach_workouts_200_title: 'İkiqat yüzlük',       ach_workouts_200_desc: '200 məşq tamamlandı',
+    ach_workouts_300_title: 'Dəmir intizam',        ach_workouts_300_desc: '300 məşq tamamlandı',
+    ach_workouts_365_title: 'İlin atleti',          ach_workouts_365_desc: '365 məşq — həqiqi atlet',
+    ach_workouts_500_title: 'Beş yüz',              ach_workouts_500_desc: '500 məşq tamamlandı',
+    ach_workouts_750_title: 'Elit atlet',           ach_workouts_750_desc: '750 məşq tamamlandı',
+    ach_workouts_1000_title: 'Əfsanə',              ach_workouts_1000_desc: '1000 məşq — sən əfsanəsən',
+    ach_streak_3_title: 'İsti start',           ach_streak_3_desc: 'Ardıcıl 3 gün məşq',
+    ach_streak_7_title: 'Od həftəsi',           ach_streak_7_desc: 'Ardıcıl 7 gün',
+    ach_streak_14_title: 'İki həftə güclü',     ach_streak_14_desc: 'Ardıcıl 14 gün',
+    ach_streak_21_title: 'Vərdiş qurucu',       ach_streak_21_desc: '21 gün — vərdiş formalaşıb',
+    ach_streak_30_title: 'İldırım ayı',         ach_streak_30_desc: 'Ardıcıl 30 gün',
+    ach_streak_45_title: 'Dayandırılmaz',       ach_streak_45_desc: 'Ardıcıl 45 gün',
+    ach_streak_60_title: 'İki aylıq seriya',    ach_streak_60_desc: 'Ardıcıl 60 gün',
+    ach_streak_90_title: 'Durdurulamaz',        ach_streak_90_desc: 'Ardıcıl 90 gün',
+    ach_streak_180_title: 'Yarım il',           ach_streak_180_desc: 'Ardıcıl 180 gün',
+    ach_streak_365_title: 'İl seriası',         ach_streak_365_desc: 'Ardıcıl 365 gün — məğlubedilməz',
+    ach_volume_500_title: 'Ağır qaldırma',      ach_volume_500_desc: 'Ümumi həcm 500 kq',
+    ach_volume_1k_title: 'Ton mərhələsi',       ach_volume_1k_desc: 'Ümumi həcm 1 000 kq',
+    ach_volume_2500_title: 'Güclü bədən',       ach_volume_2500_desc: 'Ümumi həcm 2 500 kq',
+    ach_volume_5k_title: 'Güc evi',             ach_volume_5k_desc: 'Ümumi həcm 5 000 kq',
+    ach_volume_10k_title: 'Dəmir iradə',        ach_volume_10k_desc: 'Ümumi həcm 10 000 kq',
+    ach_volume_25k_title: 'Titan',              ach_volume_25k_desc: 'Ümumi həcm 25 000 kq',
+    ach_volume_50k_title: 'Atlas',              ach_volume_50k_desc: 'Ümumi həcm 50 000 kq',
+    ach_volume_100k_title: 'Herkules',          ach_volume_100k_desc: 'Ümumi həcm 100 000 kq',
+    ach_volume_250k_title: 'Koloss',            ach_volume_250k_desc: 'Ümumi həcm 250 000 kq',
+    ach_volume_500k_title: 'Güc tanrısı',       ach_volume_500k_desc: 'Ümumi həcm 500 000 kq',
+    ach_sets_25_title: 'Başlanğıc dəsti',       ach_sets_25_desc: '25 yanaşma tamamlandı',
+    ach_sets_50_title: 'Əlli hərəkət',          ach_sets_50_desc: '50 yanaşma tamamlandı',
+    ach_sets_100_title: 'Yüz yanaşma',          ach_sets_100_desc: '100 yanaşma tamamlandı',
+    ach_sets_250_title: 'İnadkar',              ach_sets_250_desc: '250 yanaşma tamamlandı',
+    ach_sets_500_title: 'Beş yüz yanaşma',      ach_sets_500_desc: '500 yanaşma tamamlandı',
+    ach_sets_1000_title: 'Mərhələ',             ach_sets_1000_desc: '1 000 yanaşma tamamlandı',
+    ach_sets_2500_title: 'Maşın',               ach_sets_2500_desc: '2 500 yanaşma tamamlandı',
+    ach_sets_5000_title: 'Durdurulamaz',        ach_sets_5000_desc: '5 000 yanaşma tamamlandı',
+    ach_sets_10000_title: 'On min klub',        ach_sets_10000_desc: '10 000 yanaşma tamamlandı',
+    ach_pr_1_title: 'İlk rekord',               ach_pr_1_desc: 'İlk şəxsi rekordunu qur',
+    ach_pr_5_title: 'Rekord axtarıcı',          ach_pr_5_desc: '5 şəxsi rekord',
+    ach_pr_10_title: 'Rekordçu',                ach_pr_10_desc: '10 şəxsi rekord',
+    ach_pr_20_title: 'Hədd qıran',              ach_pr_20_desc: '20 şəxsi rekord',
+    ach_pr_30_title: 'Yüksək performanslı',     ach_pr_30_desc: '30 şəxsi rekord',
+    ach_pr_50_title: 'Elit performans',         ach_pr_50_desc: '50 şəxsi rekord',
+    ach_pr_75_title: 'Rekord əfsanəsi',         ach_pr_75_desc: '75 şəxsi rekord',
+    ach_pr_100_title: 'Ölümsüz rekordlar',      ach_pr_100_desc: '100 şəxsi rekord',
+    ach_duration_20_title: 'Aktiv başlanğıc',       ach_duration_20_desc: 'Orta məşq 20+ dəq',
+    ach_duration_30_title: '30 dəqiqəlik atlet',    ach_duration_30_desc: 'Orta məşq 30+ dəq',
+    ach_duration_45_title: 'Ciddi antrenman',        ach_duration_45_desc: 'Orta məşq 45+ dəq',
+    ach_duration_60_title: 'Güclü saat',            ach_duration_60_desc: 'Orta məşq 60+ dəq',
+    ach_duration_75_title: 'Uzadılmış sessiya',      ach_duration_75_desc: 'Orta məşq 75+ dəq',
+    ach_duration_90_title: 'Doxsan dəq ustası',     ach_duration_90_desc: 'Orta məşq 90+ dəq',
+    ach_duration_120_title: 'İki saatlıq marafon',  ach_duration_120_desc: 'Orta məşq 2+ saat',
+    ach_time_5h_title: 'Vaxt investoru',     ach_time_5h_desc: 'Cəmi 5 saat məşq',
+    ach_time_10h_title: 'Sadiq',             ach_time_10h_desc: 'Cəmi 10 saat məşq',
+    ach_time_25h_title: 'İyirmi beş saat',   ach_time_25h_desc: 'Cəmi 25 saat məşq',
+    ach_time_50h_title: 'Əlli saat',         ach_time_50h_desc: 'Cəmi 50 saat məşq',
+    ach_time_100h_title: 'Yüz saat',         ach_time_100h_desc: 'Cəmi 100 saat məşq',
+    ach_time_200h_title: 'İki yüz saat',     ach_time_200h_desc: 'Cəmi 200 saat məşq',
+    ach_time_500h_title: 'Beş yüz saat',     ach_time_500h_desc: 'Cəmi 500 saat məşq',
+    ach_score_100_title: 'İlk xallar',          ach_score_100_desc: '100 reytinq xalı',
+    ach_score_500_title: 'Xal toplayıcı',       ach_score_500_desc: '500 reytinq xalı',
+    ach_score_1k_title: 'Min xal',              ach_score_1k_desc: '1 000 reytinq xalı',
+    ach_score_2500_title: 'Yüksələn ulduz',     ach_score_2500_desc: '2 500 reytinq xalı',
+    ach_score_5k_title: 'Yüksək nəticəli',      ach_score_5k_desc: '5 000 reytinq xalı',
+    ach_score_10k_title: 'Xal ustası',          ach_score_10k_desc: '10 000 reytinq xalı',
+    ach_score_25k_title: 'Elit reytinq',        ach_score_25k_desc: '25 000 reytinq xalı',
+    ach_score_50k_title: 'Əfsanəvi reytinq',    ach_score_50k_desc: '50 000 reytinq xalı',
+    ach_tier_bronze_title: 'Tunc döyüşçü',      ach_tier_bronze_desc: 'Bürünc dərəcəsinə çatıldı',
+    ach_tier_silver_title: 'Gümüş atlet',       ach_tier_silver_desc: 'Gümüş dərəcəsinə çatıldı',
+    ach_tier_gold_title: 'Qızıl çempion',       ach_tier_gold_desc: 'Qızıl dərəcəsinə çatıldı',
+    ach_tier_platinum_title: 'Platin elit',     ach_tier_platinum_desc: 'Platinium dərəcəsinə çatıldı',
+    ach_tier_elite_title: 'Elit əfsanə',        ach_tier_elite_desc: 'Elit dərəcəsinə çatıldı',
+    ach_avg_vol_500_title: 'Möhkəm əsas',        ach_avg_vol_500_desc: 'Orta 500+ kq hər məşqdə',
+    ach_avg_vol_1k_title: 'Güclü işçi',          ach_avg_vol_1k_desc: 'Orta 1 000+ kq hər məşqdə',
+    ach_avg_vol_2k_title: 'Təbiətin gücü',       ach_avg_vol_2k_desc: 'Orta 2 000+ kq hər məşqdə',
+    ach_avg_sets_8_title: 'Dəst qurucu',         ach_avg_sets_8_desc: 'Orta 8+ yanaşma hər məşqdə',
+    ach_avg_sets_15_title: 'Yüksək həcm',        ach_avg_sets_15_desc: 'Orta 15+ yanaşma hər məşqdə',
+    ach_avg_sets_25_title: 'Həcm ustası',        ach_avg_sets_25_desc: 'Orta 25+ yanaşma hər məşqdə',
+    ach_devoted_title: 'Sadiq atlet',              ach_devoted_desc: '50+ məşq və 30+ günlük seriya',
+    ach_iron_man_title: 'Dəmir insan',             ach_iron_man_desc: '200+ məşq və orta 60+ dəq',
+    ach_powerhouse_title: 'Güc stansiyası',        ach_powerhouse_desc: '50 000+ kq həcm və 2 500+ yanaşma',
+    ach_champion_title: 'Çempion',                 ach_champion_desc: '10 000+ xal və 25+ rekord',
+    ach_legend_title: 'Əfsanə',                    ach_legend_desc: '365+ məşq və 180+ günlük seriya',
+    ach_all_rounder_title: 'Hərtərəfli atlet',     ach_all_rounder_desc: 'Bütün göstəricilər üzrə zirvə',
+    ach_pr_hunter_title: 'Rekord ovçusu',          ach_pr_hunter_desc: '25+ rekord və 50+ məşq',
+    ach_consistent_title: 'Ardıcıl',               ach_consistent_desc: '100+ məşq və orta 45+ dəq',
+    ach_volume_king_title: 'Həcm kralı',           ach_volume_king_desc: '100 000+ kq və 200+ məşq',
+    ach_marathon_man_title: 'Marafon adamı',       ach_marathon_man_desc: '50 məşq və 50+ cəmi saat',
   },
   common: {
     error: 'Xəta',
