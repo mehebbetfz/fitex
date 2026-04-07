@@ -1,6 +1,6 @@
 // app/(tabs)/_layout.tsx
 import TemplateSelectionModal from '@/app/modals/template-selection-modal'
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from '../contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
 import AsyncStorage from '@react-native-async-storage/async-storage'
