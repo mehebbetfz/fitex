@@ -409,6 +409,16 @@ export interface Translations {
     confirm: string
     unitCm: string
   }
+  upsell: {
+    title: string
+    titleTrial: string
+    subtitle: string
+    featureSync: string
+    featureAnalytics: string
+    featureRecovery: string
+    cta: string
+    later: string
+  }
   languageSelect: {
     title: string
     subtitle: string
@@ -1011,6 +1021,16 @@ export const ru: Translations = {
     add: 'Добавить',
     confirm: 'Подтвердить',
     unitCm: 'см',
+  },
+  upsell: {
+    title: 'Разблокируй FitEx Premium',
+    titleTrial: 'дн. осталось в пробном периоде',
+    subtitle: 'Облачная синхронизация, аналитика, отслеживание восстановления и многое другое.',
+    featureSync: 'Синхронизация',
+    featureAnalytics: 'Аналитика',
+    featureRecovery: 'Восстановление',
+    cta: 'Получить Premium →',
+    later: 'Позже',
   },
   languageSelect: {
     title: 'Выберите язык',
@@ -1615,6 +1635,16 @@ export const en: Translations = {
     confirm: 'Confirm',
     unitCm: 'cm',
   },
+  upsell: {
+    title: 'Unlock FitEx Premium',
+    titleTrial: 'days left in trial',
+    subtitle: 'Cloud sync, advanced analytics, recovery tracking and more.',
+    featureSync: 'Cloud Sync',
+    featureAnalytics: 'Analytics',
+    featureRecovery: 'Recovery',
+    cta: 'Get Premium →',
+    later: 'Maybe later',
+  },
   languageSelect: {
     title: 'Choose Language',
     subtitle: 'Select the language you want to use in the app',
@@ -2217,6 +2247,16 @@ export const az: Translations = {
     add: 'Əlavə et',
     confirm: 'Təsdiqlə',
     unitCm: 'sm',
+  },
+  upsell: {
+    title: 'FitEx Premium-u açın',
+    titleTrial: 'sınaq müddəti qalıb',
+    subtitle: 'Bulud sinxronizasiyası, analitika, bərpa izlənməsi və daha çox.',
+    featureSync: 'Sinxronizasiya',
+    featureAnalytics: 'Analitika',
+    featureRecovery: 'Bərpa',
+    cta: 'Premium al →',
+    later: 'Sonra',
   },
   languageSelect: {
     title: 'Dil seçin',

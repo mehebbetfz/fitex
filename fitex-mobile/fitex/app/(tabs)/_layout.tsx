@@ -249,33 +249,31 @@ export default function TabsLayout() {
 
 					<Text style={us.title}>
 						{isTrialActive
-							? `${trialDaysLeft} ${t('trial', 'days')} left in trial`
-							: 'Unlock FitEx Premium'}
+							? `${trialDaysLeft} ${t('trial', 'days')} ${t('upsell', 'titleTrial')}`
+							: t('upsell', 'title')}
 					</Text>
-					<Text style={us.subtitle}>
-						Cloud sync, advanced analytics, recovery tracking and more.
-					</Text>
+					<Text style={us.subtitle}>{t('upsell', 'subtitle')}</Text>
 
 					{/* Features row */}
 					<View style={us.featRow}>
 						{[
-							{ icon: 'cloud-upload-outline', label: 'Cloud Sync' },
-							{ icon: 'analytics-outline', label: 'Analytics' },
-							{ icon: 'body-outline', label: 'Recovery' },
+							{ icon: 'cloud-upload-outline', key: 'featureSync' as const },
+							{ icon: 'analytics-outline', key: 'featureAnalytics' as const },
+							{ icon: 'body-outline', key: 'featureRecovery' as const },
 						].map(f => (
 							<View key={f.icon} style={us.featItem}>
 								<Ionicons name={f.icon as any} size={22} color='#34C759' />
-								<Text style={us.featLabel}>{f.label}</Text>
+								<Text style={us.featLabel}>{t('upsell', f.key)}</Text>
 							</View>
 						))}
 					</View>
 
 					<TouchableOpacity style={us.ctaBtn} onPress={goToPremium} activeOpacity={0.85}>
-						<Text style={us.ctaText}>Get Premium →</Text>
+						<Text style={us.ctaText}>{t('upsell', 'cta')}</Text>
 					</TouchableOpacity>
 
 					<TouchableOpacity style={us.skipBtn} onPress={closeUpsell}>
-						<Text style={us.skipText}>Maybe later</Text>
+						<Text style={us.skipText}>{t('upsell', 'later')}</Text>
 					</TouchableOpacity>
 				</Animated.View>
 			</Animated.View>
