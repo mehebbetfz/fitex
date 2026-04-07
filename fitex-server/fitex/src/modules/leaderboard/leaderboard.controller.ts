@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common'
-import { JwtAuthGuard } from 'src/strategies/jwt-auth.guard'
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard'
 import { LeaderboardService } from './leaderboard.service'
 
 @Controller('leaderboard')
