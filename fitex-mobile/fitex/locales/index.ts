@@ -231,6 +231,28 @@ export interface Translations {
     premiumRequired: string
     syncTitle: string
     offlineMsg: string
+    // Stats page
+    statsTitle: string
+    lastSync: string
+    neverSynced: string
+    statusSuccess: string
+    statusError: string
+    statusNever: string
+    syncedData: string
+    pendingData: string
+    workouts: string
+    measurements: string
+    records: string
+    synced: string
+    pending: string
+    syncNow: string
+    history: string
+    historyEmpty: string
+    dataBreakdown: string
+    total: string
+    inSync: string
+    notSynced: string
+    cloudInfo: string
   }
   notifications: {
     workoutReminder: string
@@ -940,6 +962,27 @@ export const ru: Translations = {
     premiumRequired: 'Синхронизация доступна только в Premium',
     syncTitle: 'Синхронизация',
     offlineMsg: 'Нет подключения к интернету',
+    statsTitle: 'Синхронизация',
+    lastSync: 'Последняя синхронизация',
+    neverSynced: 'Ещё не синхронизировано',
+    statusSuccess: 'Успешно',
+    statusError: 'Ошибка',
+    statusNever: 'Никогда',
+    syncedData: 'Синхронизированные данные',
+    pendingData: 'Ожидают синхронизации',
+    workouts: 'Тренировки',
+    measurements: 'Замеры тела',
+    records: 'Личные рекорды',
+    synced: 'Синхр.',
+    pending: 'Ожидают',
+    syncNow: 'Синхронизировать сейчас',
+    history: 'История синхронизаций',
+    historyEmpty: 'История пуста',
+    dataBreakdown: 'Статус данных',
+    total: 'Всего',
+    inSync: 'В облаке',
+    notSynced: 'Не синхр.',
+    cloudInfo: 'Данные хранятся на сервере FitEx и доступны со всех ваших устройств',
   },
   notifications: {
     workoutReminder: 'Не забудь про сегодняшнюю тренировку — ты уже так далеко зашёл(ла)!',
@@ -1637,6 +1680,27 @@ export const en: Translations = {
     premiumRequired: 'Sync is a Premium feature',
     syncTitle: 'Sync',
     offlineMsg: 'No internet connection',
+    statsTitle: 'Sync',
+    lastSync: 'Last Sync',
+    neverSynced: 'Never synced',
+    statusSuccess: 'Success',
+    statusError: 'Error',
+    statusNever: 'Never',
+    syncedData: 'Synced Data',
+    pendingData: 'Pending',
+    workouts: 'Workouts',
+    measurements: 'Body Measurements',
+    records: 'Personal Records',
+    synced: 'Synced',
+    pending: 'Pending',
+    syncNow: 'Sync Now',
+    history: 'Sync History',
+    historyEmpty: 'No history yet',
+    dataBreakdown: 'Data Status',
+    total: 'Total',
+    inSync: 'In Cloud',
+    notSynced: 'Not Synced',
+    cloudInfo: 'Your data is stored on FitEx servers and available across all your devices',
   },
   notifications: {
     workoutReminder: "Don't forget today's workout — you've come so far!",
@@ -2335,6 +2399,27 @@ export const az: Translations = {
     premiumRequired: 'Sinxronizasiya yalnız Premium üçündür',
     syncTitle: 'Sinxronizasiya',
     offlineMsg: 'İnternet bağlantısı yoxdur',
+    statsTitle: 'Sinxronizasiya',
+    lastSync: 'Son sinxronizasiya',
+    neverSynced: 'Heç sinxronlaşdırılmayıb',
+    statusSuccess: 'Uğurlu',
+    statusError: 'Xəta',
+    statusNever: 'Heç vaxt',
+    syncedData: 'Sinxronlaşdırılmış məlumatlar',
+    pendingData: 'Gözləyir',
+    workouts: 'Məşqlər',
+    measurements: 'Bədən ölçüləri',
+    records: 'Şəxsi rekordlar',
+    synced: 'Sinxr.',
+    pending: 'Gözləyir',
+    syncNow: 'İndi sinxronlaşdır',
+    history: 'Sinxronizasiya tarixi',
+    historyEmpty: 'Tarix yoxdur',
+    dataBreakdown: 'Məlumat statusu',
+    total: 'Cəmi',
+    inSync: 'Bulutda',
+    notSynced: 'Sinxr. deyil',
+    cloudInfo: 'Məlumatlarınız FitEx serverlərində saxlanılır və bütün cihazlarınızda əlçatandır',
   },
   notifications: {
     workoutReminder: 'Bu günkü məşqi unutma — çox irəliləmisən!',

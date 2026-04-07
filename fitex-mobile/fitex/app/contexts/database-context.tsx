@@ -1,4 +1,5 @@
 // contexts/DatabaseContext.tsx
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { muscle_groups } from '@/constants/muscle-groups'
 import {
 	addActiveExercise,
@@ -155,6 +156,55 @@ interface CompleteWorkoutData {
 	duration: number
 	notes: string
 	exercises: ExerciseData[]
+}
+
+export const SYNC_META_KEY = '@fitex_sync_meta'
+
+export interface SyncHistoryEntry {
+	at: string
+	result: 'success' | 'error'
+	workouts: number
+	measurements: number
+	records: number
+}
+
+export interface SyncMeta {
+	lastSyncAt: string | null
+	lastSyncResult: 'success' | 'error' | 'never'
+	workoutsSynced: number
+	measurementsSynced: number
+	recordsSynced: number
+	history: SyncHistoryEntry[]
+}
+
+export const saveSyncMeta = async (
+	result: 'success' | 'error',
+	counts: { workouts: number; measurements: number; records: number },
+) => {
+	try {
+		const raw = await AsyncStorage.getItem(SYNC_META_KEY)
+		const prev: SyncMeta = raw
+			? JSON.parse(raw)
+			: { lastSyncAt: null, lastSyncResult: 'never', workoutsSynced: 0, measurementsSynced: 0, recordsSynced: 0, history: [] }
+
+		const entry: SyncHistoryEntry = {
+			at: new Date().toISOString(),
+			result,
+			workouts: counts.workouts,
+			measurements: counts.measurements,
+			records: counts.records,
+		}
+
+		const meta: SyncMeta = {
+			lastSyncAt: entry.at,
+			lastSyncResult: result,
+			workoutsSynced: counts.workouts,
+			measurementsSynced: counts.measurements,
+			recordsSynced: counts.records,
+			history: [entry, ...(prev.history ?? [])].slice(0, 10),
+		}
+		await AsyncStorage.setItem(SYNC_META_KEY, JSON.stringify(meta))
+	} catch {}
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(
@@ -560,16 +610,22 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 					)
 				}
 
-				// Шаг 3: Обновляем UI
-				await refreshAllData()
-			} catch (error) {
-				console.error('Initial sync error:', error)
-			} finally {
-				setIsLoading(false)
-			}
-		},
-		[mergeServerData, refreshAllData],
-	)
+			// Шаг 3: Обновляем UI
+			await refreshAllData()
+			await saveSyncMeta('success', {
+				workouts: unsyncedWorkouts.length,
+				measurements: unsyncedMeasurements.length,
+				records: unsyncedRecords.length,
+			})
+		} catch (error) {
+			console.error('Initial sync error:', error)
+			await saveSyncMeta('error', { workouts: 0, measurements: 0, records: 0 })
+		} finally {
+			setIsLoading(false)
+		}
+	},
+	[mergeServerData, refreshAllData],
+)
 
 	// Ручная синхронизация (кнопка в профиле)
 	const syncWithServer = useCallback(
@@ -625,20 +681,26 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 						.filter((id): id is number => id !== undefined),
 				)
 
-				await refreshAllData()
-				Alert.alert('Синхронизация завершена')
-			} catch (error) {
-				console.error('Sync error', error)
-				Alert.alert(
-					'Ошибка синхронизации',
-					'Не удалось синхронизировать данные',
-				)
-			} finally {
-				setIsLoading(false)
-			}
-		},
-		[mergeServerData, refreshAllData],
-	)
+			await refreshAllData()
+			await saveSyncMeta('success', {
+				workouts: allWorkouts.length,
+				measurements: allMeasurements.length,
+				records: allRecords.length,
+			})
+			Alert.alert('Синхронизация завершена')
+		} catch (error) {
+			console.error('Sync error', error)
+			await saveSyncMeta('error', { workouts: 0, measurements: 0, records: 0 })
+			Alert.alert(
+				'Ошибка синхронизации',
+				'Не удалось синхронизировать данные',
+			)
+		} finally {
+			setIsLoading(false)
+		}
+	},
+	[mergeServerData, refreshAllData],
+)
 
 	const importServerData = useCallback(
 		async (serverData: {

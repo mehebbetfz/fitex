@@ -643,6 +643,12 @@ export default function ProfileScreen() {
 									) : null
 								}
 							/>
+							<SettingsItem
+								icon='stats-chart-outline'
+								title={t('sync', 'statsTitle')}
+								subtitle={t('sync', 'lastSync')}
+								onPress={() => router.push('/(auth)/(routes)/sync-stats')}
+							/>
 						</View>
 					</FadeIn>
 				) : null}
