@@ -19,13 +19,14 @@ import {
 import {
 	ErrorCode,
 	Purchase,
+	Subscription,
 	endConnection,
-	fetchProducts,
 	finishTransaction,
+	getSubscriptions,
 	initConnection,
 	purchaseErrorListener,
 	purchaseUpdatedListener,
-	requestPurchase,
+	requestSubscription,
 } from 'react-native-iap'
 import { useAuth } from '../contexts/auth-context'
 
@@ -54,7 +55,7 @@ export default function TrialPaywallScreen() {
 	const { startTrial, updateUser } = useAuth()
 	const { t } = useLanguage()
 
-	const [products, setProducts] = useState<any[]>([])
+	const [products, setProducts] = useState<Subscription[]>([])
 	const [selectedSku, setSelectedSku] = useState<string>(SKUS.yearly)
 	const [loading, setLoading] = useState(false)
 	const [initializing, setInitializing] = useState(true)
@@ -120,26 +121,30 @@ export default function TrialPaywallScreen() {
 					setLoading(false)
 				})
 
-				const items = await fetchProducts({
+				const items = await getSubscriptions({
 					skus: [SKUS.monthly, SKUS.yearly],
-					type: 'subs',
 				})
 
 				if (mounted) {
-					setProducts(
-						items?.length
-							? items
-							: [
-									{ productId: SKUS.monthly, title: t('trial', 'monthly'), localizedPrice: '4.99 $' },
-									{ productId: SKUS.yearly, title: t('trial', 'yearly'), localizedPrice: '49.99 $' },
-								],
-					)
+					if (items?.length) {
+						// Sort: yearly first
+						const sorted = [...items].sort((a, b) =>
+							a.productId === SKUS.yearly ? -1 : 1
+						)
+						setProducts(sorted)
+					} else {
+						setProducts([
+							{ productId: SKUS.monthly, title: t('trial', 'monthly'), localizedPrice: '$4.99' } as any,
+							{ productId: SKUS.yearly, title: t('trial', 'yearly'), localizedPrice: '$39.99' } as any,
+						])
+					}
 				}
-			} catch {
+			} catch (e) {
+				console.warn('[IAP] getSubscriptions error:', e)
 				if (mounted) {
 					setProducts([
-						{ productId: SKUS.monthly, title: t('trial', 'monthly'), localizedPrice: '4.99 $' },
-						{ productId: SKUS.yearly, title: t('trial', 'yearly'), localizedPrice: '49.99 $' },
+						{ productId: SKUS.monthly, title: t('trial', 'monthly'), localizedPrice: '$4.99' } as any,
+						{ productId: SKUS.yearly, title: t('trial', 'yearly'), localizedPrice: '$39.99' } as any,
 					])
 				}
 			} finally {
@@ -162,15 +167,12 @@ export default function TrialPaywallScreen() {
 		if (loading) return
 		setLoading(true)
 		try {
-			await requestPurchase({
-				request: {
-					apple: { sku: selectedSku },
-					google: { skus: [selectedSku] },
-				},
-				type: 'subs',
+			await requestSubscription({
+				sku: selectedSku,
+				andDangerouslyFinishTransactionAutomaticallyIOS: false,
 			})
 		} catch (error: any) {
-			if (error.code !== ErrorCode.UserCancelled) {
+			if (error.code !== ErrorCode.E_USER_CANCELLED) {
 				Alert.alert(t('common', 'error'), error.message)
 			}
 			setLoading(false)
@@ -200,7 +202,26 @@ export default function TrialPaywallScreen() {
 	// ── UI helpers ────────────────────────────────────────────────────────────
 	const getPrice = (sku: string) => {
 		const product = products.find(p => p.productId === sku)
-		return product?.localizedPrice ?? product?.price ?? '—'
+		if (!product) return '—'
+		// react-native-iap v14 on iOS returns localizedPrice
+		// Android returns price
+		return (product as any).localizedPrice
+			?? (product as any).price
+			?? '—'
+	}
+
+	const getTitle = (sku: string) => {
+		const product = products.find(p => p.productId === sku)
+		if (!product) return sku === SKUS.monthly ? t('trial', 'monthly') : t('trial', 'yearly')
+		return (product as any).title
+			?.replace(/\(.*\)/, '')
+			.trim()
+			?? (sku === SKUS.monthly ? t('trial', 'monthly') : t('trial', 'yearly'))
+	}
+
+	const getDescription = (sku: string) => {
+		const product = products.find(p => p.productId === sku)
+		return (product as any).description ?? ''
 	}
 
 	if (initializing) {
@@ -267,8 +288,8 @@ export default function TrialPaywallScreen() {
 								{selectedSku === SKUS.yearly && <View style={styles.planRadioDot} />}
 							</View>
 							<View style={styles.planInfo}>
-								<Text style={styles.planName}>{t('trial', 'yearly')}</Text>
-								<Text style={styles.planDesc}>{t('trial', 'yearlySave')}</Text>
+								<Text style={styles.planName}>{getTitle(SKUS.yearly)}</Text>
+								<Text style={styles.planDesc}>{getDescription(SKUS.yearly) || t('trial', 'yearlySave')}</Text>
 							</View>
 							<Text style={styles.planPrice}>{yearlyPrice}</Text>
 						</View>
@@ -284,8 +305,8 @@ export default function TrialPaywallScreen() {
 								{selectedSku === SKUS.monthly && <View style={styles.planRadioDot} />}
 							</View>
 							<View style={styles.planInfo}>
-								<Text style={styles.planName}>{t('trial', 'monthly')}</Text>
-								<Text style={styles.planDesc}>{t('trial', 'monthlyDesc')}</Text>
+								<Text style={styles.planName}>{getTitle(SKUS.monthly)}</Text>
+								<Text style={styles.planDesc}>{getDescription(SKUS.monthly) || t('trial', 'monthlyDesc')}</Text>
 							</View>
 							<Text style={styles.planPrice}>{monthlyPrice}</Text>
 						</View>

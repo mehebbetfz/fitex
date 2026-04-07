@@ -137,20 +137,6 @@ export default function LoginScreen() {
 
 		{/* Нижний текст с условиями */}
 		<Text style={styles.termsText}>{t('login', 'terms')}</Text>
-
-		{/* Demo account for App Store reviewers */}
-		<TouchableOpacity
-			onPress={handleDemo}
-			disabled={loading !== null}
-			style={styles.demoButton}
-			activeOpacity={0.6}
-		>
-			{loading === 'demo' ? (
-				<ActivityIndicator size='small' color={COLORS.textSecondary} />
-			) : (
-				<Text style={styles.demoText}>Demo Account</Text>
-			)}
-		</TouchableOpacity>
 	</SafeAreaView>
 )
 }
@@ -222,7 +208,7 @@ const styles = StyleSheet.create({
 	},
 	emailButton: {
 		backgroundColor: '#3A3A3C',
-		marginTop: 4,
+		marginTop: 12,
 	},
 	buttonText: {
 		color: COLORS.text,
