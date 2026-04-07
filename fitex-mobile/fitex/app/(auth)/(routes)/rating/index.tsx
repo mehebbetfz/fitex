@@ -105,11 +105,11 @@ const ProgressBar = ({
 // ─── Tier icon (SVG-based via Ionicons) ───────────────────────────────────────
 
 const TIER_ICONS: Record<TierName, { name: string; color: string }> = {
-	beginner: { name: 'leaf-outline',    color: '#8E8E93' },
-	bronze:   { name: 'medal-outline',   color: '#CD7F32' },
-	silver:   { name: 'medal-outline',   color: '#C0C0C0' },
-	gold:     { name: 'ribbon-outline',  color: '#FFD700' },
-	platinum: { name: 'diamond-outline', color: '#5AC8FA' },
+	beginner: { name: 'trophy',    color: '#8E8E93' },
+	bronze:   { name: 'trophy',   color: '#CD7F32' },
+	silver:   { name: 'trophy',   color: '#C0C0C0' },
+	gold:     { name: 'trophy',  color: '#FFD700' },
+	platinum: { name: 'trophy', color: '#5AC8FA' },
 	elite:    { name: 'trophy',          color: '#FF9500' },
 }
 

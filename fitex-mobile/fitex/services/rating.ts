@@ -14,11 +14,11 @@ export interface Tier {
 }
 
 export const TIERS: Tier[] = [
-	{ name: 'beginner',  emoji: '🌱', color: '#8E8E93', minScore: 0,     maxScore: 499 },
-	{ name: 'bronze',    emoji: '🥉', color: '#CD7F32', minScore: 500,   maxScore: 1499 },
-	{ name: 'silver',    emoji: '🥈', color: '#C0C0C0', minScore: 1500,  maxScore: 3999 },
-	{ name: 'gold',      emoji: '🥇', color: '#FFD700', minScore: 4000,  maxScore: 9999 },
-	{ name: 'platinum',  emoji: '💎', color: '#5AC8FA', minScore: 10000, maxScore: 24999 },
+	{ name: 'beginner',  emoji: '🏆', color: '#8E8E93', minScore: 0,     maxScore: 499 },
+	{ name: 'bronze',    emoji: '🏆', color: '#CD7F32', minScore: 500,   maxScore: 1499 },
+	{ name: 'silver',    emoji: '🏆', color: '#C0C0C0', minScore: 1500,  maxScore: 3999 },
+	{ name: 'gold',      emoji: '🏆', color: '#FFD700', minScore: 4000,  maxScore: 9999 },
+	{ name: 'platinum',  emoji: '🏆', color: '#5AC8FA', minScore: 10000, maxScore: 24999 },
 	{ name: 'elite',     emoji: '🏆', color: '#FF9500', minScore: 25000, maxScore: Infinity },
 ]
 
