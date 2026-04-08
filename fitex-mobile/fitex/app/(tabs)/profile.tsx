@@ -474,7 +474,7 @@ export default function ProfileScreen() {
 		])
 	}
 
-	const handleUpgrade = () => router.push('/(auth)/subscription')
+	const handleUpgrade = () => router.push('/(auth)/trial-paywall' as any)
 	const userInitial = user?.firstName?.[0] || user?.email?.[0] || '?'
 
 	return (
