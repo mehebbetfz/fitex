@@ -166,14 +166,29 @@ export default function TrialPaywallScreen() {
 	// ── Buy ───────────────────────────────────────────────────────────────────
 	const buySubscription = async () => {
 		if (loading) return
+
+		// Guard: products not loaded
+		if (!products.length) {
+			Alert.alert(
+				t('common', 'error'),
+				'Store not available. Make sure you are on a real device with a valid Apple ID.',
+			)
+			return
+		}
+
 		setLoading(true)
 		try {
+			console.log('[IAP] requestSubscription sku:', selectedSku)
 			await requestSubscription({
 				sku: selectedSku,
 				andDangerouslyFinishTransactionAutomaticallyIOS: false,
 			})
 		} catch (error: any) {
-			if (error.code !== ErrorCode.E_USER_CANCELLED) {
+			console.log('[IAP] error code:', error.code, error.message)
+			if (
+				error.code !== ErrorCode.E_USER_CANCELLED &&
+				error.code !== 'E_USER_CANCELLED'
+			) {
 				Alert.alert(t('common', 'error'), error.message)
 			}
 			setLoading(false)
