@@ -257,27 +257,53 @@ export default function TrialPaywallScreen() {
 				contentContainerStyle={styles.scroll}
 				showsVerticalScrollIndicator={false}
 			>
-				{/* Hero */}
-				<LinearGradient
-					colors={['#1A2B1A', '#0A0A0A']}
-					style={styles.hero}
-				>
-					<View style={styles.badgeRow}>
-						<View style={styles.badge}>
-							<Ionicons name='shield-checkmark' size={14} color={COLORS.primary} />
-							<Text style={styles.badgeText}>{t('trial', 'badge')}</Text>
+			{/* Hero */}
+			<LinearGradient
+				colors={['#0D1F0D', '#0A0A0A']}
+				style={styles.hero}
+			>
+				<View style={styles.badgeRow}>
+					<View style={styles.badge}>
+						<Ionicons name='shield-checkmark' size={14} color={COLORS.primary} />
+						<Text style={styles.badgeText}>{t('trial', 'badge')}</Text>
+					</View>
+				</View>
+
+				<Text style={styles.heroTitle}>{t('trial', 'heroTitle')}</Text>
+				<Text style={styles.heroSubtitle}>{t('trial', 'heroSubtitle')}</Text>
+
+				{/* Timeline */}
+				<View style={styles.timeline}>
+					<View style={styles.timelineStep}>
+						<View style={[styles.timelineDot, { backgroundColor: COLORS.primary }]}>
+							<Ionicons name='card-outline' size={14} color='#fff' />
 						</View>
+						<Text style={styles.timelineTitle}>{t('trial', 'timelineCard')}</Text>
+						<Text style={styles.timelineDesc}>{t('trial', 'timelineCardDesc')}</Text>
 					</View>
-
-					<Text style={styles.heroTitle}>{t('trial', 'heroTitle')}</Text>
-					<Text style={styles.heroSubtitle}>{t('trial', 'heroSubtitle')}</Text>
-
-					<View style={styles.trialBubble}>
-						<Text style={styles.trialDays}>{TRIAL_DAYS}</Text>
-						<Text style={styles.trialLabel}>{t('trial', 'days')}</Text>
+					<View style={styles.timelineLine} />
+					<View style={styles.timelineStep}>
+						<View style={[styles.timelineDot, { backgroundColor: COLORS.accent }]}>
+							<Ionicons name='trophy-outline' size={14} color='#fff' />
+						</View>
+						<Text style={styles.timelineTitle}>{TRIAL_DAYS} {t('trial', 'timelineDays')}</Text>
+						<Text style={styles.timelineDesc}>{t('trial', 'timelineFree')}</Text>
 					</View>
-					<Text style={styles.trialFree}>{t('trial', 'freeLabel')}</Text>
-				</LinearGradient>
+					<View style={styles.timelineLine} />
+					<View style={styles.timelineStep}>
+						<View style={[styles.timelineDot, { backgroundColor: '#8E8E93' }]}>
+							<Ionicons name='refresh-outline' size={14} color='#fff' />
+						</View>
+						<Text style={styles.timelineTitle}>{t('trial', 'timelineCharge')}</Text>
+						<Text style={styles.timelineDesc}>{t('trial', 'timelineChargeDesc')}</Text>
+					</View>
+				</View>
+
+				<View style={styles.noChargeRow}>
+					<Ionicons name='checkmark-circle' size={16} color={COLORS.primary} />
+					<Text style={styles.noChargeText}>{t('trial', 'noChargeToday')}</Text>
+				</View>
+			</LinearGradient>
 
 				{/* Features */}
 				<View style={styles.featuresSection}>
@@ -291,42 +317,52 @@ export default function TrialPaywallScreen() {
 				<View style={styles.plansSection}>
 					<Text style={styles.sectionTitle}>{t('trial', 'choosePlan')}</Text>
 
-					<TouchableOpacity
-						style={[styles.planCard, selectedSku === SKUS.yearly && styles.planCardSelected]}
-						onPress={() => setSelectedSku(SKUS.yearly)}
-						activeOpacity={0.8}
-					>
-						<View style={styles.planBestValue}>
-							<Text style={styles.planBestValueText}>{t('subscription', 'bestValue')}</Text>
+				<TouchableOpacity
+					style={[styles.planCard, selectedSku === SKUS.yearly && styles.planCardSelected]}
+					onPress={() => setSelectedSku(SKUS.yearly)}
+					activeOpacity={0.8}
+				>
+					<View style={styles.planBestValue}>
+						<Text style={styles.planBestValueText}>{t('subscription', 'bestValue')}</Text>
+					</View>
+					<View style={styles.planRow}>
+						<View style={styles.planRadio}>
+							{selectedSku === SKUS.yearly && <View style={styles.planRadioDot} />}
 						</View>
-						<View style={styles.planRow}>
-							<View style={styles.planRadio}>
-								{selectedSku === SKUS.yearly && <View style={styles.planRadioDot} />}
-							</View>
-							<View style={styles.planInfo}>
-								<Text style={styles.planName}>{getTitle(SKUS.yearly)}</Text>
-								<Text style={styles.planDesc}>{getDescription(SKUS.yearly) || t('trial', 'yearlySave')}</Text>
-							</View>
-							<Text style={styles.planPrice}>{yearlyPrice}</Text>
+						<View style={styles.planInfo}>
+							<Text style={styles.planName}>{t('trial', 'trialFreeLabel')}</Text>
+							<Text style={styles.planTrialSub}>
+								{t('trial', 'thenPay')} {yearlyPrice} / {t('trial', 'yearShort')}
+							</Text>
 						</View>
-					</TouchableOpacity>
+						<View style={styles.planPriceWrap}>
+							<Text style={styles.planPriceFree}>{t('trial', 'free')}</Text>
+							<Text style={styles.planPriceSub}>{TRIAL_DAYS} {t('trial', 'days')}</Text>
+						</View>
+					</View>
+				</TouchableOpacity>
 
-					<TouchableOpacity
-						style={[styles.planCard, selectedSku === SKUS.monthly && styles.planCardSelected]}
-						onPress={() => setSelectedSku(SKUS.monthly)}
-						activeOpacity={0.8}
-					>
-						<View style={styles.planRow}>
-							<View style={styles.planRadio}>
-								{selectedSku === SKUS.monthly && <View style={styles.planRadioDot} />}
-							</View>
-							<View style={styles.planInfo}>
-								<Text style={styles.planName}>{getTitle(SKUS.monthly)}</Text>
-								<Text style={styles.planDesc}>{getDescription(SKUS.monthly) || t('trial', 'monthlyDesc')}</Text>
-							</View>
-							<Text style={styles.planPrice}>{monthlyPrice}</Text>
+				<TouchableOpacity
+					style={[styles.planCard, selectedSku === SKUS.monthly && styles.planCardSelected]}
+					onPress={() => setSelectedSku(SKUS.monthly)}
+					activeOpacity={0.8}
+				>
+					<View style={styles.planRow}>
+						<View style={styles.planRadio}>
+							{selectedSku === SKUS.monthly && <View style={styles.planRadioDot} />}
 						</View>
-					</TouchableOpacity>
+						<View style={styles.planInfo}>
+							<Text style={styles.planName}>{t('trial', 'trialFreeLabel')}</Text>
+							<Text style={styles.planTrialSub}>
+								{t('trial', 'thenPay')} {monthlyPrice} / {t('trial', 'monthShort')}
+							</Text>
+						</View>
+						<View style={styles.planPriceWrap}>
+							<Text style={styles.planPriceFree}>{t('trial', 'free')}</Text>
+							<Text style={styles.planPriceSub}>{TRIAL_DAYS} {t('trial', 'days')}</Text>
+						</View>
+					</View>
+				</TouchableOpacity>
 				</View>
 
 				{/* CTA */}
@@ -343,14 +379,17 @@ export default function TrialPaywallScreen() {
 							end={{ x: 1, y: 0 }}
 							style={styles.ctaGradient}
 						>
-							{loading ? (
-								<ActivityIndicator color='#fff' />
-							) : (
-								<>
-									<Text style={styles.ctaText}>{t('trial', 'cta')}</Text>
-									<Text style={styles.ctaSubtext}>{t('trial', 'ctaSub')}</Text>
-								</>
-							)}
+						{loading ? (
+							<ActivityIndicator color='#fff' />
+						) : (
+							<>
+								<View style={styles.ctaInner}>
+									<Ionicons name='card-outline' size={20} color='#fff' />
+									<Text style={styles.ctaText}>{t('trial', 'ctaNew')}</Text>
+								</View>
+								<Text style={styles.ctaSubtext}>{t('trial', 'ctaNewSub')}</Text>
+							</>
+						)}
 						</LinearGradient>
 					</TouchableOpacity>
 
@@ -368,7 +407,7 @@ export default function TrialPaywallScreen() {
 				</View>
 
 				<TouchableOpacity onPress={skipForNow} style={styles.skipButton}>
-					<Text style={styles.skipText}>{t('trial', 'skipLink')}</Text>
+					<Text style={styles.skipText}>{t('trial', 'skipLimited')}</Text>
 				</TouchableOpacity>
 				</View>
 			</ScrollView>
@@ -497,6 +536,63 @@ const styles = StyleSheet.create({
 		color: COLORS.primary,
 	},
 
+	// Timeline
+	timeline: {
+		flexDirection: 'row',
+		alignItems: 'flex-start',
+		marginTop: 24,
+		marginBottom: 16,
+		paddingHorizontal: 8,
+	},
+	timelineStep: {
+		flex: 1,
+		alignItems: 'center',
+		gap: 6,
+	},
+	timelineDot: {
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 4,
+	},
+	timelineTitle: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: '#fff',
+		textAlign: 'center',
+	},
+	timelineDesc: {
+		fontSize: 11,
+		color: COLORS.textSecondary,
+		textAlign: 'center',
+		lineHeight: 14,
+	},
+	timelineLine: {
+		flex: 0,
+		width: 28,
+		height: 2,
+		backgroundColor: 'rgba(255,255,255,0.15)',
+		marginTop: 17,
+	},
+	noChargeRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		backgroundColor: 'rgba(52,199,89,0.12)',
+		paddingHorizontal: 14,
+		paddingVertical: 8,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: 'rgba(52,199,89,0.25)',
+	},
+	noChargeText: {
+		fontSize: 13,
+		color: COLORS.primary,
+		fontWeight: '600',
+	},
+
 	// Features
 	featuresSection: {
 		paddingHorizontal: 20,
@@ -593,7 +689,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	planName: {
-		fontSize: 16,
+		fontSize: 15,
 		fontWeight: '700',
 		color: COLORS.text,
 	},
@@ -601,6 +697,23 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		color: COLORS.textSecondary,
 		marginTop: 2,
+	},
+	planTrialSub: {
+		fontSize: 12,
+		color: COLORS.textSecondary,
+		marginTop: 3,
+	},
+	planPriceWrap: {
+		alignItems: 'flex-end',
+	},
+	planPriceFree: {
+		fontSize: 18,
+		fontWeight: '800',
+		color: COLORS.primary,
+	},
+	planPriceSub: {
+		fontSize: 11,
+		color: COLORS.textSecondary,
 	},
 	planPrice: {
 		fontSize: 17,
@@ -628,6 +741,11 @@ const styles = StyleSheet.create({
 		paddingVertical: 18,
 		alignItems: 'center',
 		justifyContent: 'center',
+	},
+	ctaInner: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
 	},
 	ctaText: {
 		fontSize: 18,

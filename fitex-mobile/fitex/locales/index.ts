@@ -727,14 +727,29 @@ export interface Translations {
     yearlySave: string
     cta: string
     ctaSub: string
+    ctaNew: string
+    ctaNewSub: string
     legal: string
     skipLink: string
+    skipLimited: string
     termsLink: string
     privacyLink: string
     skipTitle: string
     skipBody: string
     skipConfirm: string
     noReceipt: string
+    timelineCard: string
+    timelineCardDesc: string
+    timelineDays: string
+    timelineFree: string
+    timelineCharge: string
+    timelineChargeDesc: string
+    noChargeToday: string
+    trialFreeLabel: string
+    thenPay: string
+    free: string
+    yearShort: string
+    monthShort: string
   }
 }
 
@@ -1453,10 +1468,25 @@ export const ru: Translations = {
     yearlySave: 'Скидка 20% — выгоднее',
     cta: 'Начать бесплатный период',
     ctaSub: 'Списание через 30 дней · Отмена в любой момент',
+    ctaNew: 'Привязать карту · 30 дней бесплатно',
+    ctaNewSub: 'Первое списание только через 30 дней',
     legal: 'Подписка автоматически продлевается. Вы можете отменить её в настройках App Store / Google Play в любое время до окончания пробного периода.',
     skipLink: 'Попробовать без карты (ограниченный доступ)',
+    skipLimited: 'Продолжить с ограниченным доступом',
     termsLink: 'Условия использования',
     privacyLink: 'Политика конфиденциальности',
+    timelineCard: 'Сегодня',
+    timelineCardDesc: 'Привязываешь карту',
+    timelineDays: 'дней',
+    timelineFree: 'Полный Premium бесплатно',
+    timelineCharge: 'День 31',
+    timelineChargeDesc: 'Первое списание',
+    noChargeToday: 'Сегодня с карты ничего не снимается',
+    trialFreeLabel: '30 дней бесплатно',
+    thenPay: 'Затем',
+    free: 'FREE',
+    yearShort: 'год',
+    monthShort: 'мес',
     skipTitle: 'Ограниченный доступ',
     skipBody: 'Без привязки карты будут доступны только базовые функции. Рейтинг, синхронизация и аналитика — только с подпиской.',
     skipConfirm: 'Продолжить без карты',
@@ -2179,10 +2209,25 @@ export const en: Translations = {
     yearlySave: 'Save 20% — best value',
     cta: 'Start Free Trial',
     ctaSub: 'Charged after 30 days · Cancel anytime',
+    ctaNew: 'Link Card · 30 Days Free',
+    ctaNewSub: 'First charge only after 30 days',
     legal: 'Subscription renews automatically. You can cancel at any time via App Store / Google Play settings before the trial ends.',
     skipLink: 'Continue without payment (limited access)',
+    skipLimited: 'Continue with limited access',
     termsLink: 'Terms of Use',
     privacyLink: 'Privacy Policy',
+    timelineCard: 'Today',
+    timelineCardDesc: 'Link your card',
+    timelineDays: 'days',
+    timelineFree: 'Full Premium free',
+    timelineCharge: 'Day 31',
+    timelineChargeDesc: 'First charge',
+    noChargeToday: 'No charge today',
+    trialFreeLabel: '30 days free',
+    thenPay: 'Then',
+    free: 'FREE',
+    yearShort: 'yr',
+    monthShort: 'mo',
     skipTitle: 'Limited Access',
     skipBody: 'Without a payment method, only basic features are available. Rating, sync, and advanced analytics require a subscription.',
     skipConfirm: 'Continue without card',
@@ -2905,14 +2950,29 @@ export const az: Translations = {
     yearlySave: '20% endirim — daha sərfəli',
     cta: 'Pulsuz sınaqa başla',
     ctaSub: '30 gündən sonra tutulur · İstənilən vaxt ləğv edin',
+    ctaNew: 'Kartı bağla · 30 gün pulsuz',
+    ctaNewSub: 'İlk ödəniş yalnız 30 gündən sonra',
     legal: 'Abunəlik avtomatik yenilənir. Sınaq müddəti başa çatmadan App Store / Google Play parametrlərindən ləğv edə bilərsiniz.',
     skipLink: 'Ödənişsiz davam et (məhdud giriş)',
+    skipLimited: 'Məhdud girişlə davam et',
     termsLink: 'İstifadə Şərtləri',
     privacyLink: 'Məxfilik Siyasəti',
     skipTitle: 'Məhdud Giriş',
     skipBody: 'Ödəniş metodu olmadan yalnız əsas funksiyalar mövcuddur. Reytinq, sinxronizasiya və analitika üçün abunəlik tələb olunur.',
     skipConfirm: 'Kartsız davam et',
     noReceipt: 'Alış qəbzi tapılmadı',
+    timelineCard: 'Bu gün',
+    timelineCardDesc: 'Kartı bağlayırsın',
+    timelineDays: 'gün',
+    timelineFree: 'Tam Premium pulsuz',
+    timelineCharge: '31-ci gün',
+    timelineChargeDesc: 'İlk ödəniş',
+    noChargeToday: 'Bu gün kartdan heç nə tutulmur',
+    trialFreeLabel: '30 gün pulsuz',
+    thenPay: 'Sonra',
+    free: 'PULSUZ',
+    yearShort: 'il',
+    monthShort: 'ay',
   },
 }
 
