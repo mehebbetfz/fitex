@@ -8,6 +8,7 @@ import {
 	ActivityIndicator,
 	Alert,
 	Dimensions,
+	Linking,
 	Platform,
 	SafeAreaView,
 	ScrollView,
@@ -338,11 +339,22 @@ export default function TrialPaywallScreen() {
 						</LinearGradient>
 					</TouchableOpacity>
 
-					<Text style={styles.legalText}>{t('trial', 'legal')}</Text>
+				<Text style={styles.legalText}>{t('trial', 'legal')}</Text>
 
-					<TouchableOpacity onPress={skipForNow} style={styles.skipButton}>
-						<Text style={styles.skipText}>{t('trial', 'skipLink')}</Text>
+				{/* Required EULA + Privacy links for App Store compliance */}
+				<View style={styles.linksRow}>
+					<TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+						<Text style={styles.linkText}>{t('trial', 'termsLink')}</Text>
 					</TouchableOpacity>
+					<Text style={styles.linkSep}> · </Text>
+					<TouchableOpacity onPress={() => Linking.openURL('https://github.com/mehebbetfz/fitex/blob/main/fitex-mobile/fitex/privacy-policy.md')}>
+						<Text style={styles.linkText}>{t('trial', 'privacyLink')}</Text>
+					</TouchableOpacity>
+				</View>
+
+				<TouchableOpacity onPress={skipForNow} style={styles.skipButton}>
+					<Text style={styles.skipText}>{t('trial', 'skipLink')}</Text>
+				</TouchableOpacity>
 				</View>
 			</ScrollView>
 
@@ -620,6 +632,22 @@ const styles = StyleSheet.create({
 		marginTop: 16,
 		lineHeight: 17,
 		paddingHorizontal: 8,
+	},
+	linksRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginTop: 10,
+		marginBottom: 4,
+	},
+	linkText: {
+		fontSize: 12,
+		color: '#5AC8FA',
+		textDecorationLine: 'underline',
+	},
+	linkSep: {
+		fontSize: 12,
+		color: COLORS.textSecondary,
 	},
 	skipButton: {
 		paddingVertical: 12,

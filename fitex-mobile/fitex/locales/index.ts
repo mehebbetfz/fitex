@@ -729,6 +729,8 @@ export interface Translations {
     ctaSub: string
     legal: string
     skipLink: string
+    termsLink: string
+    privacyLink: string
     skipTitle: string
     skipBody: string
     skipConfirm: string
@@ -1453,6 +1455,8 @@ export const ru: Translations = {
     ctaSub: 'Списание через 30 дней · Отмена в любой момент',
     legal: 'Подписка автоматически продлевается. Вы можете отменить её в настройках App Store / Google Play в любое время до окончания пробного периода.',
     skipLink: 'Попробовать без карты (ограниченный доступ)',
+    termsLink: 'Условия использования',
+    privacyLink: 'Политика конфиденциальности',
     skipTitle: 'Ограниченный доступ',
     skipBody: 'Без привязки карты будут доступны только базовые функции. Рейтинг, синхронизация и аналитика — только с подпиской.',
     skipConfirm: 'Продолжить без карты',
@@ -2177,6 +2181,8 @@ export const en: Translations = {
     ctaSub: 'Charged after 30 days · Cancel anytime',
     legal: 'Subscription renews automatically. You can cancel at any time via App Store / Google Play settings before the trial ends.',
     skipLink: 'Continue without payment (limited access)',
+    termsLink: 'Terms of Use',
+    privacyLink: 'Privacy Policy',
     skipTitle: 'Limited Access',
     skipBody: 'Without a payment method, only basic features are available. Rating, sync, and advanced analytics require a subscription.',
     skipConfirm: 'Continue without card',
@@ -2901,6 +2907,8 @@ export const az: Translations = {
     ctaSub: '30 gündən sonra tutulur · İstənilən vaxt ləğv edin',
     legal: 'Abunəlik avtomatik yenilənir. Sınaq müddəti başa çatmadan App Store / Google Play parametrlərindən ləğv edə bilərsiniz.',
     skipLink: 'Ödənişsiz davam et (məhdud giriş)',
+    termsLink: 'İstifadə Şərtləri',
+    privacyLink: 'Məxfilik Siyasəti',
     skipTitle: 'Məhdud Giriş',
     skipBody: 'Ödəniş metodu olmadan yalnız əsas funksiyalar mövcuddur. Reytinq, sinxronizasiya və analitika üçün abunəlik tələb olunur.',
     skipConfirm: 'Kartsız davam et',
