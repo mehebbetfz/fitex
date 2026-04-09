@@ -26,6 +26,7 @@ import {
 	requestPurchase,
 } from 'react-native-iap'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
+import { getStorefrontPrice } from '@/services/iap-price'
 import { syncAlreadyOwnedSubscription, verifySubscriptionOnServer } from '@/services/subscription-verify'
 import { useAuth } from '../contexts/auth-context'
 
@@ -245,8 +246,7 @@ export default function TrialPaywallScreen() {
 	// ── UI helpers ────────────────────────────────────────────────────────────
 	const getPrice = (sku: string) => {
 		const product = products.find(p => p.id === sku)
-		if (!product) return '—'
-		return product.displayPrice ?? '—'
+		return getStorefrontPrice(product)
 	}
 
 	const getTitle = (sku: string) => {

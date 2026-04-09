@@ -25,6 +25,7 @@ import {
 
 import { useLanguage } from '@/contexts/language-context'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
+import { getStorefrontPrice } from '@/services/iap-price'
 import { syncAlreadyOwnedSubscription, verifySubscriptionOnServer } from '@/services/subscription-verify'
 import { useAuth } from '../contexts/auth-context'
 
@@ -345,7 +346,7 @@ export default function SubscriptionScreen() {
 	const renderProduct = ({ item }: { item: ProductSubscription }) => {
 		const productId = item.id
 		const isYearly = productId.includes('yearly')
-		const price = item.displayPrice ?? (item as any).localizedPrice ?? '—'
+		const price = getStorefrontPrice(item)
 		const description =
 			item.description ??
 			(isYearly ? t('subscription', 'yearlyDesc') : t('subscription', 'monthlyDesc'))

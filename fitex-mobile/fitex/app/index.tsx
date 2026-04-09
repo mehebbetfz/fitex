@@ -1,7 +1,7 @@
 // app/index.tsx
 import { useLanguage } from '@/contexts/language-context'
 import { Redirect } from 'expo-router'
-import { useAuth } from './contexts/auth-context'
+import { hasActivePremium, useAuth } from './contexts/auth-context'
 
 export default function Index() {
 	const { user, isLoading: authLoading } = useAuth()
@@ -15,8 +15,8 @@ export default function Index() {
 		return <Redirect href='/(auth)/language-select' />
 	}
 
-	// Redirect to trial paywall if user hasn't started their trial yet
-	if (user && !user.trialStartedAt) {
+	// Trial paywall только для новых пользователей без активного Premium (не по trialStartedAt — иначе Premium без триала попадал на paywall)
+	if (user && !hasActivePremium(user) && user.isNewUser === true) {
 		return <Redirect href='/(auth)/trial-paywall' />
 	}
 

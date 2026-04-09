@@ -277,7 +277,16 @@ export class AuthService {
 		return this.toPublicUser(u)
 	}
 
+	/** Совпадает с логикой мобильного hasActivePremium (источник истины — premiumExpiresAt). */
+	private isPremiumEntitlementActive(user: UserDocument): boolean {
+		if (user.premiumExpiresAt) {
+			return new Date(user.premiumExpiresAt).getTime() > Date.now()
+		}
+		return !!user.isPremium
+	}
+
 	private toPublicUser(user: UserDocument) {
+		const premiumActive = this.isPremiumEntitlementActive(user)
 		return {
 			id: user._id,
 			email: user.email,
@@ -288,7 +297,8 @@ export class AuthService {
 			premiumExpiresAt: user.premiumExpiresAt ?? null,
 			trialStartedAt: user.trialStartedAt ?? null,
 			trialEndsAt: user.trialEndsAt ?? null,
-			isNewUser: user.isNewUser ?? true,
+			// С активной подпиской не показываем trial paywall (клиент редиректит по isNewUser).
+			isNewUser: premiumActive ? false : (user.isNewUser ?? true),
 		}
 	}
 

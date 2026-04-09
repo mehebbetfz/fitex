@@ -112,8 +112,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 			setUser(userData)
 			console.log('[Auth] User saved successfully')
-			// New user — must go through trial paywall first
-			if (userData.isNewUser) {
+			// Новый пользователь без Premium — trial paywall; с активной подпиской — сразу в приложение
+			if (userData.isNewUser && !hasActivePremium(userData)) {
 				router.replace('/(auth)/trial-paywall')
 			} else {
 				router.replace('/(tabs)')

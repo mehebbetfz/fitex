@@ -19,6 +19,8 @@ import {
 	ActivityIndicator,
 	Alert,
 	Animated,
+	AppState,
+	AppStateStatus,
 	Linking,
 	Modal,
 	Platform,
@@ -371,7 +373,7 @@ const TimePickerModal = ({
 // Main component
 // ─────────────────────────────────────────────
 export default function ProfileScreen() {
-	const { user, signOut } = useAuth()
+	const { user, signOut, refreshProfile } = useAuth()
 	const { t, language, setLanguage } = useLanguage()
 	const {
 		syncWithServer,
@@ -393,6 +395,19 @@ export default function ProfileScreen() {
 	const [exporting, setExporting] = useState(false)
 
 	const premium = user ? hasActivePremium(user) : false
+
+	const appStateRef = useRef<AppStateStatus>(AppState.currentState)
+	useEffect(() => {
+		if (!premium) return
+		const sub = AppState.addEventListener('change', next => {
+			if (appStateRef.current.match(/inactive|background/) && next === 'active') {
+				void refreshProfile()
+			}
+			appStateRef.current = next
+		})
+		return () => sub.remove()
+	}, [premium, refreshProfile])
+
 	const nextBillingRelative = useMemo(() => {
 		if (!premium || !user?.premiumExpiresAt) return null
 		return formatNextBillingRelative(user.premiumExpiresAt, language)
@@ -506,7 +521,7 @@ export default function ProfileScreen() {
 
 	const handleUpgrade = () => router.push('/(auth)/trial-paywall' as any)
 
-	const handleManageSubscription = useCallback(async () => {
+	const openSubscriptionStore = useCallback(async () => {
 		const url =
 			Platform.OS === 'ios'
 				? 'https://apps.apple.com/account/subscriptions'
@@ -517,6 +532,30 @@ export default function ProfileScreen() {
 			Alert.alert(t('common', 'error'), t('profile', 'openStoreError'))
 		}
 	}, [t])
+
+	const handleCancelSubscriptionPress = useCallback(() => {
+		Alert.alert(
+			t('profile', 'cancelSubscriptionTitle'),
+			t('profile', 'cancelSubscriptionMessage'),
+			[
+				{ text: t('common', 'cancel'), style: 'cancel' },
+				{
+					text: t('profile', 'refreshSubscriptionStatus'),
+					onPress: () => {
+						void refreshProfile().then(() => {
+							Alert.alert(t('common', 'ok'), t('profile', 'subscriptionStatusRefreshed'))
+						})
+					},
+				},
+				{
+					text: t('profile', 'openStoreButton'),
+					onPress: () => {
+						void openSubscriptionStore()
+					},
+				},
+			],
+		)
+	}, [t, refreshProfile, openSubscriptionStore])
 
 	const userInitial = user?.firstName?.[0] || user?.email?.[0] || '?'
 
@@ -668,7 +707,7 @@ export default function ProfileScreen() {
 								icon='card-outline'
 								title={t('profile', 'cancelSubscription')}
 								subtitle={t('profile', 'cancelSubscriptionHint')}
-								onPress={handleManageSubscription}
+								onPress={handleCancelSubscriptionPress}
 								iconColor={COLORS.primary}
 							/>
 						</View>

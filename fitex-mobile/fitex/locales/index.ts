@@ -726,6 +726,11 @@ export interface Translations {
     cancelSubscription: string
     cancelSubscriptionHint: string
     openStoreError: string
+    cancelSubscriptionTitle: string
+    cancelSubscriptionMessage: string
+    openStoreButton: string
+    refreshSubscriptionStatus: string
+    subscriptionStatusRefreshed: string
   }
   trial: {
     badge: string
@@ -1484,6 +1489,12 @@ export const ru: Translations = {
     cancelSubscriptionHint:
       'Откроется App Store или Google Play — там можно отключить автопродление подписки.',
     openStoreError: 'Не удалось открыть страницу подписок. Откройте магазин приложений вручную.',
+    cancelSubscriptionTitle: 'Подписка',
+    cancelSubscriptionMessage:
+      'Отменить автопродление можно только в App Store или Google Play. До конца оплаченного периода Premium остаётся активным.\n\nПосле возврата из магазина приложение обновит статус. Можно нажать «Обновить статус».',
+    openStoreButton: 'Открыть магазин',
+    refreshSubscriptionStatus: 'Обновить статус',
+    subscriptionStatusRefreshed: 'Статус обновлён',
   },
   trial: {
     badge: 'Бесплатный период',
@@ -2243,6 +2254,12 @@ export const en: Translations = {
     cancelSubscriptionHint:
       'Opens the App Store or Google Play where you can turn off auto-renewal.',
     openStoreError: 'Could not open subscriptions. Please open the app store manually.',
+    cancelSubscriptionTitle: 'Subscription',
+    cancelSubscriptionMessage:
+      'To turn off auto-renewal, use the App Store or Google Play. Premium stays active until the end of the paid period.\n\nWhen you return from the store, the app refreshes status — or tap Refresh.',
+    openStoreButton: 'Open store',
+    refreshSubscriptionStatus: 'Refresh status',
+    subscriptionStatusRefreshed: 'Status updated',
   },
   trial: {
     badge: 'Free Trial',
@@ -3002,6 +3019,12 @@ export const az: Translations = {
     cancelSubscriptionHint:
       'App Store və ya Google Play açılacaq — orada avtomatik yeniləməni söndürə bilərsiniz.',
     openStoreError: 'Abunəlik səhifəsini açmaq mümkün olmadı. Mağazan əl ilə açın.',
+    cancelSubscriptionTitle: 'Abunəlik',
+    cancelSubscriptionMessage:
+      'Avtomatik yeniləməni yalnız App Store və ya Google Play-də söndürmək olar. Ödənişli müddətin sonuna qədər Premium aktiv qalır.\n\nMağazadan qayıdanda status yenilənir — və ya «Yenilə» düyməsinə basın.',
+    openStoreButton: 'Mağazan aç',
+    refreshSubscriptionStatus: 'Statusu yenilə',
+    subscriptionStatusRefreshed: 'Status yeniləndi',
   },
   trial: {
     badge: 'Pulsuz Sınaq',
