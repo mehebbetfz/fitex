@@ -541,6 +541,7 @@ export interface Translations {
     premium: string
     topPlayers: string
     syncHint: string
+    podiumTitle: string
   }
   languageSelect: {
     title: string
@@ -1303,6 +1304,7 @@ export const ru: Translations = {
     premium: 'Premium',
     topPlayers: 'Топ игроков',
     syncHint: 'Синхронизируйте данные чтобы обновить рейтинг',
+    podiumTitle: 'Топ-3',
   },
   languageSelect: {
     title: 'Выберите язык',
@@ -2068,6 +2070,7 @@ export const en: Translations = {
     premium: 'Premium',
     topPlayers: 'Top Players',
     syncHint: 'Sync your data to update the leaderboard',
+    podiumTitle: 'Top 3',
   },
   languageSelect: {
     title: 'Choose Language',
@@ -2833,6 +2836,7 @@ export const az: Translations = {
     premium: 'Premium',
     topPlayers: 'Ən yaxşılar',
     syncHint: 'Reytinqi yeniləmək üçün məlumatları sinxronizasiya edin',
+    podiumTitle: 'Top 3',
   },
   languageSelect: {
     title: 'Dil seçin',

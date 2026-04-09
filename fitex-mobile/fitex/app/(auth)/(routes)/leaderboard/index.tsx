@@ -4,12 +4,15 @@ import { useLanguage } from '@/contexts/language-context'
 import { TIERS, TierName } from '@/services/rating'
 import { api } from '@/services/api'
 import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+	ActivityIndicator,
 	Animated,
 	FlatList,
 	Image,
+	Platform,
 	RefreshControl,
 	StyleSheet,
 	Text,
@@ -127,7 +130,7 @@ const PodiumItem = ({
 			{entry ? (
 				<>
 					{entry.rank === 1 && (
-						<Ionicons name='crown' size={20} color={C.gold} style={p.crown} />
+						<Ionicons name='ribbon' size={20} color={C.gold} style={p.crown} />
 					)}
 					<Avatar uri={entry.avatarUrl} name={name} size={48} isCurrentUser={entry.isCurrentUser} />
 					<Text style={p.podiumName} numberOfLines={1}>{name}</Text>
@@ -182,6 +185,7 @@ const RowItem = ({
 			style={[
 				r.row,
 				entry.isCurrentUser && r.rowHighlight,
+				entry.isCurrentUser && r.rowYou,
 			]}
 		>
 			{/* Rank */}
@@ -251,12 +255,33 @@ const RowItem = ({
 
 const r = StyleSheet.create({
 	row: {
-		flexDirection: 'row', alignItems: 'center', gap: 10,
-		paddingVertical: 12, paddingHorizontal: 16,
-		backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border,
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 10,
+		paddingVertical: 12,
+		paddingHorizontal: 14,
+		backgroundColor: C.card,
+		borderRadius: 16,
+		borderWidth: 1,
+		borderColor: C.border,
+		overflow: 'hidden',
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.18,
+				shadowRadius: 8,
+			},
+			android: { elevation: 3 },
+		}),
 	},
 	rowHighlight: {
-		backgroundColor: '#0D2218', borderColor: `${C.primary}50`,
+		backgroundColor: 'rgba(52, 199, 89, 0.07)',
+		borderColor: 'rgba(52, 199, 89, 0.35)',
+	},
+	rowYou: {
+		borderLeftWidth: 3,
+		borderLeftColor: C.primary,
 	},
 	rankWrap: { width: 28, alignItems: 'center' },
 	rankNum: { fontSize: 13, fontWeight: '800' },
@@ -290,62 +315,101 @@ const MyRankCard = ({
 	entry: LeaderboardEntry
 	t: ReturnType<typeof useLanguage>['t']
 }) => {
-	const tier   = TIER_MAP[entry.tierName]
+	const tier = TIER_MAP[entry.tierName]
 	const fullName = [entry.firstName, entry.lastName].filter(Boolean).join(' ') || '—'
 
 	return (
-		<View style={m.card}>
-			<View style={m.left}>
-				<Avatar uri={entry.avatarUrl} name={entry.firstName || '?'} size={52} isCurrentUser />
-				<View style={m.info}>
-					<Text style={m.name} numberOfLines={1}>{fullName}</Text>
-					<View style={m.tierRow}>
-						<Ionicons name={tier.icon as any} size={12} color={tier.color} />
-						<Text style={[m.tierLabel, { color: tier.color }]}>
-							{entry.tierName.charAt(0).toUpperCase() + entry.tierName.slice(1)}
-						</Text>
+		<View style={m.outer}>
+			<LinearGradient
+				colors={['rgba(52, 199, 89, 0.55)', 'rgba(52, 199, 89, 0.15)', 'rgba(90, 200, 250, 0.12)']}
+				start={{ x: 0, y: 0 }}
+				end={{ x: 1, y: 1 }}
+				style={m.gradRing}
+			>
+				<View style={m.cardInner}>
+					<View style={m.cardHeader}>
+						<View style={m.cardHeaderIcon}>
+							<Ionicons name='person' size={15} color={C.primary} />
+						</View>
+						<Text style={m.cardHeaderLabel}>{t('leaderboard', 'myRank')}</Text>
+					</View>
+					<View style={m.left}>
+						<Avatar uri={entry.avatarUrl} name={entry.firstName || '?'} size={52} isCurrentUser />
+						<View style={m.info}>
+							<Text style={m.name} numberOfLines={1}>
+								{fullName}
+							</Text>
+							<View style={m.tierRow}>
+								<Ionicons name={tier.icon as any} size={12} color={tier.color} />
+								<Text style={[m.tierLabel, { color: tier.color }]}>
+									{entry.tierName.charAt(0).toUpperCase() + entry.tierName.slice(1)}
+								</Text>
+							</View>
+						</View>
+					</View>
+					<View style={m.stats}>
+						<View style={m.stat}>
+							<Text style={[m.statVal, { color: tier.color }]}>#{entry.rank}</Text>
+							<Text style={m.statKey}>{t('leaderboard', 'rank')}</Text>
+						</View>
+						<View style={m.divider} />
+						<View style={m.stat}>
+							<Text style={[m.statVal, { color: tier.color }]}>
+								{entry.totalScore >= 1000
+									? `${(entry.totalScore / 1000).toFixed(1)}k`
+									: String(entry.totalScore)}
+							</Text>
+							<Text style={m.statKey}>{t('leaderboard', 'score')}</Text>
+						</View>
+						<View style={m.divider} />
+						<View style={m.stat}>
+							<Text style={m.statVal}>{entry.totalWorkouts}</Text>
+							<Text style={m.statKey}>{t('leaderboard', 'workouts')}</Text>
+						</View>
 					</View>
 				</View>
-			</View>
-			<View style={m.stats}>
-				<View style={m.stat}>
-					<Text style={[m.statVal, { color: tier.color }]}>#{entry.rank}</Text>
-					<Text style={m.statKey}>{t('leaderboard', 'rank')}</Text>
-				</View>
-				<View style={m.divider} />
-				<View style={m.stat}>
-					<Text style={[m.statVal, { color: tier.color }]}>
-						{entry.totalScore >= 1000 ? `${(entry.totalScore / 1000).toFixed(1)}k` : String(entry.totalScore)}
-					</Text>
-					<Text style={m.statKey}>{t('leaderboard', 'score')}</Text>
-				</View>
-				<View style={m.divider} />
-				<View style={m.stat}>
-					<Text style={m.statVal}>{entry.totalWorkouts}</Text>
-					<Text style={m.statKey}>{t('leaderboard', 'workouts')}</Text>
-				</View>
-			</View>
+			</LinearGradient>
 		</View>
 	)
 }
 
 const m = StyleSheet.create({
-	card: {
-		marginHorizontal: 16, marginBottom: 16,
-		backgroundColor: '#0D2218', borderRadius: 16,
-		borderWidth: 1.5, borderColor: `${C.primary}50`,
-		padding: 14, gap: 12,
+	outer: { marginBottom: 18 },
+	gradRing: { borderRadius: 20, padding: 1.5 },
+	cardInner: {
+		backgroundColor: '#151518',
+		borderRadius: 18,
+		padding: 14,
+		gap: 12,
+	},
+	cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+	cardHeaderIcon: {
+		width: 30,
+		height: 30,
+		borderRadius: 10,
+		backgroundColor: 'rgba(52, 199, 89, 0.14)',
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderWidth: 1,
+		borderColor: 'rgba(52, 199, 89, 0.25)',
+	},
+	cardHeaderLabel: {
+		fontSize: 12,
+		fontWeight: '800',
+		color: C.sub,
+		letterSpacing: 0.6,
+		textTransform: 'uppercase',
 	},
 	left: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 	info: { flex: 1, gap: 3 },
-	name: { fontSize: 15, fontWeight: '700', color: C.text },
+	name: { fontSize: 16, fontWeight: '700', color: C.text },
 	tierRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 	tierLabel: { fontSize: 12, fontWeight: '600' },
 	stats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
 	stat: { alignItems: 'center', flex: 1 },
 	statVal: { fontSize: 18, fontWeight: '800', color: C.text },
-	statKey: { fontSize: 10, color: C.sub, marginTop: 1 },
-	divider: { width: 1, height: 28, backgroundColor: C.border },
+	statKey: { fontSize: 10, color: C.sub, marginTop: 2 },
+	divider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.08)' },
 })
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -391,7 +455,7 @@ export default function LeaderboardScreen() {
 		<SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
 			{/* Header */}
 			<View style={s.header}>
-				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+				<TouchableOpacity onPress={() => router.back()} style={s.backBtn} hitSlop={12}>
 					<Ionicons name='chevron-back' size={26} color={C.text} />
 				</TouchableOpacity>
 				<View style={s.headerCenter}>
@@ -400,10 +464,17 @@ export default function LeaderboardScreen() {
 				</View>
 				<View style={{ width: 40 }} />
 			</View>
+			<LinearGradient
+				colors={['rgba(52, 199, 89, 0.35)', 'rgba(52, 199, 89, 0)', 'transparent']}
+				start={{ x: 0, y: 0 }}
+				end={{ x: 1, y: 0 }}
+				style={s.headerGradient}
+			/>
 
 			{loading ? (
 				<View style={s.loader}>
-					<Ionicons name='podium-outline' size={40} color={C.sub} />
+					<ActivityIndicator size='large' color={C.primary} />
+					<Ionicons name='podium-outline' size={36} color={C.sub} style={{ marginTop: 16 }} />
 					<Text style={s.loaderText}>{t('common', 'loading')}</Text>
 				</View>
 			) : (
@@ -412,7 +483,7 @@ export default function LeaderboardScreen() {
 						data={entries}
 						keyExtractor={item => item.userId}
 						showsVerticalScrollIndicator={false}
-						contentContainerStyle={s.list}
+						contentContainerStyle={s.listContent}
 						refreshControl={
 							<RefreshControl
 								refreshing={refreshing}
@@ -427,10 +498,23 @@ export default function LeaderboardScreen() {
 
 								{/* Podium */}
 								{entries.length >= 3 && (
-									<View style={s.podiumWrap}>
-										<PodiumItem entry={top3[0]} height={90} />
-										<PodiumItem entry={top3[1]} height={120} />
-										<PodiumItem entry={top3[2]} height={70} />
+									<View style={s.podiumCard}>
+										<View style={s.podiumCardHeader}>
+											<LinearGradient
+												colors={['rgba(255, 215, 0, 0.2)', 'rgba(255, 215, 0, 0)']}
+												start={{ x: 0, y: 0 }}
+												end={{ x: 1, y: 1 }}
+												style={s.podiumIconWrap}
+											>
+												<Ionicons name='podium-outline' size={20} color={C.gold} />
+											</LinearGradient>
+											<Text style={s.podiumCardTitle}>{t('leaderboard', 'podiumTitle')}</Text>
+										</View>
+										<View style={s.podiumWrap}>
+											<PodiumItem entry={top3[0]} height={90} />
+											<PodiumItem entry={top3[1]} height={120} />
+											<PodiumItem entry={top3[2]} height={70} />
+										</View>
 									</View>
 								)}
 
@@ -453,7 +537,9 @@ export default function LeaderboardScreen() {
 						ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
 						ListEmptyComponent={
 							<View style={s.empty}>
-								<Ionicons name='people-outline' size={44} color={C.sub} />
+								<View style={s.emptyIconCircle}>
+									<Ionicons name='people-outline' size={40} color={C.primary} />
+								</View>
 								<Text style={s.emptyTitle}>{t('leaderboard', 'noData')}</Text>
 								<Text style={s.emptySub}>{t('leaderboard', 'noDataSub')}</Text>
 							</View>
@@ -471,38 +557,106 @@ const s = StyleSheet.create({
 	safe: { flex: 1, backgroundColor: C.bg },
 
 	header: {
-		flexDirection: 'row', alignItems: 'center',
-		paddingHorizontal: 16, paddingVertical: 12,
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+	},
+	headerGradient: {
+		height: 2,
+		marginHorizontal: 20,
+		marginBottom: 4,
+		borderRadius: 1,
+		opacity: 0.9,
 	},
 	backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
 	headerCenter: { flex: 1, alignItems: 'center' },
-	title: { fontSize: 18, fontWeight: '800', color: C.text },
-	subtitle: { fontSize: 12, color: C.sub, marginTop: 1 },
+	title: { fontSize: 19, fontWeight: '800', color: C.text, letterSpacing: -0.3 },
+	subtitle: { fontSize: 12, color: C.sub, marginTop: 2 },
+	loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+	loaderText: { color: C.sub, fontSize: 14, marginTop: 4 },
 
-	loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-	loaderText: { color: C.sub, fontSize: 14 },
-
-	// Podium
+	podiumCard: {
+		marginBottom: 20,
+		backgroundColor: C.card,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: 'rgba(255,255,255,0.06)',
+		paddingTop: 14,
+		paddingBottom: 18,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.2,
+				shadowRadius: 12,
+			},
+			android: { elevation: 4 },
+		}),
+	},
+	podiumCardHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 10,
+		paddingHorizontal: 16,
+		marginBottom: 14,
+	},
+	podiumIconWrap: {
+		width: 36,
+		height: 36,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 215, 0, 0.25)',
+	},
+	podiumCardTitle: {
+		fontSize: 16,
+		fontWeight: '800',
+		color: C.text,
+		letterSpacing: -0.2,
+	},
 	podiumWrap: {
-		flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center',
-		gap: 8, paddingHorizontal: 16, marginBottom: 20,
+		flexDirection: 'row',
+		alignItems: 'flex-end',
+		justifyContent: 'center',
+		gap: 6,
+		paddingHorizontal: 10,
 	},
 
-	// List
-	list: { paddingBottom: 40 },
+	listContent: { paddingBottom: 40, paddingHorizontal: 16 },
 	listHeader: {
-		flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-		paddingHorizontal: 16, marginBottom: 10,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		marginBottom: 12,
+		marginTop: 4,
 	},
-	listHeaderText: { fontSize: 15, fontWeight: '700', color: C.text },
-	syncHintBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-	syncHintText: { fontSize: 12, color: C.primary, fontWeight: '600' },
+	listHeaderText: { fontSize: 16, fontWeight: '800', color: C.text },
+	syncHintBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		backgroundColor: 'rgba(52, 199, 89, 0.12)',
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: 'rgba(52, 199, 89, 0.25)',
+	},
+	syncHintText: { fontSize: 12, color: C.primary, fontWeight: '700' },
 
-	// Items padding
-	item: { paddingHorizontal: 16 },
-
-	// Empty
-	empty: { alignItems: 'center', gap: 10, paddingTop: 60, paddingHorizontal: 32 },
-	emptyTitle: { fontSize: 16, fontWeight: '700', color: C.text },
-	emptySub: { fontSize: 13, color: C.sub, textAlign: 'center', lineHeight: 18 },
+	empty: { alignItems: 'center', gap: 12, paddingTop: 48, paddingHorizontal: 28 },
+	emptyIconCircle: {
+		width: 88,
+		height: 88,
+		borderRadius: 44,
+		backgroundColor: 'rgba(52, 199, 89, 0.1)',
+		borderWidth: 1,
+		borderColor: 'rgba(52, 199, 89, 0.2)',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	emptyTitle: { fontSize: 17, fontWeight: '700', color: C.text },
+	emptySub: { fontSize: 13, color: C.sub, textAlign: 'center', lineHeight: 20 },
 })
