@@ -1,4 +1,5 @@
 import { hasActivePremium, useAuth } from '../contexts/auth-context'
+import { useDatabase } from '../contexts/database-context'
 import { useLanguage } from '@/contexts/language-context'
 import {
 	translateExerciseName,
@@ -43,6 +44,21 @@ const COLORS = {
 	success: '#34C759',
 	info: '#5AC8FA',
 } as const
+
+/** Числа из SQLite/синхронизации — защита от NaN в графиках и .toFixed() */
+function safeNum(n: unknown, fallback = 0): number {
+	if (n === null || n === undefined) return fallback
+	const x =
+		typeof n === 'number' ? n : parseFloat(String(n).replace(',', '.').trim())
+	return Number.isFinite(x) ? x : fallback
+}
+
+function toFiniteOrNull(n: unknown): number | null {
+	if (n === null || n === undefined) return null
+	const x =
+		typeof n === 'number' ? n : parseFloat(String(n).replace(',', '.').trim())
+	return Number.isFinite(x) ? x : null
+}
 
 interface BodyMeasurement {
 	id: string
@@ -173,14 +189,29 @@ const calculateEnduranceProgress = (
 		return { value: '0%', subtitle: t('progress', 'noWorkouts'), trend: 'neutral' }
 	const recentWorkouts = workouts.slice(0, 10)
 	const avgDuration =
-		recentWorkouts.reduce((sum, w) => sum + (w.duration || 0), 0) /
-		recentWorkouts.length
+		recentWorkouts.reduce((sum, w) => sum + safeNum(w?.duration), 0) /
+		Math.max(1, recentWorkouts.length)
 	if (recentWorkouts.length >= 2) {
 		const firstWorkout = recentWorkouts[recentWorkouts.length - 1]
 		const lastWorkout = recentWorkouts[0]
-		const durationChange =
-			((lastWorkout.duration - firstWorkout.duration) / firstWorkout.duration) *
-			100
+		const d0 = safeNum(firstWorkout?.duration)
+		const d1 = safeNum(lastWorkout?.duration)
+		// (d1 - d0) / d0 при d0 === 0 даёт Infinity/NaN — показываем длительность в минутах
+		if (d0 <= 0) {
+			return {
+				value: `${Math.round(d1)} ${t('history', 'min')}`,
+				subtitle: t('progress', 'avgDuration'),
+				trend: d1 > 60 ? 'positive' : 'neutral',
+			}
+		}
+		const durationChange = ((d1 - d0) / d0) * 100
+		if (!Number.isFinite(durationChange)) {
+			return {
+				value: `${Math.round(avgDuration)} ${t('history', 'min')}`,
+				subtitle: t('progress', 'avgDuration'),
+				trend: 'neutral',
+			}
+		}
 		if (durationChange > 10)
 			return {
 				value: `+${Math.round(durationChange)}%`,
@@ -229,7 +260,7 @@ function buildVolumeLast7Days(workouts: Workout[], locale: string) {
 		let sum = 0
 		for (const w of workouts) {
 			const wd = (w.date || '').split('T')[0]
-			if (wd === key) sum += w.volume || 0
+			if (wd === key) sum += safeNum(w.volume)
 		}
 		values.push(Math.round((sum / 1000) * 10) / 10)
 	}
@@ -237,12 +268,14 @@ function buildVolumeLast7Days(workouts: Workout[], locale: string) {
 }
 
 function buildDurationLastN(workouts: Workout[], n: number) {
-	const sorted = [...workouts].sort(
-		(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-	)
+	const sorted = [...workouts].sort((a, b) => {
+		const ta = new Date(a.date).getTime()
+		const tb = new Date(b.date).getTime()
+		return (Number.isFinite(ta) ? ta : 0) - (Number.isFinite(tb) ? tb : 0)
+	})
 	const last = sorted.slice(-Math.max(2, n))
 	if (last.length === 1) {
-		const d = last[0].duration || 0
+		const d = Math.max(0, Math.round(safeNum(last[0].duration)))
 		return {
 			labels: ['1', '2'],
 			values: [d, d],
@@ -250,7 +283,7 @@ function buildDurationLastN(workouts: Workout[], n: number) {
 	}
 	return {
 		labels: last.map((_, i) => String(i + 1)),
-		values: last.map(w => Math.max(0, Math.round(w.duration || 0))),
+		values: last.map(w => Math.max(0, Math.round(safeNum(w.duration)))),
 	}
 }
 
@@ -261,7 +294,7 @@ function buildMuscleVolumePie(
 ) {
 	const map = new Map<string, number>()
 	for (const w of workouts) {
-		const vol = w.volume || 0
+		const vol = safeNum(w.volume)
 		const groups = (w.muscle_groups || '')
 			.split(',')
 			.map(g => g.trim())
@@ -283,11 +316,11 @@ function buildMuscleVolumePie(
 				name === '__other__'
 					? otherLabel
 					: translateGroupName(name, lang),
-			population: Math.round(pop),
+			population: Math.round(safeNum(pop)),
 			color: PIE_COLORS[i % PIE_COLORS.length],
 			legendFontColor: '#8E8E93',
 		}))
-		.filter(p => p.population > 0)
+		.filter(p => p.population > 0 && Number.isFinite(p.population))
 }
 
 const CHART_CONFIG_GREEN = {
@@ -446,6 +479,7 @@ export default function StatisticsTab() {
 	const { t, language } = useLanguage()
 	const { user } = useAuth()
 	const premium = hasActivePremium(user)
+	const { pullServerDataSilent } = useDatabase()
 	const [selectedMetric, setSelectedMetric] = useState('Вес')
 
 	const getMeasurementDisplayName = (name: string) => {
@@ -559,8 +593,8 @@ export default function StatisticsTab() {
 					return {
 						id: m.id?.toString() || index.toString(),
 						name: m.name,
-						current: m.value,
-						previous: m.value,
+						current: safeNum(m.value),
+						previous: safeNum(m.value),
 						unit: m.unit,
 						trend,
 					}
@@ -589,10 +623,16 @@ export default function StatisticsTab() {
 							(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
 						)
 						.slice(-6)
-						.map(m => ({
-							month: months[new Date(m.date).getMonth()],
-							value: m.value,
-						}))
+						.map(m => {
+							const d = new Date(m.date)
+							const mi = Number.isFinite(d.getTime())
+								? d.getMonth()
+								: 0
+							return {
+								month: months[Math.min(11, Math.max(0, mi))],
+								value: safeNum(m.value),
+							}
+						})
 					measurementMap[name] = sorted
 				})
 				setMeasurementHistoryMap(measurementMap)
@@ -620,9 +660,9 @@ export default function StatisticsTab() {
 				const muscleGrowth = calculateMuscleGrowth(formattedMeasurements, t)
 				const strengthProgress = await calculateStrengthProgress(t)
 				const enduranceProgress = calculateEnduranceProgress(allWorkouts, t)
-				const totalVolume = stats.total_volume
-					? `${(stats.total_volume / 1000).toFixed(1)} т`
-					: '0 т'
+				const volRaw = safeNum(stats?.total_volume)
+				const totalVolume =
+					volRaw > 0 ? `${(volRaw / 1000).toFixed(1)} т` : '0 т'
 
 			setProgressStats([
 				{
@@ -757,27 +797,42 @@ export default function StatisticsTab() {
 
 	useFocusEffect(
 		useCallback(() => {
-			if (hasData) {
-				loadAllData({ silent: true })
-			} else {
-				loadAllData({ silent: false })
+			const run = async () => {
+				await pullServerDataSilent(premium)
+				if (hasData) {
+					await loadAllData({ silent: true })
+				} else {
+					await loadAllData({ silent: false })
+				}
+				checkMeasurementReminder()
 			}
-			checkMeasurementReminder()
-		}, [loadAllData, checkMeasurementReminder, hasData]),
+			void run()
+		}, [
+			loadAllData,
+			checkMeasurementReminder,
+			hasData,
+			premium,
+			pullServerDataSilent,
+		]),
 	)
 
 	const calculateCurrentValue = () => {
 		const data = measurementHistoryMap[selectedMetric]
 		if (!data || data.length === 0) return '—'
+		const last = toFiniteOrNull(data[data.length - 1].value)
+		if (last === null) return '—'
 		const unit =
 			bodyMeasurements.find(m => m.name === selectedMetric)?.unit ?? ''
-		return `${data[data.length - 1].value} ${unit}`
+		return `${last} ${unit}`.trim()
 	}
 
 	const calculateValueChange = () => {
 		const data = measurementHistoryMap[selectedMetric]
 		if (!data || data.length < 2) return '—'
-		const change = data[data.length - 1].value - data[0].value
+		const a = toFiniteOrNull(data[data.length - 1].value)
+		const b = toFiniteOrNull(data[0].value)
+		if (a === null || b === null) return '—'
+		const change = a - b
 		const unit =
 			bodyMeasurements.find(m => m.name === selectedMetric)?.unit ?? ''
 		return `${change > 0 ? '+' : ''}${change.toFixed(1)} ${unit}`
@@ -786,8 +841,11 @@ export default function StatisticsTab() {
 	const isPositiveChange = () => {
 		const data = measurementHistoryMap[selectedMetric]
 		if (!data || data.length < 2) return true
+		const a = toFiniteOrNull(data[data.length - 1].value)
+		const b = toFiniteOrNull(data[0].value)
+		if (a === null || b === null) return true
+		const change = a - b
 		const negativeMetrics = ['Вес', 'Талия', 'Жир']
-		const change = data[data.length - 1].value - data[0].value
 		return negativeMetrics.includes(selectedMetric) ? change <= 0 : change >= 0
 	}
 
@@ -810,7 +868,7 @@ export default function StatisticsTab() {
 		<LineChart
 			data={{
 				labels: data.map(d => d.month),
-				datasets: [{ data: data.map(d => d.value) }],
+				datasets: [{ data: data.map(d => safeNum(d.value)) }],
 			}}
 			width={screenWidth - 32}
 			height={240}
@@ -947,7 +1005,7 @@ export default function StatisticsTab() {
 											{
 												data:
 													volume7.values.length > 0
-														? volume7.values
+														? volume7.values.map(v => safeNum(v))
 														: [0],
 											},
 										],
@@ -972,7 +1030,11 @@ export default function StatisticsTab() {
 								<LineChart
 									data={{
 										labels: durationSeries.labels,
-										datasets: [{ data: durationSeries.values }],
+										datasets: [
+											{
+												data: durationSeries.values.map(v => safeNum(v)),
+											},
+										],
 									}}
 									width={screenWidth - 32}
 									height={200}

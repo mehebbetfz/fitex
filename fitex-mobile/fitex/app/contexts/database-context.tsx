@@ -97,6 +97,8 @@ interface DatabaseContextType {
 
 	performInitialSync: (isPremium: boolean) => Promise<void>
 	syncUnsyncedData: (isPremium: boolean) => Promise<void>
+	/** Скачать данные с сервера и смёржить в SQLite без спиннера и алертов (для экранов статистики). */
+	pullServerDataSilent: (isPremium: boolean) => Promise<void>
 
 	// Шаблоны
 	refreshTemplates: () => Promise<void>
@@ -627,6 +629,21 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 	[mergeServerData, refreshAllData],
 )
 
+	const pullServerDataSilent = useCallback(
+		async (isPremium: boolean) => {
+			if (!isPremium) return
+			const networkState = await Network.getNetworkStateAsync()
+			if (!networkState.isConnected || !networkState.isInternetReachable) return
+			try {
+				const { data: serverData } = await api.get('/sync/download')
+				await mergeServerData(serverData)
+			} catch (e) {
+				console.warn('[Sync] pullServerDataSilent failed', e)
+			}
+		},
+		[mergeServerData],
+	)
+
 	// Ручная синхронизация (кнопка в профиле)
 	const syncWithServer = useCallback(
 		async (isPremium: boolean) => {
@@ -1155,6 +1172,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 		syncWithServer,
 		performInitialSync,
 		syncUnsyncedData,
+		pullServerDataSilent,
 	}
 
 	return (
