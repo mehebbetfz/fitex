@@ -1,4 +1,4 @@
-import { useAuth } from '@/app/contexts/auth-context'
+import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
 import { Achievement, computeRating } from '@/services/rating'
@@ -268,6 +268,7 @@ const StatsBar = ({
 export default function AchievementsScreen() {
 	const { t } = useLanguage()
 	const { user } = useAuth()
+	const premium = hasActivePremium(user)
 	const [achievements, setAchievements] = useState<Achievement[]>([])
 	const [loading, setLoading] = useState(true)
 	const [selectedAch, setSelectedAch] = useState<Achievement | null>(null)
@@ -285,7 +286,7 @@ export default function AchievementsScreen() {
 
 	useEffect(() => { load() }, [load])
 
-	if (!user?.isPremium) return <PremiumGate featureIcon='ribbon-outline' featureColor='#FFD700' />
+	if (!premium) return <PremiumGate featureIcon='ribbon-outline' featureColor='#FFD700' />
 
 	const earnedAll = achievements.filter(a => a.earned).length
 	const earnedPct = achievements.length > 0 ? Math.round((earnedAll / achievements.length) * 100) : 0

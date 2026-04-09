@@ -7,7 +7,7 @@ import { router } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
-interface User {
+export interface User {
 	id: string
 	email: string
 	firstName?: string
@@ -77,11 +77,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				console.log('[Auth] Loaded user string length:', userStr?.length || 0)
 
 				if (token && userStr) {
-					const parsedUser = JSON.parse(userStr)
-					console.log('[Auth] Parsed user:', parsedUser.email || parsedUser.id)
-					setUser(parsedUser)
+					const parsedUser = JSON.parse(userStr) as User
 					api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-					console.log('[Auth] Set Authorization header')
+					try {
+						const { data } = await api.get('/auth/me')
+						const merged: User = { ...parsedUser, ...(data as User) }
+						setUser(merged)
+						await SecureStore.setItemAsync('user', JSON.stringify(merged))
+						console.log('[Auth] Profile merged from server, isPremium:', merged.isPremium)
+					} catch (e) {
+						console.warn('[Auth] /auth/me failed, using cached user', e)
+						setUser(parsedUser)
+					}
+				} else if (token) {
+					api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 				} else {
 					console.log('[Auth] No valid session found')
 				}
@@ -327,4 +336,16 @@ export const useAuth = () => {
 	const context = useContext(AuthContext)
 	if (!context) throw new Error('useAuth must be used within AuthProvider')
 	return context
+}
+
+/** True if subscription is active (server is source of truth; uses premiumExpiresAt when set). */
+export function hasActivePremium(user: User | null): boolean {
+	if (!user) return false
+	if (user.premiumExpiresAt) {
+		const t = new Date(user.premiumExpiresAt).getTime()
+		if (!Number.isNaN(t)) {
+			return t > Date.now()
+		}
+	}
+	return !!user.isPremium
 }

@@ -1,6 +1,6 @@
 import { useDatabase } from '@/app/contexts/database-context'
 import { SyncMeta, SyncHistoryEntry, SYNC_META_KEY } from '@/app/contexts/database-context'
-import { useAuth } from '@/app/contexts/auth-context'
+import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
 import { api } from '@/services/api'
@@ -220,6 +220,7 @@ const hi = StyleSheet.create({
 export default function SyncStatsScreen() {
 	const { t, language } = useLanguage()
 	const { user } = useAuth()
+	const premium = hasActivePremium(user)
 	const { syncWithServer } = useDatabase()
 
 	const [meta, setMeta]     = useState<SyncMeta | null>(null)
@@ -270,12 +271,12 @@ export default function SyncStatsScreen() {
 
 	useEffect(() => { loadData() }, [loadData])
 
-	if (!user?.isPremium) return <PremiumGate featureIcon='cloud-upload-outline' featureColor='#5AC8FA' />
+	if (!premium) return <PremiumGate featureIcon='cloud-upload-outline' featureColor='#5AC8FA' />
 
 	const onRefresh = () => { setRefreshing(true); loadData() }
 
 	const handleSync = async () => {
-		if (!user?.isPremium) {
+		if (!premium) {
 			Alert.alert(t('sync', 'premiumRequired'))
 			return
 		}
@@ -372,7 +373,7 @@ export default function SyncStatsScreen() {
 					</View>
 
 					{/* Sync now button */}
-					{user?.isPremium && (
+					{premium && (
 						<TouchableOpacity
 							style={[s.syncBtn, (!online || syncing) && s.syncBtnDisabled]}
 							onPress={handleSync}

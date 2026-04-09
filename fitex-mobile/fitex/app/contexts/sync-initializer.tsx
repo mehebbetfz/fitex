@@ -1,7 +1,7 @@
 // app/contexts/sync-initializer.tsx
 import { useSyncContext } from '@/app/contexts/sync-context'
 import { useEffect, useRef } from 'react'
-import { useAuth } from './auth-context'
+import { hasActivePremium, useAuth } from './auth-context'
 import { useDatabase } from './database-context'
 
 /**
@@ -43,7 +43,7 @@ export const SyncInitializer = () => {
 				setProgress(35, 'Загрузка данных...')
 				setPhase('uploading', 'Загрузка данных...')
 
-				await performInitialSync(user.isPremium)
+				await performInitialSync(hasActivePremium(user))
 
 				setProgress(80, 'Получение данных...')
 				setPhase('downloading', 'Получение данных...')
@@ -64,7 +64,7 @@ export const SyncInitializer = () => {
 	// ── Старт приложения: отправляем только не синхронизированное ──────────
 	useEffect(() => {
 		if (!user || !isInitialized) return
-		if (!user.isPremium) return
+		if (!hasActivePremium(user)) return
 		if (hasSyncedOnStartup.current) return
 
 		hasSyncedOnStartup.current = true
@@ -75,7 +75,7 @@ export const SyncInitializer = () => {
 				setProgress(20, 'Отправка изменений...')
 				setPhase('uploading', 'Отправка изменений...')
 
-				await syncUnsyncedData(user.isPremium)
+				await syncUnsyncedData(hasActivePremium(user))
 
 				setProgress(90)
 				await new Promise(r => setTimeout(r, 200))

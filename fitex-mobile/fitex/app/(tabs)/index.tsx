@@ -1,4 +1,4 @@
-import { useAuth } from '../contexts/auth-context'
+import { hasActivePremium, useAuth } from '../contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
 import { translateUnit, translateExerciseName } from '@/constants/exercise-i18n'
 import * as db from '@/scripts/database'
@@ -336,6 +336,7 @@ export default function StatisticsTab() {
 	const router = useRouter()
 	const { t, language } = useLanguage()
 	const { user } = useAuth()
+	const premium = hasActivePremium(user)
 	const [selectedMetric, setSelectedMetric] = useState('Вес')
 
 	const getMeasurementDisplayName = (name: string) => {
@@ -698,26 +699,26 @@ export default function StatisticsTab() {
 					</View>
 					<View style={styles.headerIcons}>
 						<TouchableOpacity
-							style={[styles.headerIconBtn, user?.isPremium && styles.headerIconBtnPremium]}
+							style={[styles.headerIconBtn, premium && styles.headerIconBtnPremium]}
 							onPress={() => router.push(
-								user?.isPremium
+								premium
 									? '/(auth)/(routes)/leaderboard'
 									: '/(auth)/trial-paywall' as any
 							)}
 							activeOpacity={0.7}
 						>
-							<Ionicons name='podium-outline' size={22} color={user?.isPremium ? '#FF9500' : '#8E8E93'} />
+							<Ionicons name='podium-outline' size={22} color={premium ? '#FF9500' : '#8E8E93'} />
 						</TouchableOpacity>
 						<TouchableOpacity
-							style={[styles.headerIconBtn, user?.isPremium && styles.headerIconBtnPremium]}
+							style={[styles.headerIconBtn, premium && styles.headerIconBtnPremium]}
 							onPress={() => router.push(
-								user?.isPremium
+								premium
 									? '/(auth)/(routes)/rating'
 									: '/(auth)/trial-paywall' as any
 							)}
 							activeOpacity={0.7}
 						>
-							<Ionicons name='ribbon-outline' size={22} color={user?.isPremium ? '#FFD700' : '#8E8E93'} />
+							<Ionicons name='ribbon-outline' size={22} color={premium ? '#FFD700' : '#8E8E93'} />
 						</TouchableOpacity>
 					</View>
 				</View>

@@ -61,7 +61,7 @@ import React, {
 	useState,
 } from 'react'
 import { Alert } from 'react-native'
-import { useAuth } from './auth-context'
+import { hasActivePremium, useAuth } from './auth-context'
 
 interface DatabaseContextType {
 	isInitialized: boolean
@@ -1092,7 +1092,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 	useEffect(() => {
 		if (!user || !isInitialized || hasSyncedOnStartup.current) return
 		hasSyncedOnStartup.current = true
-		performInitialSync(user.isPremium ?? false)
+		performInitialSync(hasActivePremium(user))
 	}, [user?.id, isInitialized, performInitialSync])
 
 	// Обновляем статистику при изменении тренировок

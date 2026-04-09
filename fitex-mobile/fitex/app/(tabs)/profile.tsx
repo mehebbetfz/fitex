@@ -28,7 +28,7 @@ import {
 	View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useAuth } from '../contexts/auth-context'
+import { hasActivePremium, useAuth } from '../contexts/auth-context'
 
 const COLORS = {
 	primary: '#34C759',
@@ -381,13 +381,13 @@ export default function ProfileScreen() {
 	}, [user])
 
 	const handleSync = async () => {
-		if (!user?.isPremium) {
+		if (!premium) {
 			router.push('/(auth)/subscription')
 			return
 		}
 		setSyncing(true)
 		try {
-			await syncWithServer(user?.isPremium)
+			await syncWithServer(premium)
 		} catch (error) {
 			Alert.alert(t('common', 'error'), t('profile', 'syncError') + error)
 		} finally {
@@ -511,14 +511,14 @@ export default function ProfileScreen() {
 								style={{
 									flexDirection: 'row',
 									alignItems: 'center',
-									backgroundColor: user?.isPremium
+									backgroundColor: premium
 										? 'rgba(52,199,89,0.1)'
 										: 'rgba(142,142,147,0.1)',
 									borderRadius: 20,
 									paddingHorizontal: 12,
 									paddingVertical: 6,
 									borderWidth: 1,
-									borderColor: user?.isPremium
+									borderColor: premium
 										? 'rgba(52,199,89,0.2)'
 										: 'rgba(142,142,147,0.2)',
 									gap: 6,
@@ -529,7 +529,7 @@ export default function ProfileScreen() {
 										width: 7,
 										height: 7,
 										borderRadius: 3.5,
-										backgroundColor: user?.isPremium
+										backgroundColor: premium
 											? COLORS.primary
 											: COLORS.textSecondary,
 									}}
@@ -538,12 +538,12 @@ export default function ProfileScreen() {
 									style={{
 										fontSize: 13,
 										fontWeight: '600',
-										color: user?.isPremium
+										color: premium
 											? COLORS.primary
 											: COLORS.textSecondary,
 									}}
 								>
-									{user?.isPremium ? t('profile', 'premium') : t('profile', 'basic')}
+									{premium ? t('profile', 'premium') : t('profile', 'basic')}
 								</Text>
 							</View>
 						</FadeIn>
@@ -579,21 +579,21 @@ export default function ProfileScreen() {
 						<View style={styles.premiumStatusBlock}>
 						<View style={styles.premiumStatusHeader}>
 							<Ionicons
-								name={user?.isPremium ? 'diamond' : 'diamond-outline'}
+								name={premium ? 'diamond' : 'diamond-outline'}
 								size={24}
 								color={
-									user?.isPremium ? COLORS.primary : COLORS.textSecondary
+									premium ? COLORS.primary : COLORS.textSecondary
 								}
 							/>
 							<Text style={styles.premiumStatusTitle}>{t('profile', 'premiumStatus')}</Text>
 						</View>
 						<View style={styles.premiumStatusBody}>
 							<Text style={styles.premiumStatusText}>
-								{user?.isPremium
+								{premium
 									? t('profile', 'premiumActive')
 									: t('profile', 'freePlan')}
 							</Text>
-							{!user?.isPremium && (
+							{!premium && (
 								<TouchableOpacity
 									style={styles.upgradeButton}
 									onPress={handleUpgrade}
@@ -627,7 +627,7 @@ export default function ProfileScreen() {
 						/>
 						<SettingsItemSkeleton />
 					</>
-				) : user?.isPremium ? (
+				) : premium ? (
 					<FadeIn show={!loading}>
 						<View style={styles.section}>
 							<Text style={styles.sectionTitle}>{t('profile', 'cloud')}</Text>

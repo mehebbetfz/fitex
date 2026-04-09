@@ -57,6 +57,18 @@ export async function syncAlreadyOwnedSubscription(): Promise<VerifyOk | VerifyF
 		PREMIUM_IDS.has(p.productId),
 	)
 	if (!active.length) {
+		try {
+			const { data } = await api.get('/auth/me')
+			const exp = data.premiumExpiresAt ? new Date(data.premiumExpiresAt).getTime() : 0
+			const fromServer =
+				data.isPremium &&
+				(!data.premiumExpiresAt || (!Number.isNaN(exp) && exp > Date.now()))
+			if (fromServer) {
+				return { ok: true, premiumExpiresAt: data.premiumExpiresAt }
+			}
+		} catch {
+			/* offline or 401 */
+		}
 		return { ok: false, message: 'noActiveSubscription' }
 	}
 

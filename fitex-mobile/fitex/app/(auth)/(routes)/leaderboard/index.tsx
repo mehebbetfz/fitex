@@ -1,4 +1,4 @@
-import { useAuth } from '@/app/contexts/auth-context'
+import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
 import { TIERS, TierName } from '@/services/rating'
@@ -353,6 +353,7 @@ const m = StyleSheet.create({
 export default function LeaderboardScreen() {
 	const { t } = useLanguage()
 	const { user } = useAuth()
+	const premium = hasActivePremium(user)
 	const [entries, setEntries] = useState<LeaderboardEntry[]>([])
 	const [myRank, setMyRank] = useState<LeaderboardEntry | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -377,7 +378,7 @@ export default function LeaderboardScreen() {
 
 	useEffect(() => { load() }, [load])
 
-	if (!user?.isPremium) return <PremiumGate featureIcon='podium-outline' featureColor='#FF9500' />
+	if (!premium) return <PremiumGate featureIcon='podium-outline' featureColor='#FF9500' />
 
 	const onRefresh = () => {
 		setRefreshing(true)

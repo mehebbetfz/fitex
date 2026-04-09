@@ -1,4 +1,4 @@
-import { useAuth } from '@/app/contexts/auth-context'
+import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import SharedPremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
 import { Achievement, computeRating, LEVELS, RatingData, Tier, TIERS, TierName } from '@/services/rating'
@@ -520,6 +520,7 @@ const RatingSkeleton = () => (
 export default function RatingScreen() {
 	const { t } = useLanguage()
 	const { user } = useAuth()
+	const premium = hasActivePremium(user)
 	const [data, setData] = useState<RatingData | null>(null)
 	const [loading, setLoading] = useState(true)
 
@@ -538,7 +539,7 @@ export default function RatingScreen() {
 
 	useEffect(() => { load() }, [load])
 
-	if (!user?.isPremium) return <SharedPremiumGate featureIcon='ribbon-outline' featureColor='#FFD700' />
+	if (!premium) return <SharedPremiumGate featureIcon='ribbon-outline' featureColor='#FFD700' />
 
 	return (
 		<SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

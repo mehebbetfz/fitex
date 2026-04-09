@@ -1,6 +1,6 @@
 // app/(tabs)/_layout.tsx
 import TemplateSelectionModal from '@/app/modals/template-selection-modal'
-import { useAuth } from '../contexts/auth-context'
+import { hasActivePremium, useAuth } from '../contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -35,7 +35,7 @@ export default function TabsLayout() {
 	// Show upsell modal once per day for non-premium users
 	useEffect(() => {
 		if (!user) return
-		if (user.isPremium) return
+		if (hasActivePremium(user)) return
 
 		const check = async () => {
 			try {
@@ -55,7 +55,7 @@ export default function TabsLayout() {
 		}
 
 		check()
-	}, [user?.id])
+	}, [user?.id, user?.isPremium, user?.premiumExpiresAt])
 
 	const closeUpsell = async () => {
 		Animated.parallel([
