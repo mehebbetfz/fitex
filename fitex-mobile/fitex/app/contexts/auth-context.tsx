@@ -14,6 +14,8 @@ interface User {
 	lastName?: string
 	avatarUrl?: string
 	isPremium: boolean
+	/** ISO string from server; App Store / Play subscription end time */
+	premiumExpiresAt?: string
 	trialStartedAt?: string   // ISO date string, set when user starts trial
 	trialEndsAt?: string      // ISO date string = trialStartedAt + 30 days
 	isNewUser?: boolean       // true on very first login
@@ -34,6 +36,8 @@ interface AuthContextType {
 	resetAuth: () => Promise<void>
 	signOut: () => Promise<void>
 	updateUser: (user: Partial<User>) => void
+	/** Refetch premium / profile from server (e.g. after subscription changes). */
+	refreshProfile: () => Promise<void>
 	startTrial: () => Promise<void>
 	dismissTrialPaywall: () => Promise<void>
 	trialDaysLeft: number       // ≥0 if in trial, -1 if not started/expired
@@ -272,6 +276,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		setUser(prev => (prev ? { ...prev, ...updates } : null))
 	}
 
+	const refreshProfile = async () => {
+		try {
+			const token = await SecureStore.getItemAsync('access_token')
+			if (!token) return
+			const { data } = await api.get('/auth/me')
+			setUser(prev => {
+				if (!prev) return null
+				const next = { ...prev, ...data }
+				SecureStore.setItemAsync('user', JSON.stringify(next)).catch(() => {})
+				return next
+			})
+		} catch (err) {
+			console.warn('[Auth] refreshProfile failed:', err)
+		}
+	}
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -289,6 +309,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			resetAuth,
 			signOut,
 			updateUser,
+			refreshProfile,
 			startTrial,
 			dismissTrialPaywall,
 			trialDaysLeft,

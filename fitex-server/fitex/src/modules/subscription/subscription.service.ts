@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
+import { Model, Types } from 'mongoose'
 import { Subscription, SubscriptionDocument } from 'src/models/subscription.schema'
 import { User, UserDocument } from 'src/models/user.schema'
 import { IapService } from '../iap/iap.service'
@@ -11,42 +11,91 @@ export class SubscriptionService {
 		@InjectModel(Subscription.name) private subModel: Model<SubscriptionDocument>,
 		@InjectModel(User.name) private userModel: Model<UserDocument>,
 		private iapService: IapService,
-	) { }
+	) {}
 
 	async verifyAndActivate(userId: string, receipt: string, platform: 'ios' | 'android') {
 		const verification = await this.iapService.verifyReceipt(receipt, platform)
 		if (!verification.valid) {
-			throw new BadRequestException('Invalid receipt')
+			throw new BadRequestException(
+				'errorMessage' in verification ? verification.errorMessage : 'Invalid receipt',
+			)
 		}
 
-		const transactionId = verification.transactionId
-		const productId = verification.productId
-		const purchaseDate = new Date(verification.purchaseDate)
-		const expirationDate = verification.expirationDate ? new Date(verification.expirationDate) : null
-
-		// Проверяем, не активирована ли уже эта транзакция
-		const existing = await this.subModel.findOne({ transactionId })
-		if (existing) {
-			throw new BadRequestException('Receipt already used')
+		const expirationDate = verification.expirationDate
+		if (!expirationDate || expirationDate.getTime() <= Date.now()) {
+			throw new BadRequestException('Subscription has expired')
 		}
 
-		const subscription = new this.subModel({
-			userId,
-			productId,
-			transactionId,
-			purchaseDate,
-			expirationDate,
+		const stableId =
+			platform === 'ios'
+				? verification.originalTransactionId || verification.transactionId
+				: verification.transactionId
+
+		const other = await this.subModel.findOne({
 			platform,
-			status: 'active',
+			subscriptionGroupId: stableId,
+			userId: { $ne: new Types.ObjectId(userId) },
 		})
-		await subscription.save()
+		if (other) {
+			throw new ConflictException(
+				'This subscription is already linked to another Fitex account. Sign in with that account or use Restore on the account that purchased it.',
+			)
+		}
+
+		let doc = await this.subModel.findOne({
+			userId: new Types.ObjectId(userId),
+			platform,
+			subscriptionGroupId: stableId,
+		})
+
+		if (!doc) {
+			doc = await this.subModel.findOne({
+				userId: new Types.ObjectId(userId),
+				platform,
+				transactionId: verification.transactionId,
+			})
+		}
+
+		if (!doc && platform === 'ios' && verification.originalTransactionId) {
+			doc = await this.subModel.findOne({
+				userId: new Types.ObjectId(userId),
+				platform,
+				transactionId: verification.originalTransactionId,
+			})
+		}
+
+		if (doc) {
+			doc.productId = verification.productId
+			doc.transactionId = verification.transactionId
+			doc.subscriptionGroupId = stableId
+			doc.purchaseDate = verification.purchaseDate
+			doc.expirationDate = expirationDate
+			doc.status = 'active'
+			await doc.save()
+		} else {
+			await new this.subModel({
+				userId: new Types.ObjectId(userId),
+				productId: verification.productId,
+				transactionId: verification.transactionId,
+				subscriptionGroupId: stableId,
+				purchaseDate: verification.purchaseDate,
+				expirationDate,
+				platform,
+				status: 'active',
+			}).save()
+		}
 
 		await this.userModel.findByIdAndUpdate(userId, {
 			isPremium: true,
 			premiumExpiresAt: expirationDate,
 		})
 
-		return { success: true }
+		return {
+			success: true,
+			isPremium: true,
+			premiumExpiresAt: expirationDate.toISOString(),
+			productId: verification.productId,
+		}
 	}
 
 	async getUserSubscriptions(userId: string) {
@@ -57,7 +106,6 @@ export class SubscriptionService {
 		const user = await this.userModel.findById(userId)
 		if (!user) throw new BadRequestException('User not found')
 
-		// Idempotent: ignore if trial already started
 		if (user.trialStartedAt) {
 			return {
 				success: true,
@@ -83,7 +131,6 @@ export class SubscriptionService {
 		const user = await this.userModel.findById(userId)
 		if (!user) throw new BadRequestException('User not found')
 
-		// Do not grant trial here — only mark user as not-new so app can proceed in Basic mode.
 		await this.userModel.findByIdAndUpdate(userId, {
 			isNewUser: false,
 		})

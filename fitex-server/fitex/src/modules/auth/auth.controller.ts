@@ -1,9 +1,16 @@
-import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common'
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard'
 import { AuthService } from './auth.service'
 
 @Controller('auth')
 export class AuthController {
 	constructor(private authService: AuthService) { }
+
+	@Get('me')
+	@UseGuards(JwtAuthGuard)
+	async me(@Req() req: { user: { userId: string } }) {
+		return this.authService.getSessionUser(req.user.userId)
+	}
 
 	@Post('google')
 	@HttpCode(HttpStatus.OK)

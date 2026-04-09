@@ -14,6 +14,10 @@ export class Subscription {
 	@Prop({ required: true })
 	transactionId: string
 
+	/** Stable id: Apple original_transaction_id, Google purchase token (renewals update transactionId). */
+	@Prop()
+	subscriptionGroupId?: string
+
 	@Prop({ required: true })
 	purchaseDate: Date
 

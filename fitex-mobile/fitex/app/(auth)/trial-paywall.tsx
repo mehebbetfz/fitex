@@ -1,5 +1,4 @@
 import { useLanguage } from '@/contexts/language-context'
-import { api } from '@/services/api'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
@@ -21,14 +20,13 @@ import {
 	Purchase,
 	ProductSubscription,
 	endConnection,
-	finishTransaction,
 	initConnection,
 	purchaseErrorListener,
 	purchaseUpdatedListener,
 	requestPurchase,
 } from 'react-native-iap'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
-import { getIosAppStoreReceiptForVerify } from '@/services/iap-receipt'
+import { syncAlreadyOwnedSubscription, verifySubscriptionOnServer } from '@/services/subscription-verify'
 import { useAuth } from '../contexts/auth-context'
 
 const COLORS = {
@@ -51,7 +49,7 @@ const SKUS = {
 const TRIAL_DAYS = 30
 
 export default function TrialPaywallScreen() {
-	const { dismissTrialPaywall, startTrial, updateUser } = useAuth()
+	const { dismissTrialPaywall, updateUser } = useAuth()
 	const { t } = useLanguage()
 
 	const [products, setProducts] = useState<ProductSubscription[]>([])
@@ -66,47 +64,23 @@ export default function TrialPaywallScreen() {
 	// ── Purchase handler ─────────────────────────────────────────────────────
 	const handlePurchase = useCallback(
 		async (purchase: Purchase) => {
-			let receipt: string | undefined
-			if (Platform.OS === 'ios') {
-				receipt = await getIosAppStoreReceiptForVerify()
-			} else {
-				receipt = purchase.purchaseToken ?? undefined
-			}
-
-			if (!receipt) {
-				Alert.alert(t('common', 'error'), t('trial', 'noReceipt'))
-				setLoading(false)
-				return
-			}
-
-			try {
-				const response = await api.post('/subscription/verify', {
-					receipt,
-					productId: purchase.productId,
-					platform: Platform.OS,
-					transactionId: purchase.transactionId,
+			const result = await verifySubscriptionOnServer(purchase)
+			if (result.ok) {
+				await updateUser({
+					isPremium: true,
+					premiumExpiresAt: result.premiumExpiresAt,
+					isNewUser: false,
 				})
-
-				if (response.data?.success) {
-					await finishTransaction({ purchase, isConsumable: false })
-					await updateUser({ isPremium: true })
-					await startTrial()
-					router.replace('/(tabs)')
-				} else {
-					Alert.alert(t('common', 'error'), response.data?.message || t('subscription', 'purchaseError'))
-					setLoading(false)
-				}
-			} catch (err: unknown) {
+				await dismissTrialPaywall()
+				router.replace('/(tabs)')
+			} else {
 				const msg =
-					(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
-						?.message
-					?? (err as { message?: string })?.message
-					?? t('subscription', 'purchaseError')
+					result.message === 'noReceipt' ? t('trial', 'noReceipt') : result.message
 				Alert.alert(t('common', 'error'), msg)
 				setLoading(false)
 			}
 		},
-		[startTrial, updateUser, t],
+		[dismissTrialPaywall, updateUser, t],
 	)
 
 	// ── IAP init ─────────────────────────────────────────────────────────────
@@ -121,13 +95,34 @@ export default function TrialPaywallScreen() {
 					await handlePurchase(purchase)
 				})
 
-				purchaseErrorSub.current = purchaseErrorListener((error: any) => {
+				purchaseErrorSub.current = purchaseErrorListener(async (error: any) => {
 					if (
-						error.code !== ErrorCode.UserCancelled &&
-						error.code !== 'E_USER_CANCELLED'
+						error.code === ErrorCode.UserCancelled ||
+						error.code === 'E_USER_CANCELLED'
 					) {
-						Alert.alert(t('subscription', 'purchaseError'), error.message)
+						setLoading(false)
+						return
 					}
+					if (error.code === ErrorCode.AlreadyOwned) {
+						const r = await syncAlreadyOwnedSubscription()
+						if (r.ok) {
+							await updateUser({
+								isPremium: true,
+								premiumExpiresAt: r.premiumExpiresAt,
+								isNewUser: false,
+							})
+							await dismissTrialPaywall()
+							router.replace('/(tabs)')
+						} else {
+							Alert.alert(
+								t('subscription', 'purchaseError'),
+								t('subscription', 'restoreEmpty'),
+							)
+						}
+						setLoading(false)
+						return
+					}
+					Alert.alert(t('subscription', 'purchaseError'), error.message)
 					setLoading(false)
 				})
 
@@ -162,7 +157,7 @@ export default function TrialPaywallScreen() {
 			purchaseErrorSub.current?.remove()
 			endConnection()
 		}
-	}, [handlePurchase, t])
+	}, [handlePurchase, t, dismissTrialPaywall, updateUser])
 
 	// ── Buy ───────────────────────────────────────────────────────────────────
 	const buySubscription = async () => {

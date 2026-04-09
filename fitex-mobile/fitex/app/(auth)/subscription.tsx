@@ -17,8 +17,6 @@ import {
 	Purchase,
 	ProductSubscription,
 	endConnection,
-	finishTransaction,
-	getAvailablePurchases,
 	initConnection,
 	purchaseErrorListener,
 	purchaseUpdatedListener,
@@ -27,8 +25,7 @@ import {
 
 import { useLanguage } from '@/contexts/language-context'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
-import { getIosAppStoreReceiptForVerify } from '@/services/iap-receipt'
-import { api } from '../../services/api'
+import { syncAlreadyOwnedSubscription, verifySubscriptionOnServer } from '@/services/subscription-verify'
 import { useAuth } from '../contexts/auth-context'
 
 const LOG_TAG = '[SubscriptionScreen]'
@@ -97,73 +94,23 @@ export default function SubscriptionScreen() {
 				platform: Platform.OS,
 			})
 
-			const receipt =
-				Platform.OS === 'ios'
-					? await getIosAppStoreReceiptForVerify()
-					: purchase.purchaseToken
-
-			log('Receipt extracted', { hasReceipt: !!receipt, platform: Platform.OS })
-
-			if (!receipt) {
-				logWarn('No receipt found in purchase object')
-				Alert.alert(t('common', 'error'), 'No purchase receipt found')
-				setLoading(false)
-				return
-			}
-
-			try {
-				log('Sending verify request to /subscription/verify', {
-					productId: purchase.productId,
-					platform: Platform.OS,
-					transactionId: purchase.transactionId,
+			const result = await verifySubscriptionOnServer(purchase)
+			if (result.ok) {
+				log('Verification successful')
+				await updateUser({
+					isPremium: true,
+					premiumExpiresAt: result.premiumExpiresAt,
 				})
-
-				const response = await api.post('/subscription/verify', {
-					receipt,
-					productId: purchase.productId,
-					platform: Platform.OS,
-					transactionId: purchase.transactionId,
-				})
-
-				log('Verify response received', {
-					status: response.status,
-					success: response.data?.success,
-					message: response.data?.message,
-				})
-
-				if (response.data?.success) {
-					log('Verification successful, finishing transaction...')
-					await finishTransaction({ purchase, isConsumable: false })
-					log('Transaction finished')
-
-					log('Calling updateUser({ isPremium: true })')
-					await updateUser({ isPremium: true })
-					log('updateUser completed')
-
-					Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
-					log('Navigating back after successful purchase')
-					router.back()
-				} else {
-					logWarn('Verification failed', {
-						message: response.data?.message,
-					})
-					Alert.alert(
-						t('common', 'error'),
-						response.data?.message || t('subscription', 'purchaseError'),
-					)
-				}
-			} catch (error: unknown) {
-				logError('Verify request threw an error', error)
+				Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
+				router.back()
+			} else {
+				logWarn('Verification failed', { message: result.message })
 				const msg =
-					(error as { response?: { data?: { message?: string } }; message?: string })?.response?.data
-						?.message
-					?? (error as { message?: string })?.message
-					?? t('subscription', 'purchaseError')
+					result.message === 'noReceipt' ? 'No purchase receipt found' : result.message
 				Alert.alert(t('common', 'error'), msg)
-			} finally {
-				log('handlePurchase finally: setLoading(false)')
-				setLoading(false)
 			}
+			log('handlePurchase finally: setLoading(false)')
+			setLoading(false)
 		},
 		[updateUser, t],
 	)
@@ -191,16 +138,32 @@ export default function SubscriptionScreen() {
 				})
 
 				log('Subscribing to purchaseErrorListener')
-				purchaseErrorSub.current = purchaseErrorListener((error: any) => {
+				purchaseErrorSub.current = purchaseErrorListener(async (error: any) => {
 					logWarn('purchaseErrorListener fired', {
 						code: error.code,
 						message: error.message,
 					})
-					if (error.code !== ErrorCode.UserCancelled) {
-						Alert.alert(t('subscription', 'purchaseError'), error.message)
-					} else {
+					if (error.code === ErrorCode.UserCancelled) {
 						log('User cancelled purchase — no alert shown')
+						setLoading(false)
+						return
 					}
+					if (error.code === ErrorCode.AlreadyOwned) {
+						const r = await syncAlreadyOwnedSubscription()
+						if (r.ok) {
+							await updateUser({
+								isPremium: true,
+								premiumExpiresAt: r.premiumExpiresAt,
+							})
+							Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
+							router.back()
+						} else {
+							Alert.alert(t('subscription', 'purchaseError'), t('subscription', 'restoreEmpty'))
+						}
+						setLoading(false)
+						return
+					}
+					Alert.alert(t('subscription', 'purchaseError'), error.message)
 					setLoading(false)
 				})
 
@@ -246,7 +209,7 @@ export default function SubscriptionScreen() {
 			endConnection()
 			log('endConnection() called')
 		}
-	}, [handlePurchase])
+	}, [handlePurchase, t, updateUser])
 
 	// ==============================
 	// ПОКУПКА
@@ -332,24 +295,24 @@ export default function SubscriptionScreen() {
 		log('setLoading(true)')
 
 		try {
-			log('Calling getAvailablePurchases()...')
-			const purchases = await getAvailablePurchases()
-			log('getAvailablePurchases returned', {
-				count: purchases.length,
-				productIds: purchases.map(p => p.productId),
-			})
+			log('Calling syncAlreadyOwnedSubscription()...')
+			const r = await syncAlreadyOwnedSubscription()
+			log('restore result', { ok: r.ok })
 
-			if (!purchases.length) {
-				logWarn('No available purchases found')
+			if (!r.ok) {
+				logWarn('No active premium subscription to restore', { message: r.message })
 				Alert.alert(t('subscription', 'restoreEmpty'))
 				setLoading(false)
 				return
 			}
 
-			log('Handling first available purchase for restore', {
-				productId: purchases[0].productId,
+			await updateUser({
+				isPremium: true,
+				premiumExpiresAt: r.premiumExpiresAt,
 			})
-			await handlePurchase(purchases[0])
+			Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
+			setLoading(false)
+			router.back()
 		} catch (error) {
 			logError('restorePurchases threw', error)
 			Alert.alert(t('common', 'error'), t('subscription', 'purchaseError'))

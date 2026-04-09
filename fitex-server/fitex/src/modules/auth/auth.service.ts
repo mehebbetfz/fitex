@@ -72,7 +72,7 @@ export class AuthService {
 		user.emailVerificationToken = undefined
 		user.emailVerificationExpires = undefined
 		await user.save()
-		return this.login(user)
+		return await this.login(user)
 	}
 
 	async loginWithEmail(email: string, password: string): Promise<ReturnType<AuthService['login']>> {
@@ -83,7 +83,7 @@ export class AuthService {
 		const valid = await bcrypt.compare(password, user.passwordHash)
 		if (!valid) throw new UnauthorizedException('Invalid email or password')
 
-		return this.login(user)
+		return await this.login(user)
 	}
 
 	async resendVerificationCode(email: string): Promise<{ message: string }> {
@@ -260,26 +260,51 @@ export class AuthService {
 		return user
 	}
 
-	login(user: UserDocument) {
-		const payload = {
-			sub: user._id,
+	private async clearExpiredPremium(userId: string): Promise<UserDocument | null> {
+		const u = await this.userModel.findById(userId)
+		if (!u) return null
+		const now = new Date()
+		if (u.isPremium && u.premiumExpiresAt && u.premiumExpiresAt < now) {
+			u.isPremium = false
+			await u.save()
+		}
+		return u
+	}
+
+	async getSessionUser(userId: string) {
+		const u = await this.clearExpiredPremium(userId)
+		if (!u) throw new UnauthorizedException('User not found')
+		return this.toPublicUser(u)
+	}
+
+	private toPublicUser(user: UserDocument) {
+		return {
+			id: user._id,
 			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			avatarUrl: user.avatarUrl,
 			isPremium: user.isPremium,
+			premiumExpiresAt: user.premiumExpiresAt ?? null,
+			trialStartedAt: user.trialStartedAt ?? null,
+			trialEndsAt: user.trialEndsAt ?? null,
+			isNewUser: user.isNewUser ?? true,
+		}
+	}
+
+	async login(user: UserDocument) {
+		const fresh = await this.clearExpiredPremium(user._id.toString())
+		const u = fresh ?? user
+
+		const payload = {
+			sub: u._id,
+			email: u.email,
+			isPremium: u.isPremium,
 		}
 
 		return {
 			access_token: this.jwtService.sign(payload),
-			user: {
-				id: user._id,
-				email: user.email,
-				firstName: user.firstName,
-				lastName: user.lastName,
-				avatarUrl: user.avatarUrl,
-				isPremium: user.isPremium,
-				trialStartedAt: user.trialStartedAt ?? null,
-				trialEndsAt: user.trialEndsAt ?? null,
-				isNewUser: user.isNewUser ?? true,
-			},
+			user: this.toPublicUser(u),
 		}
 	}
 }
