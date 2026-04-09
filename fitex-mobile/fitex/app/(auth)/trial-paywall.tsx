@@ -22,13 +22,13 @@ import {
 	ProductSubscription,
 	endConnection,
 	finishTransaction,
-	getReceiptIOS,
 	initConnection,
 	purchaseErrorListener,
 	purchaseUpdatedListener,
 	requestPurchase,
 } from 'react-native-iap'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
+import { getIosAppStoreReceiptForVerify } from '@/services/iap-receipt'
 import { useAuth } from '../contexts/auth-context'
 
 const COLORS = {
@@ -51,7 +51,7 @@ const SKUS = {
 const TRIAL_DAYS = 30
 
 export default function TrialPaywallScreen() {
-	const { dismissTrialPaywall, updateUser } = useAuth()
+	const { dismissTrialPaywall, startTrial, updateUser } = useAuth()
 	const { t } = useLanguage()
 
 	const [products, setProducts] = useState<ProductSubscription[]>([])
@@ -68,17 +68,7 @@ export default function TrialPaywallScreen() {
 		async (purchase: Purchase) => {
 			let receipt: string | undefined
 			if (Platform.OS === 'ios') {
-				receipt =
-					(purchase as any).transactionReceipt
-					?? purchase.purchaseToken
-					?? undefined
-				if (!receipt) {
-					try {
-						receipt = await getReceiptIOS()
-					} catch {
-						/* ignore */
-					}
-				}
+				receipt = await getIosAppStoreReceiptForVerify()
 			} else {
 				receipt = purchase.purchaseToken ?? undefined
 			}
@@ -106,8 +96,13 @@ export default function TrialPaywallScreen() {
 					Alert.alert(t('common', 'error'), response.data?.message || t('subscription', 'purchaseError'))
 					setLoading(false)
 				}
-			} catch {
-				Alert.alert(t('common', 'error'), t('subscription', 'purchaseError'))
+			} catch (err: unknown) {
+				const msg =
+					(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data
+						?.message
+					?? (err as { message?: string })?.message
+					?? t('subscription', 'purchaseError')
+				Alert.alert(t('common', 'error'), msg)
 				setLoading(false)
 			}
 		},

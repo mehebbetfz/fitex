@@ -27,6 +27,7 @@ import {
 
 import { useLanguage } from '@/contexts/language-context'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
+import { getIosAppStoreReceiptForVerify } from '@/services/iap-receipt'
 import { api } from '../../services/api'
 import { useAuth } from '../contexts/auth-context'
 
@@ -98,7 +99,7 @@ export default function SubscriptionScreen() {
 
 			const receipt =
 				Platform.OS === 'ios'
-					? (purchase as any).transactionReceipt
+					? await getIosAppStoreReceiptForVerify()
 					: purchase.purchaseToken
 
 			log('Receipt extracted', { hasReceipt: !!receipt, platform: Platform.OS })
@@ -151,15 +152,20 @@ export default function SubscriptionScreen() {
 						response.data?.message || t('subscription', 'purchaseError'),
 					)
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				logError('Verify request threw an error', error)
-				Alert.alert(t('common', 'error'), t('subscription', 'purchaseError'))
+				const msg =
+					(error as { response?: { data?: { message?: string } }; message?: string })?.response?.data
+						?.message
+					?? (error as { message?: string })?.message
+					?? t('subscription', 'purchaseError')
+				Alert.alert(t('common', 'error'), msg)
 			} finally {
 				log('handlePurchase finally: setLoading(false)')
 				setLoading(false)
 			}
 		},
-		[updateUser],
+		[updateUser, t],
 	)
 
 	// ==============================
