@@ -9,6 +9,12 @@ services:
     container_name: fitex-api
     restart: unless-stopped
     env_file: .env
+    environment:
+      # Папка с Apple .cer смонтирована ниже; без неё падает разбор JWS в POST /webhooks/apple
+      APPLE_ROOT_CA_DIR: /app/certs
+    volumes:
+      # Сертификаты лежат на хосте в ./certs рядом с compose — внутри контейнера видны как /app/certs
+      - ./certs:/app/certs:ro
     ports:
       - "0.0.0.0:3000:3000"      # open to world — no domain needed, access via http://IP:3000
     networks:
