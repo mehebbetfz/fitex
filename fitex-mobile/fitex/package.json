@@ -8,7 +8,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "eas:update": "eas update --channel production --non-interactive --auto",
+    "eas:build:ios": "eas build --platform ios --profile production --non-interactive --auto-submit"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
