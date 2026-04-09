@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
-	Dimensions,
 	Linking,
 	Platform,
 	SafeAreaView,
@@ -20,18 +19,17 @@ import {
 import {
 	ErrorCode,
 	Purchase,
-	Subscription,
+	ProductSubscription,
 	endConnection,
+	fetchProducts,
 	finishTransaction,
-	getSubscriptions,
+	getReceiptIOS,
 	initConnection,
 	purchaseErrorListener,
 	purchaseUpdatedListener,
-	requestSubscription,
+	requestPurchase,
 } from 'react-native-iap'
 import { useAuth } from '../contexts/auth-context'
-
-const { width } = Dimensions.get('window')
 
 const COLORS = {
 	primary: '#34C759',
@@ -56,7 +54,8 @@ export default function TrialPaywallScreen() {
 	const { startTrial, updateUser } = useAuth()
 	const { t } = useLanguage()
 
-	const [products, setProducts] = useState<Subscription[]>([])
+	const [products, setProducts] = useState<ProductSubscription[]>([])
+	const [storeReady, setStoreReady] = useState(false)
 	const [selectedSku, setSelectedSku] = useState<string>(SKUS.yearly)
 	const [loading, setLoading] = useState(false)
 	const [initializing, setInitializing] = useState(true)
@@ -67,10 +66,22 @@ export default function TrialPaywallScreen() {
 	// ── Purchase handler ─────────────────────────────────────────────────────
 	const handlePurchase = useCallback(
 		async (purchase: Purchase) => {
-			const receipt =
-				Platform.OS === 'ios'
-					? (purchase as any).transactionReceipt
-					: purchase.purchaseToken
+			let receipt: string | undefined
+			if (Platform.OS === 'ios') {
+				receipt =
+					(purchase as any).transactionReceipt
+					?? purchase.purchaseToken
+					?? undefined
+				if (!receipt) {
+					try {
+						receipt = await getReceiptIOS()
+					} catch {
+						/* ignore */
+					}
+				}
+			} else {
+				receipt = purchase.purchaseToken ?? undefined
+			}
 
 			if (!receipt) {
 				Alert.alert(t('common', 'error'), t('trial', 'noReceipt'))
@@ -116,37 +127,41 @@ export default function TrialPaywallScreen() {
 				})
 
 				purchaseErrorSub.current = purchaseErrorListener((error: any) => {
-					if (error.code !== ErrorCode.UserCancelled) {
+					if (
+						error.code !== ErrorCode.UserCancelled &&
+						error.code !== 'E_USER_CANCELLED'
+					) {
 						Alert.alert(t('subscription', 'purchaseError'), error.message)
 					}
 					setLoading(false)
 				})
 
-				const items = await getSubscriptions({
+				const items = await fetchProducts({
 					skus: [SKUS.monthly, SKUS.yearly],
+					type: 'subs',
 				})
 
 				if (mounted) {
-					if (items?.length) {
-						// Sort: yearly first
-						const sorted = [...items].sort((a, b) =>
-							a.productId === SKUS.yearly ? -1 : 1
+					const subs = (items ?? []).filter(
+						(p): p is ProductSubscription => p.type === 'subs',
+					)
+					if (subs.length) {
+						const sorted = [...subs].sort((a, b) =>
+							a.id === SKUS.yearly ? -1 : 1
 						)
 						setProducts(sorted)
+						setStoreReady(true)
 					} else {
-						setProducts([
-							{ productId: SKUS.monthly, title: t('trial', 'monthly'), localizedPrice: '$4.99' } as any,
-							{ productId: SKUS.yearly, title: t('trial', 'yearly'), localizedPrice: '$39.99' } as any,
-						])
+						setProducts([])
+						setStoreReady(false)
+						console.warn('[IAP] No subscription products returned from App Store')
 					}
 				}
 			} catch (e) {
-				console.warn('[IAP] getSubscriptions error:', e)
+				console.warn('[IAP] fetchProducts error:', e)
 				if (mounted) {
-					setProducts([
-						{ productId: SKUS.monthly, title: t('trial', 'monthly'), localizedPrice: '$4.99' } as any,
-						{ productId: SKUS.yearly, title: t('trial', 'yearly'), localizedPrice: '$39.99' } as any,
-					])
+					setProducts([])
+					setStoreReady(false)
 				}
 			} finally {
 				if (mounted) setInitializing(false)
@@ -167,29 +182,60 @@ export default function TrialPaywallScreen() {
 	const buySubscription = async () => {
 		if (loading) return
 
-		// Guard: products not loaded
-		if (!products.length) {
+		if (!storeReady || !products.length) {
 			Alert.alert(
 				t('common', 'error'),
-				'Store not available. Make sure you are on a real device with a valid Apple ID.',
+				t('trial', 'storeUnavailable'),
 			)
 			return
 		}
 
 		setLoading(true)
 		try {
-			console.log('[IAP] requestSubscription sku:', selectedSku)
-			await requestSubscription({
-				sku: selectedSku,
-				andDangerouslyFinishTransactionAutomaticallyIOS: false,
-			})
+			console.log('[IAP] requestPurchase subs sku:', selectedSku)
+
+			if (Platform.OS === 'ios') {
+				await requestPurchase({
+					type: 'subs',
+					request: {
+						apple: {
+							sku: selectedSku,
+							andDangerouslyFinishTransactionAutomatically: false,
+						},
+					},
+				})
+			} else {
+				const prod = products.find(p => p.id === selectedSku)
+				const offers =
+					prod?.platform === 'android' ? prod.subscriptionOffers ?? [] : []
+				const token =
+					offers.find(o => o.offerTokenAndroid)?.offerTokenAndroid
+					?? offers[0]?.offerTokenAndroid
+				if (!token) {
+					Alert.alert(t('common', 'error'), t('trial', 'androidOfferMissing'))
+					setLoading(false)
+					return
+				}
+				await requestPurchase({
+					type: 'subs',
+					request: {
+						google: {
+							skus: [selectedSku],
+							subscriptionOffers: [
+								{ sku: selectedSku, offerToken: token },
+							],
+						},
+					},
+				})
+			}
+			// Purchase completes via purchaseUpdatedListener; do not setLoading(false) here
 		} catch (error: any) {
 			console.log('[IAP] error code:', error.code, error.message)
 			if (
-				error.code !== ErrorCode.E_USER_CANCELLED &&
+				error.code !== ErrorCode.UserCancelled &&
 				error.code !== 'E_USER_CANCELLED'
 			) {
-				Alert.alert(t('common', 'error'), error.message)
+				Alert.alert(t('common', 'error'), error.message ?? String(error))
 			}
 			setLoading(false)
 		}
@@ -217,27 +263,23 @@ export default function TrialPaywallScreen() {
 
 	// ── UI helpers ────────────────────────────────────────────────────────────
 	const getPrice = (sku: string) => {
-		const product = products.find(p => p.productId === sku)
+		const product = products.find(p => p.id === sku)
 		if (!product) return '—'
-		// react-native-iap v14 on iOS returns localizedPrice
-		// Android returns price
-		return (product as any).localizedPrice
-			?? (product as any).price
-			?? '—'
+		return product.displayPrice ?? '—'
 	}
 
 	const getTitle = (sku: string) => {
-		const product = products.find(p => p.productId === sku)
+		const product = products.find(p => p.id === sku)
 		if (!product) return sku === SKUS.monthly ? t('trial', 'monthly') : t('trial', 'yearly')
-		return (product as any).title
+		return product.title
 			?.replace(/\(.*\)/, '')
 			.trim()
 			?? (sku === SKUS.monthly ? t('trial', 'monthly') : t('trial', 'yearly'))
 	}
 
 	const getDescription = (sku: string) => {
-		const product = products.find(p => p.productId === sku)
-		return (product as any).description ?? ''
+		const product = products.find(p => p.id === sku)
+		return product?.description ?? ''
 	}
 
 	if (initializing) {
@@ -411,12 +453,6 @@ export default function TrialPaywallScreen() {
 				</TouchableOpacity>
 				</View>
 			</ScrollView>
-
-			{loading && (
-				<View style={styles.loadingOverlay}>
-					<ActivityIndicator size='large' color={COLORS.primary} />
-				</View>
-			)}
 		</SafeAreaView>
 	)
 }
@@ -791,13 +827,5 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		color: COLORS.textSecondary,
 		textDecorationLine: 'underline',
-	},
-
-	// Loading overlay
-	loadingOverlay: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: 'rgba(0,0,0,0.6)',
-		justifyContent: 'center',
-		alignItems: 'center',
 	},
 })

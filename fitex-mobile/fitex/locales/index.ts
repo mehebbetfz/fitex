@@ -750,6 +750,8 @@ export interface Translations {
     free: string
     yearShort: string
     monthShort: string
+    storeUnavailable: string
+    androidOfferMissing: string
   }
 }
 
@@ -1487,6 +1489,9 @@ export const ru: Translations = {
     free: 'FREE',
     yearShort: 'год',
     monthShort: 'мес',
+    storeUnavailable:
+      'Подписки не загрузились из App Store. Проверьте интернет, соглашения Paid Apps в App Store Connect и на устройстве: Настройки → App Store → Sandbox (для TestFlight).',
+    androidOfferMissing: 'Не найден offer token для подписки в Google Play. Проверьте базовый план в консоли.',
     skipTitle: 'Ограниченный доступ',
     skipBody: 'Без привязки карты будут доступны только базовые функции. Рейтинг, синхронизация и аналитика — только с подпиской.',
     skipConfirm: 'Продолжить без карты',
@@ -2228,6 +2233,9 @@ export const en: Translations = {
     free: 'FREE',
     yearShort: 'yr',
     monthShort: 'mo',
+    storeUnavailable:
+      'Subscriptions did not load from the store. Check your connection, Paid Apps agreements in App Store Connect, and on device: Settings → App Store → Sandbox (for TestFlight).',
+    androidOfferMissing: 'No subscription offer token from Google Play. Check the base plan in Play Console.',
     skipTitle: 'Limited Access',
     skipBody: 'Without a payment method, only basic features are available. Rating, sync, and advanced analytics require a subscription.',
     skipConfirm: 'Continue without card',
@@ -2973,6 +2981,9 @@ export const az: Translations = {
     free: 'PULSUZ',
     yearShort: 'il',
     monthShort: 'ay',
+    storeUnavailable:
+      'Abunəliklər mağazadan yüklənmədi. İnternet, App Store Connect-də Paid Apps müqaviləsi və cihazda: Parametrlər → App Store → Sandbox (TestFlight) yoxlayın.',
+    androidOfferMissing: 'Google Play-də abunəlik offer token tapılmadı. Play Console-da əsas planı yoxlayın.',
   },
 }
 
