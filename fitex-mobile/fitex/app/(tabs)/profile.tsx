@@ -14,12 +14,14 @@ import {
 } from '@/services/notifications'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
 	Animated,
+	Linking,
 	Modal,
+	Platform,
 	ScrollView,
 	StyleSheet,
 	Switch,
@@ -503,6 +505,19 @@ export default function ProfileScreen() {
 	}
 
 	const handleUpgrade = () => router.push('/(auth)/trial-paywall' as any)
+
+	const handleManageSubscription = useCallback(async () => {
+		const url =
+			Platform.OS === 'ios'
+				? 'https://apps.apple.com/account/subscriptions'
+				: 'https://play.google.com/store/account/subscriptions?package=com.farzaliyev.fitex'
+		try {
+			await Linking.openURL(url)
+		} catch {
+			Alert.alert(t('common', 'error'), t('profile', 'openStoreError'))
+		}
+	}, [t])
+
 	const userInitial = user?.firstName?.[0] || user?.email?.[0] || '?'
 
 	return (
@@ -640,6 +655,22 @@ export default function ProfileScreen() {
 								</TouchableOpacity>
 							)}
 						</View>
+						</View>
+					</FadeIn>
+				)}
+
+				{/* Подписка: отмена / управление через магазин (IAP) */}
+				{!loading && premium && (
+					<FadeIn show={!loading}>
+						<View style={styles.section}>
+							<Text style={styles.sectionTitle}>{t('profile', 'subscription')}</Text>
+							<SettingsItem
+								icon='card-outline'
+								title={t('profile', 'cancelSubscription')}
+								subtitle={t('profile', 'cancelSubscriptionHint')}
+								onPress={handleManageSubscription}
+								iconColor={COLORS.primary}
+							/>
 						</View>
 					</FadeIn>
 				)}

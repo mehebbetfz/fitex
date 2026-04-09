@@ -722,6 +722,10 @@ export interface Translations {
     defaultUser: string
     /** Подпись к относительному времени до premiumExpiresAt (Intl). */
     nextBillingLabel: string
+    subscription: string
+    cancelSubscription: string
+    cancelSubscriptionHint: string
+    openStoreError: string
   }
   trial: {
     badge: string
@@ -1475,6 +1479,11 @@ export const ru: Translations = {
     minutes: 'Минуты',
     defaultUser: 'Пользователь',
     nextBillingLabel: 'Следующее списание',
+    subscription: 'Подписка',
+    cancelSubscription: 'Управление и отмена',
+    cancelSubscriptionHint:
+      'Откроется App Store или Google Play — там можно отключить автопродление подписки.',
+    openStoreError: 'Не удалось открыть страницу подписок. Откройте магазин приложений вручную.',
   },
   trial: {
     badge: 'Бесплатный период',
@@ -2229,6 +2238,11 @@ export const en: Translations = {
     minutes: 'Minutes',
     defaultUser: 'User',
     nextBillingLabel: 'Next billing',
+    subscription: 'Subscription',
+    cancelSubscription: 'Manage or cancel',
+    cancelSubscriptionHint:
+      'Opens the App Store or Google Play where you can turn off auto-renewal.',
+    openStoreError: 'Could not open subscriptions. Please open the app store manually.',
   },
   trial: {
     badge: 'Free Trial',
@@ -2983,6 +2997,11 @@ export const az: Translations = {
     minutes: 'Dəqiqələr',
     defaultUser: 'İstifadəçi',
     nextBillingLabel: 'Növbəti ödəniş',
+    subscription: 'Abunəlik',
+    cancelSubscription: 'İdarə və ləğv',
+    cancelSubscriptionHint:
+      'App Store və ya Google Play açılacaq — orada avtomatik yeniləməni söndürə bilərsiniz.',
+    openStoreError: 'Abunəlik səhifəsini açmaq mümkün olmadı. Mağazan əl ilə açın.',
   },
   trial: {
     badge: 'Pulsuz Sınaq',
