@@ -51,7 +51,7 @@ const SKUS = {
 const TRIAL_DAYS = 30
 
 export default function TrialPaywallScreen() {
-	const { startTrial, updateUser } = useAuth()
+	const { dismissTrialPaywall, updateUser } = useAuth()
 	const { t } = useLanguage()
 
 	const [products, setProducts] = useState<ProductSubscription[]>([])
@@ -232,7 +232,7 @@ export default function TrialPaywallScreen() {
 		}
 	}
 
-	// ── Skip (use only 30-day countdown without IAP) ─────────────────────────
+	// ── Skip (limited access, no trial) ──────────────────────────────────────
 	const skipForNow = () => {
 		Alert.alert(
 			t('trial', 'skipTitle'),
@@ -243,8 +243,8 @@ export default function TrialPaywallScreen() {
 					text: t('trial', 'skipConfirm'),
 					style: 'destructive',
 					onPress: async () => {
-						// Give a non-premium 30-day trial without IAP (limited features)
-						await startTrial()
+						// Limited access — do NOT start trial without StoreKit purchase
+						await dismissTrialPaywall()
 						router.replace('/(tabs)')
 					},
 				},

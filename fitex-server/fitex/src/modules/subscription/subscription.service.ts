@@ -78,4 +78,16 @@ export class SubscriptionService {
 
 		return { success: true, trialStartedAt: started, trialEndsAt: ends }
 	}
+
+	async dismissTrialPaywall(userId: string) {
+		const user = await this.userModel.findById(userId)
+		if (!user) throw new BadRequestException('User not found')
+
+		// Do not grant trial here — only mark user as not-new so app can proceed in Basic mode.
+		await this.userModel.findByIdAndUpdate(userId, {
+			isNewUser: false,
+		})
+
+		return { success: true }
+	}
 }

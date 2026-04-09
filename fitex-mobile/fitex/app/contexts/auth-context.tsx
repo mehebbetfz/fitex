@@ -35,6 +35,7 @@ interface AuthContextType {
 	signOut: () => Promise<void>
 	updateUser: (user: Partial<User>) => void
 	startTrial: () => Promise<void>
+	dismissTrialPaywall: () => Promise<void>
 	trialDaysLeft: number       // ≥0 if in trial, -1 if not started/expired
 	isTrialActive: boolean
 	pendingVerificationEmail: string | null
@@ -99,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			setUser(userData)
 			console.log('[Auth] User saved successfully')
 			// New user — must go through trial paywall first
-			if (userData.isNewUser || !userData.trialStartedAt) {
+			if (userData.isNewUser) {
 				router.replace('/(auth)/trial-paywall')
 			} else {
 				router.replace('/(tabs)')
@@ -130,6 +131,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			console.log('[Auth] Trial started, ends:', endsAt.toISOString())
 		} catch (err) {
 			console.error('[Auth] startTrial error:', err)
+		}
+	}
+
+	const dismissTrialPaywall = async () => {
+		if (!user) return
+		const updated: User = {
+			...user,
+			isNewUser: false,
+		}
+		try {
+			await SecureStore.setItemAsync('user', JSON.stringify(updated))
+			setUser(updated)
+			await api.post('/subscription/dismiss-trial-paywall', {}).catch(() => { /* non-critical */ })
+		} catch (err) {
+			console.error('[Auth] dismissTrialPaywall error:', err)
 		}
 	}
 
@@ -274,6 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			signOut,
 			updateUser,
 			startTrial,
+			dismissTrialPaywall,
 			trialDaysLeft,
 			isTrialActive,
 			pendingVerificationEmail,

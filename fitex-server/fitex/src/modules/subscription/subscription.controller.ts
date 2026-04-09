@@ -24,6 +24,13 @@ export class SubscriptionController {
 		return this.subService.startTrial(userId, trialStartedAt, trialEndsAt)
 	}
 
+	@Post('dismiss-trial-paywall')
+	@UseGuards(JwtAuthGuard)
+	async dismissTrialPaywall(@Req() req) {
+		const userId = req.user.userId
+		return this.subService.dismissTrialPaywall(userId)
+	}
+
 	@Get('my')
 	@UseGuards(JwtAuthGuard)
 	async mySubscriptions(@Req() req) {

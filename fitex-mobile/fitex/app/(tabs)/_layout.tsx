@@ -237,48 +237,67 @@ export default function TabsLayout() {
 			<Animated.View style={[us.overlay, { opacity: fadeAnim }]}>
 				<TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeUpsell} activeOpacity={1} />
 				<Animated.View style={[us.sheet, { transform: [{ translateY: slideAnim }] }]}>
-					{/* Close */}
-					<TouchableOpacity style={us.closeBtn} onPress={closeUpsell}>
-						<Ionicons name='close' size={20} color='#8E8E93' />
-					</TouchableOpacity>
-
-					{/* Icon */}
-					<View style={us.iconWrap}>
-						<Ionicons name='trophy' size={36} color='#FFD700' />
+					{/* Header */}
+					<View style={us.header}>
+						<View style={us.grabber} />
+						<TouchableOpacity style={us.closeBtn} onPress={closeUpsell} hitSlop={10}>
+							<Ionicons name='close' size={18} color='#8E8E93' />
+						</TouchableOpacity>
 					</View>
 
-					<Text style={us.title}>
-						{isTrialActive
-							? `${trialDaysLeft} ${t('trial', 'days')} ${t('upsell', 'titleTrial')}`
-							: t('upsell', 'title')}
-					</Text>
-					<Text style={us.subtitle}>{t('upsell', 'subtitle')}</Text>
-
-				{/* Features grid */}
-				<View style={us.featGrid}>
-					{([
-						{ icon: 'ribbon-outline',         key: 'featureRating',      color: '#FFD700' },
-						{ icon: 'podium-outline',          key: 'featureLeaderboard', color: '#FF9500' },
-						{ icon: 'cloud-upload-outline',    key: 'featureSync',        color: '#5AC8FA' },
-						{ icon: 'analytics-outline',       key: 'featureAnalytics',   color: '#AF52DE' },
-						{ icon: 'body-outline',            key: 'featureRecovery',    color: '#34C759' },
-					] as const).map(f => (
-						<View key={f.icon} style={us.featItem}>
-							<View style={[us.featIconWrap, { backgroundColor: `${f.color}18` }]}>
-								<Ionicons name={f.icon as any} size={18} color={f.color} />
+					{/* Hero card */}
+					<View style={us.heroCard}>
+						<View style={us.heroTop}>
+							<View style={us.iconWrap}>
+								<Ionicons name='diamond' size={22} color='#FFD700' />
 							</View>
-						<Text style={us.featLabel}>{t('upsell', f.key)}</Text>
+							{isTrialActive && (
+								<View style={us.pill}>
+									<Ionicons name='time-outline' size={14} color='#34C759' />
+									<Text style={us.pillText}>
+										{trialDaysLeft} {t('trial', 'days')}
+									</Text>
+								</View>
+							)}
 						</View>
-					))}
-				</View>
 
-				<TouchableOpacity style={us.ctaBtn} onPress={goToPremium} activeOpacity={0.85}>
-						<Text style={us.ctaText}>{t('upsell', 'cta')}</Text>
-					</TouchableOpacity>
+						<Text style={us.title}>
+							{isTrialActive
+								? `${t('upsell', 'title')} · ${t('upsell', 'titleTrial')}`
+								: t('upsell', 'title')}
+						</Text>
+						<Text style={us.subtitle}>{t('upsell', 'subtitle')}</Text>
 
-					<TouchableOpacity style={us.skipBtn} onPress={closeUpsell}>
-						<Text style={us.skipText}>{t('upsell', 'later')}</Text>
-					</TouchableOpacity>
+						{/* Features grid */}
+						<View style={us.featGrid}>
+							{([
+								{ icon: 'ribbon-outline', key: 'featureRating', color: '#FFD700' },
+								{ icon: 'podium-outline', key: 'featureLeaderboard', color: '#FF9500' },
+								{ icon: 'cloud-upload-outline', key: 'featureSync', color: '#5AC8FA' },
+								{ icon: 'analytics-outline', key: 'featureAnalytics', color: '#AF52DE' },
+								{ icon: 'body-outline', key: 'featureRecovery', color: '#34C759' },
+							] as const).map(f => (
+								<View key={f.icon} style={us.featItem}>
+									<View style={[us.featIconWrap, { backgroundColor: `${f.color}18` }]}>
+										<Ionicons name={f.icon as any} size={18} color={f.color} />
+									</View>
+									<Text style={us.featLabel}>{t('upsell', f.key)}</Text>
+								</View>
+							))}
+						</View>
+					</View>
+
+					{/* Actions */}
+					<View style={us.actions}>
+						<TouchableOpacity style={us.ctaBtn} onPress={goToPremium} activeOpacity={0.85}>
+							<Ionicons name='card-outline' size={18} color='#fff' />
+							<Text style={us.ctaText}>{t('upsell', 'cta')}</Text>
+						</TouchableOpacity>
+
+						<TouchableOpacity style={us.skipBtn} onPress={closeUpsell}>
+							<Text style={us.skipText}>{t('upsell', 'later')}</Text>
+						</TouchableOpacity>
+					</View>
 				</Animated.View>
 			</Animated.View>
 		</Modal>
@@ -296,51 +315,87 @@ const us = StyleSheet.create({
 		backgroundColor: '#1C1C1E',
 		borderTopLeftRadius: 24,
 		borderTopRightRadius: 24,
-		padding: 28,
-		paddingBottom: 40,
-		alignItems: 'center',
+		paddingTop: 10,
+		paddingHorizontal: 16,
+		paddingBottom: 18,
 		borderTopWidth: 1,
 		borderColor: '#2C2C2E',
 	},
+	header: {
+		height: 44,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	grabber: {
+		width: 44,
+		height: 5,
+		borderRadius: 3,
+		backgroundColor: 'rgba(255,255,255,0.18)',
+	},
 	closeBtn: {
 		position: 'absolute',
-		top: 16,
-		right: 16,
-		padding: 6,
+		right: 6,
+		top: 6,
+		padding: 10,
 		backgroundColor: '#2C2C2E',
 		borderRadius: 20,
 	},
+	heroCard: {
+		backgroundColor: '#151518',
+		borderRadius: 20,
+		padding: 18,
+		borderWidth: 1,
+		borderColor: 'rgba(255,255,255,0.08)',
+	},
+	heroTop: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		marginBottom: 14,
+	},
 	iconWrap: {
-		width: 72,
-		height: 72,
-		borderRadius: 36,
+		width: 44,
+		height: 44,
+		borderRadius: 14,
 		backgroundColor: 'rgba(255,215,0,0.12)',
 		alignItems: 'center',
 		justifyContent: 'center',
-		marginBottom: 16,
 		borderWidth: 1,
 		borderColor: 'rgba(255,215,0,0.25)',
 	},
+	pill: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 999,
+		backgroundColor: 'rgba(52,199,89,0.12)',
+		borderWidth: 1,
+		borderColor: 'rgba(52,199,89,0.22)',
+	},
+	pillText: {
+		color: '#34C759',
+		fontSize: 12,
+		fontWeight: '700',
+	},
 	title: {
-		fontSize: 22,
-		fontWeight: '800',
+		fontSize: 20,
+		fontWeight: '900',
 		color: '#FFFFFF',
-		textAlign: 'center',
-		marginBottom: 8,
+		marginBottom: 6,
 	},
 	subtitle: {
 		fontSize: 14,
 		color: '#8E8E93',
-		textAlign: 'center',
 		lineHeight: 20,
-		marginBottom: 24,
-		paddingHorizontal: 8,
+		marginBottom: 16,
 	},
 	featGrid: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: 10,
-		marginBottom: 24,
+		marginBottom: 2,
 		justifyContent: 'center',
 	},
 	featItem: {
@@ -362,13 +417,20 @@ const us = StyleSheet.create({
 		fontWeight: '500',
 		flex: 1,
 	},
+	actions: {
+		marginTop: 12,
+		paddingHorizontal: 2,
+	},
 	ctaBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 8,
 		backgroundColor: '#34C759',
 		borderRadius: 14,
 		paddingVertical: 14,
 		paddingHorizontal: 48,
 		width: '100%',
-		alignItems: 'center',
 		shadowColor: '#34C759',
 		shadowOffset: { width: 0, height: 6 },
 		shadowOpacity: 0.35,
@@ -383,6 +445,7 @@ const us = StyleSheet.create({
 	},
 	skipBtn: {
 		paddingVertical: 8,
+		alignItems: 'center',
 	},
 	skipText: {
 		color: '#8E8E93',
