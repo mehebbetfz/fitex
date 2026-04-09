@@ -21,7 +21,6 @@ import {
 	Purchase,
 	ProductSubscription,
 	endConnection,
-	fetchProducts,
 	finishTransaction,
 	getReceiptIOS,
 	initConnection,
@@ -29,6 +28,7 @@ import {
 	purchaseUpdatedListener,
 	requestPurchase,
 } from 'react-native-iap'
+import { fetchPremiumSubscriptions } from '@/services/iap-products'
 import { useAuth } from '../contexts/auth-context'
 
 const COLORS = {
@@ -136,25 +136,16 @@ export default function TrialPaywallScreen() {
 					setLoading(false)
 				})
 
-				const items = await fetchProducts({
-					skus: [SKUS.monthly, SKUS.yearly],
-					type: 'subs',
-				})
+				const subs = await fetchPremiumSubscriptions()
 
 				if (mounted) {
-					const subs = (items ?? []).filter(
-						(p): p is ProductSubscription => p.type === 'subs',
-					)
 					if (subs.length) {
-						const sorted = [...subs].sort((a, b) =>
-							a.id === SKUS.yearly ? -1 : 1
-						)
-						setProducts(sorted)
+						setProducts(subs)
 						setStoreReady(true)
 					} else {
 						setProducts([])
 						setStoreReady(false)
-						console.warn('[IAP] No subscription products returned from App Store')
+						console.warn('[IAP] No subscription products after retries + fallback')
 					}
 				}
 			} catch (e) {

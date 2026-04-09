@@ -15,8 +15,8 @@ import {
 import {
 	ErrorCode,
 	Purchase,
+	ProductSubscription,
 	endConnection,
-	fetchProducts,
 	finishTransaction,
 	getAvailablePurchases,
 	initConnection,
@@ -26,6 +26,7 @@ import {
 } from 'react-native-iap'
 
 import { useLanguage } from '@/contexts/language-context'
+import { fetchPremiumSubscriptions } from '@/services/iap-products'
 import { api } from '../../services/api'
 import { useAuth } from '../contexts/auth-context'
 
@@ -68,21 +69,6 @@ const SKUS = {
 	yearly: 'premium_yearly',
 }
 
-const FALLBACK_PRODUCTS = [
-	{
-		productId: SKUS.monthly,
-		title: 'Месячная подписка',
-		description: 'Все преимущества Premium на месяц',
-		localizedPrice: '4.99 $',
-	},
-	{
-		productId: SKUS.yearly,
-		title: 'Годовая подписка',
-		description: 'Все преимущества Premium на год (скидка 20%)',
-		localizedPrice: '49.99 $',
-	},
-]
-
 const handleBack = () => {
 	router.back()
 }
@@ -92,7 +78,7 @@ export default function SubscriptionScreen() {
 
 	const { updateUser } = useAuth()
 	const { t } = useLanguage()
-	const [products, setProducts] = useState<any[]>([])
+	const [products, setProducts] = useState<ProductSubscription[]>([])
 	const [loading, setLoading] = useState(false)
 	const [initializing, setInitializing] = useState(true)
 
@@ -212,36 +198,23 @@ export default function SubscriptionScreen() {
 					setLoading(false)
 				})
 
-				log('Fetching products from store', {
-					skus: [SKUS.monthly, SKUS.yearly],
-				})
-				const items = await fetchProducts({
-					skus: [SKUS.monthly, SKUS.yearly],
-					type: 'subs',
-				})
-				
+				log('Fetching subscription products (retries + fallback)...')
+				const items = await fetchPremiumSubscriptions()
 
-				log('fetchProducts returned', {
+				log('fetchPremiumSubscriptions returned', {
 					count: items?.length ?? 0,
-					productIds: items?.map((i: any) => i.productId),
+					ids: items?.map(i => i.id),
 				})
 
 				if (mounted) {
-					const productsToSet = items?.length ? items : FALLBACK_PRODUCTS
-					log(
-						items?.length
-							? 'Using real products from store'
-							: 'No products from store — using FALLBACK_PRODUCTS',
-					)
-					setProducts(productsToSet)
+					setProducts(items)
 				} else {
 					logWarn('Component unmounted before products could be set')
 				}
 			} catch (error) {
 				logError('IAP init failed', error)
 				if (mounted) {
-					log('Setting FALLBACK_PRODUCTS due to init error')
-					setProducts(FALLBACK_PRODUCTS)
+					setProducts([])
 				}
 			} finally {
 				if (mounted) {
@@ -280,18 +253,48 @@ export default function SubscriptionScreen() {
 			return
 		}
 
+		if (!products.length) {
+			Alert.alert(t('common', 'error'), t('trial', 'storeUnavailable'))
+			return
+		}
+
 		setLoading(true)
 		log('setLoading(true)')
 
 		try {
 			log('Calling requestPurchase', { productId, type: 'subs' })
-			await requestPurchase({
-				request: {
-					apple: { sku: productId },
-					google: { skus: [productId] },
-				},
-				type: 'subs',
-			})
+			if (Platform.OS === 'ios') {
+				await requestPurchase({
+					type: 'subs',
+					request: {
+						apple: {
+							sku: productId,
+							andDangerouslyFinishTransactionAutomatically: false,
+						},
+					},
+				})
+			} else {
+				const prod = products.find(p => p.id === productId)
+				const offers =
+					prod?.platform === 'android' ? prod.subscriptionOffers ?? [] : []
+				const token =
+					offers.find(o => o.offerTokenAndroid)?.offerTokenAndroid
+					?? offers[0]?.offerTokenAndroid
+				if (!token) {
+					Alert.alert(t('common', 'error'), t('trial', 'androidOfferMissing'))
+					setLoading(false)
+					return
+				}
+				await requestPurchase({
+					type: 'subs',
+					request: {
+						google: {
+							skus: [productId],
+							subscriptionOffers: [{ sku: productId, offerToken: token }],
+						},
+					},
+				})
+			}
 			log('requestPurchase returned (result will arrive via listener)')
 		} catch (error: any) {
 			logError('requestPurchase threw', {
@@ -370,10 +373,10 @@ export default function SubscriptionScreen() {
 		</View>
 	)
 
-	const renderProduct = ({ item }: { item: any }) => {
-		const productId: string = item.productId
+	const renderProduct = ({ item }: { item: ProductSubscription }) => {
+		const productId = item.id
 		const isYearly = productId.includes('yearly')
-		const price = item.localizedPrice ?? item.price ?? '—'
+		const price = item.displayPrice ?? (item as any).localizedPrice ?? '—'
 		const description =
 			item.description ??
 			(isYearly ? t('subscription', 'yearlyDesc') : t('subscription', 'monthlyDesc'))
@@ -436,10 +439,15 @@ export default function SubscriptionScreen() {
 					</>
 				}
 				data={products}
-				keyExtractor={item => String(item.productId)}
+				keyExtractor={item => String(item.id)}
 				renderItem={renderProduct}
 				contentContainerStyle={styles.listContent}
 				showsVerticalScrollIndicator={false}
+				ListEmptyComponent={
+					!initializing ? (
+						<Text style={styles.emptyProducts}>{t('trial', 'storeUnavailable')}</Text>
+					) : null
+				}
 				ListFooterComponent={
 					Platform.OS === 'ios' ? (
 						<TouchableOpacity
@@ -907,6 +915,14 @@ const styles = StyleSheet.create({
 	},
 	loadingText: { marginTop: 16, fontSize: 16, color: COLORS.textSecondary },
 	listContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 60 },
+	emptyProducts: {
+		paddingHorizontal: 16,
+		paddingVertical: 24,
+		color: COLORS.textSecondary,
+		fontSize: 14,
+		lineHeight: 20,
+		textAlign: 'center',
+	},
 	title: {
 		fontSize: 32,
 		fontWeight: 'bold',
