@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "^3.0.0",
     "@aws-sdk/client-s3": "^3.999.0",
     "@aws-sdk/s3-request-presigner": "^3.999.0",
     "@nestjs/cache-manager": "^3.1.0",
@@ -39,6 +40,7 @@
     "class-validator": "^0.14.3",
     "express-session": "^1.18.2",
     "google-auth-library": "^10.6.1",
+    "googleapis": "^171.4.0",
     "helmet": "^8.1.0",
     "in-app-purchase": "^1.11.4",
     "moment": "^2.30.1",

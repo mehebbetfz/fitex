@@ -137,4 +137,116 @@ export class SubscriptionService {
 
 		return { success: true }
 	}
+
+	/**
+	 * App Store Server Notifications v2 — after JWS verification.
+	 * Only updates users who already have a Subscription row from /subscription/verify.
+	 */
+	async applyIosSubscriptionFromStoreServer(
+		originalTransactionId: string,
+		payload: {
+			transactionId?: string
+			productId?: string
+			expiresMs?: number
+			notificationType: string
+		},
+	): Promise<void> {
+		const sub = await this.subModel.findOne({
+			platform: 'ios',
+			subscriptionGroupId: originalTransactionId,
+		})
+		if (!sub) {
+			return
+		}
+
+		const now = Date.now()
+		const expiresMs = payload.expiresMs
+
+		if (payload.transactionId) {
+			sub.transactionId = String(payload.transactionId)
+		}
+		if (payload.productId) {
+			sub.productId = payload.productId
+		}
+		if (expiresMs) {
+			sub.expirationDate = new Date(expiresMs)
+		}
+
+		const isActive = !!(expiresMs && expiresMs > now)
+		sub.status = isActive ? 'active' : 'expired'
+		await sub.save()
+
+		const uid = sub.userId.toString()
+		if (isActive && expiresMs) {
+			await this.userModel.findByIdAndUpdate(uid, {
+				isPremium: true,
+				premiumExpiresAt: new Date(expiresMs),
+			})
+		} else {
+			await this.userModel.findByIdAndUpdate(uid, {
+				isPremium: false,
+				premiumExpiresAt: null,
+			})
+		}
+	}
+
+	/**
+	 * Google Play Real-time developer notifications (Pub/Sub push).
+	 * Prefer expiry from Play Developer API when GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is set.
+	 */
+	async applyAndroidSubscriptionFromPlay(
+		purchaseToken: string,
+		_packageName: string,
+		notificationType: number,
+		subscriptionId: string | undefined,
+		expiryTimeIso: string | null | undefined,
+	): Promise<void> {
+		const sub = await this.subModel.findOne({
+			platform: 'android',
+			subscriptionGroupId: purchaseToken,
+		})
+		if (!sub) {
+			return
+		}
+
+		const now = Date.now()
+		let expiresMs: number | undefined
+		if (expiryTimeIso) {
+			expiresMs = new Date(expiryTimeIso).getTime()
+		}
+
+		if (subscriptionId) {
+			sub.productId = subscriptionId
+		}
+		if (expiresMs !== undefined) {
+			sub.expirationDate = new Date(expiresMs)
+		}
+
+		const hardRevoke = notificationType === 12 || notificationType === 13
+
+		let isActive = false
+		if (expiresMs !== undefined) {
+			isActive = expiresMs > now
+		} else if (hardRevoke) {
+			isActive = false
+		} else {
+			return
+		}
+
+		sub.status = isActive ? 'active' : 'expired'
+		await sub.save()
+
+		const uid = sub.userId.toString()
+		if (isActive && expiresMs !== undefined) {
+			await this.userModel.findByIdAndUpdate(uid, {
+				isPremium: true,
+				premiumExpiresAt: new Date(expiresMs),
+			})
+		} else {
+			await this.userModel.findByIdAndUpdate(uid, {
+				isPremium: false,
+				premiumExpiresAt: null,
+			})
+		}
+	}
 }
