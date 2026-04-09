@@ -631,6 +631,14 @@ export interface Translations {
     enduranceStable: string
     avgDuration: string
     noWorkouts: string
+    startFirstWorkoutCta: string
+    progressEmptyHint: string
+    statsOverview: string
+    workoutInsights: string
+    volumeLast7Days: string
+    durationTrend: string
+    volumeByMuscle: string
+    volumeOther: string
   }
   recovery: {
     title: string
@@ -712,6 +720,8 @@ export interface Translations {
     hours: string
     minutes: string
     defaultUser: string
+    /** Подпись к относительному времени до premiumExpiresAt (Intl). */
+    nextBillingLabel: string
   }
   trial: {
     badge: string
@@ -1374,6 +1384,15 @@ export const ru: Translations = {
     enduranceStable: 'Стабильная выносливость',
     avgDuration: 'Средняя длительность',
     noWorkouts: 'Нет тренировок',
+    startFirstWorkoutCta: 'Начать тренировку',
+    progressEmptyHint:
+      'Аналитика, замеры и рекорды появятся здесь после первой завершённой тренировки.',
+    statsOverview: 'Сводка',
+    workoutInsights: 'Тренировки',
+    volumeLast7Days: 'Объём за 7 дней (т)',
+    durationTrend: 'Длительность, мин',
+    volumeByMuscle: 'Объём по группам мышц',
+    volumeOther: 'Прочее',
   },
   recovery: {
     title: 'Восстановление',
@@ -1455,6 +1474,7 @@ export const ru: Translations = {
     hours: 'Часы',
     minutes: 'Минуты',
     defaultUser: 'Пользователь',
+    nextBillingLabel: 'Следующее списание',
   },
   trial: {
     badge: 'Бесплатный период',
@@ -2118,6 +2138,15 @@ export const en: Translations = {
     enduranceStable: 'Stable endurance',
     avgDuration: 'Average duration',
     noWorkouts: 'No workouts',
+    startFirstWorkoutCta: 'Start workout',
+    progressEmptyHint:
+      'Analytics, measurements and records will appear here after your first completed workout.',
+    statsOverview: 'Overview',
+    workoutInsights: 'Training',
+    volumeLast7Days: 'Volume — last 7 days (t)',
+    durationTrend: 'Duration, min',
+    volumeByMuscle: 'Volume by muscle group',
+    volumeOther: 'Other',
   },
   recovery: {
     title: 'Recovery',
@@ -2199,6 +2228,7 @@ export const en: Translations = {
     hours: 'Hours',
     minutes: 'Minutes',
     defaultUser: 'User',
+    nextBillingLabel: 'Next billing',
   },
   trial: {
     badge: 'Free Trial',
@@ -2862,6 +2892,15 @@ export const az: Translations = {
     enduranceStable: 'Sabit dözümlülük',
     avgDuration: 'Orta müddət',
     noWorkouts: 'Məşq yoxdur',
+    startFirstWorkoutCta: 'Məşqə başla',
+    progressEmptyHint:
+      'İlk tamamlanmış məşqdən sonra burada analitika, ölçülər və rekordlar görünəcək.',
+    statsOverview: 'Xülasə',
+    workoutInsights: 'Məşqlər',
+    volumeLast7Days: 'Son 7 günün həcmi (t)',
+    durationTrend: 'Müddət, dəq',
+    volumeByMuscle: 'Əzələ qrupları üzrə həcm',
+    volumeOther: 'Digər',
   },
   recovery: {
     title: 'Bərpa',
@@ -2943,6 +2982,7 @@ export const az: Translations = {
     hours: 'Saatlar',
     minutes: 'Dəqiqələr',
     defaultUser: 'İstifadəçi',
+    nextBillingLabel: 'Növbəti ödəniş',
   },
   trial: {
     badge: 'Pulsuz Sınaq',

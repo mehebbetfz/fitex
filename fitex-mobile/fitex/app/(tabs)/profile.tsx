@@ -14,7 +14,7 @@ import {
 } from '@/services/notifications'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
@@ -41,6 +41,28 @@ const COLORS = {
 	accent: '#FF9500',
 	error: '#FF3B30',
 } as const
+
+/** До окончания текущего периода подписки (сервер: premiumExpiresAt). */
+function formatNextBillingRelative(
+	expiresAt: string,
+	lang: Language | null,
+): string | null {
+	const exp = new Date(expiresAt).getTime()
+	if (!Number.isFinite(exp) || exp <= Date.now()) return null
+	const ms = exp - Date.now()
+	const days = Math.floor(ms / 86400000)
+	const hours = Math.floor((ms % 86400000) / 3600000)
+	const minutes = Math.floor((ms % 3600000) / 60000)
+	const locale = lang === 'en' ? 'en' : lang === 'az' ? 'az' : 'ru'
+	try {
+		const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+		if (days >= 1) return rtf.format(days, 'day')
+		if (hours >= 1) return rtf.format(hours, 'hour')
+		return rtf.format(Math.max(1, minutes), 'minute')
+	} catch {
+		return null
+	}
+}
 
 // ─────────────────────────────────────────────
 // Shimmer (identical to RecoveryTab)
@@ -368,6 +390,12 @@ export default function ProfileScreen() {
 	// Экспорт
 	const [exporting, setExporting] = useState(false)
 
+	const premium = user ? hasActivePremium(user) : false
+	const nextBillingRelative = useMemo(() => {
+		if (!premium || !user?.premiumExpiresAt) return null
+		return formatNextBillingRelative(user.premiumExpiresAt, language)
+	}, [premium, user?.premiumExpiresAt, language])
+
 	useEffect(() => {
 		loadNotificationSettings().then(setNotifSettings)
 	}, [])
@@ -593,6 +621,11 @@ export default function ProfileScreen() {
 									? t('profile', 'premiumActive')
 									: t('profile', 'freePlan')}
 							</Text>
+							{nextBillingRelative && (
+								<Text style={styles.premiumRenewal}>
+									{t('profile', 'nextBillingLabel')}: {nextBillingRelative}
+								</Text>
+							)}
 							{!premium && (
 								<TouchableOpacity
 									style={styles.upgradeButton}
@@ -861,6 +894,13 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 		color: COLORS.textSecondary,
 		marginBottom: 12,
+	},
+	premiumRenewal: {
+		marginTop: -6,
+		marginBottom: 12,
+		fontSize: 13,
+		color: COLORS.textSecondary,
+		lineHeight: 18,
 	},
 	upgradeButton: {
 		flexDirection: 'row',

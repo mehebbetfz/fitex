@@ -1,12 +1,19 @@
 import { hasActivePremium, useAuth } from '../contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
-import { translateUnit, translateExerciseName } from '@/constants/exercise-i18n'
+import {
+	translateExerciseName,
+	translateGroupName,
+	translateUnit,
+} from '@/constants/exercise-i18n'
+import type { Language } from '@/locales'
 import * as db from '@/scripts/database'
+import type { Workout } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect, useRouter } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+	ActivityIndicator,
 	Alert,
 	Animated,
 	Dimensions,
@@ -18,7 +25,7 @@ import {
 	TouchableOpacity,
 	View,
 } from 'react-native'
-import { LineChart } from 'react-native-chart-kit'
+import { BarChart, LineChart, PieChart } from 'react-native-chart-kit'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const COLORS = {
@@ -80,7 +87,7 @@ const MEASUREMENT_ICONS: Record<string, string> = {
 }
 
 // ── Вынесено за компонент ──
-type TFn = (section: string, key: string) => string
+type TFn = (section: any, key: any) => string
 
 const calculateMuscleGrowth = (
 	measurements: BodyMeasurement[],
@@ -197,6 +204,108 @@ const calculateEnduranceProgress = (
 		subtitle: t('progress', 'avgDuration'),
 		trend: avgDuration > 60 ? 'positive' : 'neutral',
 	}
+}
+
+const PIE_COLORS = [
+	'rgba(52, 199, 89, 0.95)',
+	'rgba(90, 200, 250, 0.95)',
+	'rgba(255, 149, 0, 0.95)',
+	'rgba(175, 82, 222, 0.95)',
+	'rgba(255, 204, 0, 0.95)',
+	'rgba(255, 59, 48, 0.88)',
+]
+
+function buildVolumeLast7Days(workouts: Workout[], locale: string) {
+	const labels: string[] = []
+	const values: number[] = []
+	for (let i = 6; i >= 0; i--) {
+		const d = new Date()
+		d.setHours(0, 0, 0, 0)
+		d.setDate(d.getDate() - i)
+		const key = d.toISOString().split('T')[0]
+		labels.push(
+			new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d),
+		)
+		let sum = 0
+		for (const w of workouts) {
+			const wd = (w.date || '').split('T')[0]
+			if (wd === key) sum += w.volume || 0
+		}
+		values.push(Math.round((sum / 1000) * 10) / 10)
+	}
+	return { labels, values }
+}
+
+function buildDurationLastN(workouts: Workout[], n: number) {
+	const sorted = [...workouts].sort(
+		(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+	)
+	const last = sorted.slice(-Math.max(2, n))
+	if (last.length === 1) {
+		const d = last[0].duration || 0
+		return {
+			labels: ['1', '2'],
+			values: [d, d],
+		}
+	}
+	return {
+		labels: last.map((_, i) => String(i + 1)),
+		values: last.map(w => Math.max(0, Math.round(w.duration || 0))),
+	}
+}
+
+function buildMuscleVolumePie(
+	workouts: Workout[],
+	lang: Language,
+	otherLabel: string,
+) {
+	const map = new Map<string, number>()
+	for (const w of workouts) {
+		const vol = w.volume || 0
+		const groups = (w.muscle_groups || '')
+			.split(',')
+			.map(g => g.trim())
+			.filter(Boolean)
+		if (groups.length === 0) {
+			map.set('__other__', (map.get('__other__') || 0) + vol)
+		} else {
+			const share = vol / groups.length
+			for (const g of groups) {
+				map.set(g, (map.get(g) || 0) + share)
+			}
+		}
+	}
+	const entries = [...map.entries()].sort((a, b) => b[1] - a[1])
+	return entries
+		.slice(0, 6)
+		.map(([name, pop], i) => ({
+			name:
+				name === '__other__'
+					? otherLabel
+					: translateGroupName(name, lang),
+			population: Math.round(pop),
+			color: PIE_COLORS[i % PIE_COLORS.length],
+			legendFontColor: '#8E8E93',
+		}))
+		.filter(p => p.population > 0)
+}
+
+const CHART_CONFIG_GREEN = {
+	backgroundGradientFrom: '#1C1C1E',
+	backgroundGradientTo: '#1C1C1E',
+	decimalPlaces: 1,
+	color: (opacity = 1) => `rgba(52, 199, 89, ${opacity})`,
+	labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.92})`,
+	propsForBackgroundLines: {
+		strokeDasharray: '',
+		stroke: 'rgba(255,255,255,0.08)',
+	},
+}
+
+const CHART_CONFIG_BLUE = {
+	...CHART_CONFIG_GREEN,
+	color: (opacity = 1) => `rgba(90, 200, 250, ${opacity})`,
+	propsForDots: { r: '4', strokeWidth: '2', stroke: '#5AC8FA' },
 }
 
 // ─────────────────────────────────────────────
@@ -363,6 +472,7 @@ export default function StatisticsTab() {
 	)
 	const [progressStats, setProgressStats] = useState<ProgressStat[]>([])
 	const [personalRecords, setPersonalRecords] = useState<any[]>([])
+	const [workouts, setWorkouts] = useState<Workout[]>([])
 
 	const [loading, setLoading] = useState({
 		measurements: true,
@@ -375,6 +485,33 @@ export default function StatisticsTab() {
 	const [currentMeasurements, setCurrentMeasurements] = useState<
 		Array<{ name: string; value: string; unit: string }>
 	>(DEFAULT_MEASUREMENTS.map(m => ({ ...m, value: '' })))
+
+	const ready =
+		!loading.measurements &&
+		!loading.stats &&
+		!loading.records &&
+		!loading.weight
+	const hasWorkouts = workouts.length > 0
+
+	const localeTag = language === 'en' ? 'en' : language === 'az' ? 'az' : 'ru'
+
+	const volume7 = useMemo(
+		() => buildVolumeLast7Days(workouts, localeTag),
+		[workouts, localeTag],
+	)
+	const durationSeries = useMemo(
+		() => buildDurationLastN(workouts, 12),
+		[workouts],
+	)
+	const musclePieData = useMemo(
+		() =>
+			buildMuscleVolumePie(
+				workouts,
+				language ?? 'ru',
+				t('progress', 'volumeOther'),
+			),
+		[workouts, language, t],
+	)
 
 	const handleRedirectToRecordsHistory = useCallback(() => {
 		router.push({ pathname: '/(routes)/records-history' })
@@ -432,7 +569,9 @@ export default function StatisticsTab() {
 				if (!silent) setLoading(prev => ({ ...prev, measurements: false }))
 
 			const months = Array.from({ length: 12 }, (_, i) =>
-				new Intl.DateTimeFormat(language, { month: 'short' }).format(new Date(2024, i, 1))
+				new Intl.DateTimeFormat(language ?? 'ru', { month: 'short' }).format(
+					new Date(2024, i, 1),
+				)
 			)
 				const allByName = new Map<string, any[]>()
 				measurements.forEach(m => {
@@ -477,6 +616,7 @@ export default function StatisticsTab() {
 
 				const stats = await db.getWorkoutStats()
 				const allWorkouts = await db.getWorkouts()
+				setWorkouts(allWorkouts)
 				const muscleGrowth = calculateMuscleGrowth(formattedMeasurements, t)
 				const strengthProgress = await calculateStrengthProgress(t)
 				const enduranceProgress = calculateEnduranceProgress(allWorkouts, t)
@@ -521,6 +661,7 @@ export default function StatisticsTab() {
 				if (!silent) setLoading(prev => ({ ...prev, stats: false }))
 			} catch (error) {
 				console.error('Error loading statistics data:', error)
+				setWorkouts([])
 				setLoading({
 					measurements: false,
 					stats: false,
@@ -529,7 +670,7 @@ export default function StatisticsTab() {
 				})
 			}
 		},
-		[],
+		[t, language],
 	)
 
 	const checkMeasurementReminder = useCallback(async () => {
@@ -593,7 +734,7 @@ export default function StatisticsTab() {
 				console.error('Error saving measurements:', error)
 				Alert.alert(t('common', 'error'), t('progress', 'saveError'))
 			}
-	}, [currentMeasurements, loadAllData])
+	}, [currentMeasurements, loadAllData, t])
 
 	const handleSkipMeasurements = useCallback(async () => {
 		const today = new Date().toISOString().split('T')[0]
@@ -609,7 +750,10 @@ export default function StatisticsTab() {
 	}, [measurementHistoryMap, selectedMetric])
 
 	// ── Stale-while-revalidate: повторные визиты — данные сразу, обновление в фоне ──
-	const hasData = bodyMeasurements.length > 0 || personalRecords.length > 0
+	const hasData =
+		bodyMeasurements.length > 0 ||
+		personalRecords.length > 0 ||
+		workouts.length > 0
 
 	useFocusEffect(
 		useCallback(() => {
@@ -661,7 +805,7 @@ export default function StatisticsTab() {
 		)
 	}
 	const rawUnit = bodyMeasurements.find(m => m.name === selectedMetric)?.unit ?? ''
-	const unit = translateUnit(rawUnit, language)
+	const unit = translateUnit(rawUnit, language ?? 'ru')
 	return (
 		<LineChart
 			data={{
@@ -723,77 +867,215 @@ export default function StatisticsTab() {
 					</View>
 				</View>
 
-				{/* ── Аналитика ── */}
-				<View style={styles.section}>
-					<View style={styles.sectionHeader}>
-						<Text style={styles.sectionTitle}>{t('progress', 'analytics')}</Text>
+				{!ready ? (
+					<View style={styles.progressLoadingBlock}>
+						<ActivityIndicator size='large' color={COLORS.primary} />
 					</View>
-
-					{loading.weight ? (
-						<ChartSkeleton />
-					) : metricKeys.length === 0 ? (
-						<View style={styles.emptyContainer}>
-							<Text style={styles.emptyText}>{t('progress', 'noChartData')}</Text>
+				) : !hasWorkouts ? (
+					<View style={styles.emptyHero}>
+						<View style={styles.emptyHeroIconWrap}>
+							<Ionicons name='barbell' size={40} color='#34C759' />
 						</View>
-					) : (
-						<FadeIn show={!loading.weight}>
-							<ScrollView
-								horizontal
-								showsHorizontalScrollIndicator={false}
-								contentContainerStyle={styles.metricSelectorContainer}
-								style={styles.metricSelectorScroll}
-							>
-								{metricKeys.map(name => (
-									<TouchableOpacity
-										key={name}
-										style={[
-											styles.metricButton,
-											selectedMetric === name && styles.activeMetricButton,
-										]}
-										onPress={() => setSelectedMetric(name)}
-									>
-										<Text
+						<Text style={styles.emptyHeroHint}>{t('progress', 'progressEmptyHint')}</Text>
+						<TouchableOpacity
+							style={styles.ctaStartWorkout}
+							onPress={() => router.push('/workout/create')}
+							activeOpacity={0.85}
+						>
+							<Text style={styles.ctaStartWorkoutText}>
+								{t('progress', 'startFirstWorkoutCta')}
+							</Text>
+						</TouchableOpacity>
+					</View>
+				) : (
+					<>
+						{/* ── Сводка ── */}
+						<View style={styles.section}>
+							<View style={styles.sectionHeader}>
+								<Text style={styles.sectionTitle}>{t('progress', 'statsOverview')}</Text>
+							</View>
+							{loading.stats ? (
+								<View style={styles.statsGrid}>
+									{[0, 1, 2, 3].map(i => (
+										<View key={i} style={[styles.statCard, styles.statCardSkeleton]}>
+											<ShimmerBlock style={styles.statSkeletonIcon} />
+											<ShimmerBlock style={styles.statSkeletonLine} />
+											<ShimmerBlock style={[styles.statSkeletonLine, { width: '70%' }]} />
+										</View>
+									))}
+								</View>
+							) : (
+								<View style={styles.statsGrid}>
+									{progressStats.map(s => (
+										<View
+											key={s.id}
 											style={[
-												styles.metricText,
-												selectedMetric === name && styles.activeMetricText,
+												styles.statCard,
+												s.trend === 'positive' && styles.statCardTrendUp,
+												s.trend === 'negative' && styles.statCardTrendDown,
 											]}
 										>
-					{getMeasurementDisplayName(name)}
-									</Text>
-								</TouchableOpacity>
-							))}
-						</ScrollView>
+											<View style={styles.statCardTop}>
+												<View style={styles.statIconWrap}>
+													<Ionicons name={s.icon as any} size={20} color='#34C759' />
+												</View>
+												<Text style={styles.statCardTitle} numberOfLines={2}>
+													{s.title}
+												</Text>
+											</View>
+											<Text style={styles.statCardValue}>{s.value}</Text>
+											<Text style={styles.statCardSub} numberOfLines={2}>
+												{s.subtitle}
+											</Text>
+										</View>
+									))}
+								</View>
+							)}
+						</View>
 
-							<View style={styles.currentValueIndicator}>
-								<Text style={styles.currentValueText}>
-									{calculateCurrentValue()}
-								</Text>
-								{calculateValueChange() !== '—' && (
-									<View style={styles.trendIndicator}>
-										<Ionicons
-											name={isPositiveChange() ? 'arrow-down' : 'arrow-up'}
-											size={12}
-											color={isPositiveChange() ? '#34C759' : '#FF3B30'}
-										/>
-										<Text
-											style={[
-												styles.trendText,
-												{ color: isPositiveChange() ? '#34C759' : '#FF3B30' },
-											]}
-										>
-											{calculateValueChange()}
-										</Text>
-									</View>
-								)}
+						{/* ── Графики тренировок ── */}
+						<View style={styles.section}>
+							<View style={styles.sectionHeader}>
+								<Text style={styles.sectionTitle}>{t('progress', 'workoutInsights')}</Text>
+							</View>
+							<Text style={styles.chartCaption}>{t('progress', 'volumeLast7Days')}</Text>
+							<View style={styles.chartWrapper}>
+								<BarChart
+									data={{
+										labels: volume7.labels,
+										datasets: [
+											{
+												data:
+													volume7.values.length > 0
+														? volume7.values
+														: [0],
+											},
+										],
+									}}
+									width={screenWidth - 32}
+									height={200}
+									yAxisLabel=''
+									yAxisSuffix=''
+									fromZero
+									showValuesOnTopOfBars
+									chartConfig={{
+										...CHART_CONFIG_GREEN,
+										decimalPlaces: 1,
+									}}
+									style={styles.chartInner}
+									verticalLabelRotation={-25}
+								/>
 							</View>
 
-							<View style={styles.chartWrapper}>{renderChart()}</View>
-						</FadeIn>
-					)}
-				</View>
+							<Text style={styles.chartCaption}>{t('progress', 'durationTrend')}</Text>
+							<View style={styles.chartWrapper}>
+								<LineChart
+									data={{
+										labels: durationSeries.labels,
+										datasets: [{ data: durationSeries.values }],
+									}}
+									width={screenWidth - 32}
+									height={200}
+									chartConfig={CHART_CONFIG_BLUE as any}
+									bezier
+									style={styles.chartInner}
+									withInnerLines
+								/>
+							</View>
 
-				{/* ── Замеры тела ── */}
-				<View style={styles.section}>
+							<Text style={styles.chartCaption}>{t('progress', 'volumeByMuscle')}</Text>
+							<View style={styles.chartWrapper}>
+								{musclePieData.length === 0 ? (
+									<View style={styles.emptyChart}>
+										<Text style={styles.emptyChartText}>{t('progress', 'noDataChart')}</Text>
+									</View>
+								) : (
+									<PieChart
+										data={musclePieData}
+										width={screenWidth - 32}
+										height={220}
+										chartConfig={CHART_CONFIG_GREEN as any}
+										accessor='population'
+										backgroundColor='transparent'
+										paddingLeft='16'
+										absolute
+										hasLegend
+									/>
+								)}
+							</View>
+						</View>
+
+						{/* ── Аналитика (замеры) ── */}
+						<View style={styles.section}>
+							<View style={styles.sectionHeader}>
+								<Text style={styles.sectionTitle}>{t('progress', 'analytics')}</Text>
+							</View>
+
+							{loading.weight ? (
+								<ChartSkeleton />
+							) : metricKeys.length === 0 ? (
+								<View style={styles.emptyContainer}>
+									<Text style={styles.emptyText}>{t('progress', 'noChartData')}</Text>
+								</View>
+							) : (
+								<FadeIn show={!loading.weight}>
+									<ScrollView
+										horizontal
+										showsHorizontalScrollIndicator={false}
+										contentContainerStyle={styles.metricSelectorContainer}
+										style={styles.metricSelectorScroll}
+									>
+										{metricKeys.map(name => (
+											<TouchableOpacity
+												key={name}
+												style={[
+													styles.metricButton,
+													selectedMetric === name && styles.activeMetricButton,
+												]}
+												onPress={() => setSelectedMetric(name)}
+											>
+												<Text
+													style={[
+														styles.metricText,
+														selectedMetric === name && styles.activeMetricText,
+													]}
+												>
+													{getMeasurementDisplayName(name)}
+												</Text>
+											</TouchableOpacity>
+										))}
+									</ScrollView>
+
+									<View style={styles.currentValueIndicator}>
+										<Text style={styles.currentValueText}>
+											{calculateCurrentValue()}
+										</Text>
+										{calculateValueChange() !== '—' && (
+											<View style={styles.trendIndicator}>
+												<Ionicons
+													name={isPositiveChange() ? 'arrow-down' : 'arrow-up'}
+													size={12}
+													color={isPositiveChange() ? '#34C759' : '#FF3B30'}
+												/>
+												<Text
+													style={[
+														styles.trendText,
+														{ color: isPositiveChange() ? '#34C759' : '#FF3B30' },
+													]}
+												>
+													{calculateValueChange()}
+												</Text>
+											</View>
+										)}
+									</View>
+
+									<View style={styles.chartWrapper}>{renderChart()}</View>
+								</FadeIn>
+							)}
+						</View>
+
+						{/* ── Замеры тела ── */}
+						<View style={styles.section}>
 					<View
 						style={{
 							display: 'flex',
@@ -849,7 +1131,7 @@ export default function StatisticsTab() {
 										<View style={styles.measurementGridRight}>
 											<Text style={styles.measurementValue}>
 												{item.current}
-												<Text style={styles.measurementUnit}> {translateUnit(item.unit, language)}</Text>
+												<Text style={styles.measurementUnit}> {translateUnit(item.unit, language ?? 'ru')}</Text>
 											</Text>
 											<Ionicons
 												name={
@@ -909,7 +1191,7 @@ export default function StatisticsTab() {
 										</View>
 								<View style={styles.recordBody}>
 										<Text style={styles.recordExercise} numberOfLines={1}>
-											{translateExerciseName(record.exercise, language)}
+											{translateExerciseName(record.exercise, language ?? 'ru')}
 										</Text>
 											<Text style={styles.recordDate}>{record.date}</Text>
 										</View>
@@ -939,6 +1221,8 @@ export default function StatisticsTab() {
 						)}
 					</View>
 				</View>
+					</>
+				)}
 			</ScrollView>
 
 			{/* Модальное окно */}
@@ -958,7 +1242,7 @@ export default function StatisticsTab() {
 						{currentMeasurements.map((measurement, index) => (
 							<View key={index} style={styles.measurementInputRow}>
 						<Text style={styles.measurementLabel}>
-							{getMeasurementDisplayName(measurement.name)} ({translateUnit(measurement.unit, language)})
+							{getMeasurementDisplayName(measurement.name)} ({translateUnit(measurement.unit, language ?? 'ru')})
 						</Text>
 								<TextInput
 									style={styles.measurementInput}
@@ -1286,5 +1570,129 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: '#121212',
+	},
+	progressLoadingBlock: {
+		minHeight: 280,
+		justifyContent: 'center',
+		alignItems: 'center',
+		paddingVertical: 48,
+	},
+	emptyHero: {
+		alignItems: 'center',
+		paddingHorizontal: 28,
+		paddingTop: 32,
+		paddingBottom: 48,
+	},
+	emptyHeroIconWrap: {
+		width: 88,
+		height: 88,
+		borderRadius: 28,
+		backgroundColor: 'rgba(52, 199, 89, 0.12)',
+		borderWidth: 1,
+		borderColor: 'rgba(52, 199, 89, 0.25)',
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 20,
+	},
+	emptyHeroHint: {
+		fontSize: 15,
+		color: COLORS.textSecondary,
+		textAlign: 'center',
+		lineHeight: 22,
+		marginBottom: 28,
+	},
+	ctaStartWorkout: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: COLORS.primary,
+		paddingVertical: 16,
+		paddingHorizontal: 32,
+		borderRadius: 16,
+		shadowColor: COLORS.primary,
+		shadowOffset: { width: 0, height: 8 },
+		shadowOpacity: 0.35,
+		shadowRadius: 14,
+		elevation: 6,
+	},
+	ctaStartWorkoutText: {
+		color: '#fff',
+		fontSize: 17,
+		fontWeight: '700',
+	},
+	statsGrid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 10,
+		marginTop: 4,
+	},
+	statCard: {
+		width: (screenWidth - 20 - 10) / 2,
+		backgroundColor: COLORS.card,
+		borderRadius: 14,
+		padding: 12,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+	},
+	statCardTrendUp: { borderLeftWidth: 3, borderLeftColor: '#34C759' },
+	statCardTrendDown: { borderLeftWidth: 3, borderLeftColor: '#FF3B30' },
+	statCardSkeleton: {
+		minHeight: 108,
+		gap: 8,
+	},
+	statSkeletonIcon: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		backgroundColor: COLORS.cardLight,
+	},
+	statSkeletonLine: {
+		height: 14,
+		width: '100%',
+		borderRadius: 4,
+		backgroundColor: COLORS.cardLight,
+	},
+	statCardTop: {
+		flexDirection: 'row',
+		alignItems: 'flex-start',
+		gap: 8,
+		marginBottom: 8,
+	},
+	statIconWrap: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		backgroundColor: 'rgba(52, 199, 89, 0.12)',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	statCardTitle: {
+		flex: 1,
+		fontSize: 12,
+		fontWeight: '600',
+		color: COLORS.textSecondary,
+		lineHeight: 16,
+	},
+	statCardValue: {
+		fontSize: 18,
+		fontWeight: '800',
+		color: COLORS.text,
+		marginBottom: 4,
+	},
+	statCardSub: {
+		fontSize: 11,
+		color: COLORS.textSecondary,
+		lineHeight: 14,
+	},
+	chartCaption: {
+		fontSize: 13,
+		fontWeight: '600',
+		color: COLORS.textSecondary,
+		marginBottom: 8,
+		marginTop: 4,
+	},
+	chartInner: {
+		paddingTop: 12,
+		paddingBottom: 4,
+		borderRadius: 16,
 	},
 })

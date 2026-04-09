@@ -4,27 +4,64 @@
  * Usage (from fitex-server/fitex/):
  *   node scripts/seed-test-accounts.js
  *
- * Requires MONGODB_URI in .env
+ * Requires MONGODB_URI (в .env локально или в env контейнера / CI).
  */
-require('dotenv').config()
+try {
+  require('dotenv').config()
+} catch {
+  /* Docker: пакета dotenv может не быть, переменные уже в process.env */
+}
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 
+/** App Review / QA: email+password, разные сроки premiumExpiresAt (следующее «списание» в приложении). */
+const REVIEWER_PASSWORD = 'FitexReview2026!'
+
 const ACCOUNTS = [
   {
-    email: 'premium@fitex.app',
-    password: 'Premium2026!',
-    firstName: 'Premium',
-    lastName: 'Active',
+    email: 'reviewer-2h@fitex.app',
+    password: REVIEWER_PASSWORD,
+    firstName: 'Review',
+    lastName: 'Soon2h',
     isPremium: true,
-    premiumExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    trialStartedAt: new Date(),
-    trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    premiumExpiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    trialStartedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    trialEndsAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
   },
   {
-    email: 'expired@fitex.app',
-    password: 'Expired2026!',
-    firstName: 'Premium',
+    email: 'reviewer-3d@fitex.app',
+    password: REVIEWER_PASSWORD,
+    firstName: 'Review',
+    lastName: 'Plus3d',
+    isPremium: true,
+    premiumExpiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    trialStartedAt: new Date(),
+    trialEndsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+  },
+  {
+    email: 'reviewer-14d@fitex.app',
+    password: REVIEWER_PASSWORD,
+    firstName: 'Review',
+    lastName: 'Plus14d',
+    isPremium: true,
+    premiumExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    trialStartedAt: new Date(),
+    trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+  },
+  {
+    email: 'reviewer-90d@fitex.app',
+    password: REVIEWER_PASSWORD,
+    firstName: 'Review',
+    lastName: 'Plus90d',
+    isPremium: true,
+    premiumExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+    trialStartedAt: new Date(),
+    trialEndsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+  },
+  {
+    email: 'reviewer-expired@fitex.app',
+    password: REVIEWER_PASSWORD,
+    firstName: 'Review',
     lastName: 'Expired',
     isPremium: false,
     premiumExpiresAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
@@ -36,7 +73,7 @@ const ACCOUNTS = [
 async function main() {
   const uri = process.env.MONGODB_URI
   if (!uri) {
-    console.error('ERROR: MONGODB_URI not set in .env')
+    console.error('ERROR: MONGODB_URI is not set (env or .env)')
     process.exit(1)
   }
 
@@ -75,9 +112,12 @@ async function main() {
   }
 
   console.log('')
-  console.log('Test accounts:')
+  console.log('Reviewer test accounts (same password for all):')
+  console.log(`Password: ${REVIEWER_PASSWORD}`)
   for (const acc of ACCOUNTS) {
-    console.log(`- ${acc.email} / ${acc.password} (${acc.isPremium ? 'PREMIUM' : 'BASIC'})`)
+    console.log(
+      `- ${acc.email} (${acc.isPremium ? 'PREMIUM' : 'BASIC'}, expires: ${acc.premiumExpiresAt.toISOString()})`,
+    )
   }
   console.log('')
   console.log('Use "Sign in with Email" on the login screen.')
