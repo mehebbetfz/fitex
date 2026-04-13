@@ -7,7 +7,8 @@ COPY package*.json ./
 RUN npm ci --ignore-scripts
 
 COPY . .
-RUN npm run build
+# nest/tsc в Docker часто упираются в лимит кучи (~2GB) → heap out of memory
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # Remove dev dependencies
 RUN npm prune --production
