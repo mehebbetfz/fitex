@@ -13,6 +13,7 @@ import {
 	FlatList,
 	Image,
 	Platform,
+	Pressable,
 	RefreshControl,
 	StyleSheet,
 	Text,
@@ -68,6 +69,30 @@ const RANK_COLORS: Record<number, string> = {
 	3: '#CD7F32',
 }
 
+/** Бриллиант в кружке — только иконка, сверху справа на аватаре */
+const PremiumDiamondBadge = ({ diameter = 18 }: { diameter?: number }) => (
+	<LinearGradient
+		colors={['#FFE566', '#FFD700', '#E6A800']}
+		start={{ x: 0, y: 0 }}
+		end={{ x: 1, y: 1 }}
+		style={{
+			position: 'absolute',
+			top: -2,
+			right: -2,
+			width: diameter,
+			height: diameter,
+			borderRadius: diameter / 2,
+			alignItems: 'center',
+			justifyContent: 'center',
+			borderWidth: 2,
+			borderColor: C.bg,
+			zIndex: 6,
+		}}
+	>
+		<Ionicons name='diamond' size={Math.max(8, diameter * 0.48)} color='#1a1a1a' />
+	</LinearGradient>
+)
+
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
 const Avatar = ({
@@ -75,33 +100,67 @@ const Avatar = ({
 	name,
 	size = 44,
 	isCurrentUser,
+	isPremium,
 }: {
 	uri?: string | null
 	name: string
 	size?: number
 	isCurrentUser?: boolean
+	isPremium?: boolean
 }) => {
 	const initials = name.trim().slice(0, 2).toUpperCase() || '?'
-	const borderColor = isCurrentUser ? C.primary : 'transparent'
+	const ringW = isCurrentUser ? 2.5 : 0
+	const badgeD = Math.max(16, Math.round(size * 0.4))
+
+	const inner = uri ? (
+		<Image
+			source={{ uri }}
+			style={{ width: size, height: size, borderRadius: size / 2 }}
+			resizeMode='cover'
+		/>
+	) : (
+		<View style={[aStyles.placeholder, { width: size, height: size, borderRadius: size / 2 }]}>
+			<Text style={[aStyles.initials, { fontSize: size * 0.36 }]}>{initials}</Text>
+		</View>
+	)
+
+	const core = (
+		<View
+			style={{
+				width: size,
+				height: size,
+				borderRadius: size / 2,
+				overflow: 'hidden',
+				backgroundColor: '#1C1C1E',
+			}}
+		>
+			{inner}
+		</View>
+	)
+
+	const body =
+		ringW > 0 ? (
+			<LinearGradient
+				colors={['#34C759', '#2CAE4E']}
+				style={{
+					width: size + ringW * 2,
+					height: size + ringW * 2,
+					borderRadius: (size + ringW * 2) / 2,
+					padding: ringW,
+					alignItems: 'center',
+					justifyContent: 'center',
+				}}
+			>
+				{core}
+			</LinearGradient>
+		) : (
+			core
+		)
 
 	return (
-		<View
-			style={[
-				aStyles.wrap,
-				{ width: size, height: size, borderRadius: size / 2, borderColor, borderWidth: isCurrentUser ? 2 : 0 },
-			]}
-		>
-			{uri ? (
-				<Image
-					source={{ uri }}
-					style={{ width: size, height: size, borderRadius: size / 2 }}
-					resizeMode='cover'
-				/>
-			) : (
-				<View style={[aStyles.placeholder, { width: size, height: size, borderRadius: size / 2 }]}>
-					<Text style={[aStyles.initials, { fontSize: size * 0.36 }]}>{initials}</Text>
-				</View>
-			)}
+		<View style={{ position: 'relative', width: ringW ? size + ringW * 2 : size, height: ringW ? size + ringW * 2 : size }}>
+			{body}
+			{isPremium ? <PremiumDiamondBadge diameter={badgeD} /> : null}
 		</View>
 	)
 }
@@ -117,9 +176,11 @@ const aStyles = StyleSheet.create({
 const PodiumItem = ({
 	entry,
 	height,
+	onOpenProfile,
 }: {
 	entry: LeaderboardEntry | null
 	height: number
+	onOpenProfile?: (userId: string) => void
 }) => {
 	const tier = entry ? TIER_MAP[entry.tierName] : TIER_MAP.beginner
 	const rankColor = entry ? (RANK_COLORS[entry.rank] ?? C.sub) : C.sub
@@ -128,22 +189,33 @@ const PodiumItem = ({
 	return (
 		<View style={[p.item, { height: height + 80 }]}>
 			{entry ? (
-				<>
-					{entry.rank === 1 && (
-						<Ionicons name='ribbon' size={20} color={C.gold} style={p.crown} />
-					)}
-					<Avatar uri={entry.avatarUrl} name={name} size={48} isCurrentUser={entry.isCurrentUser} />
-					<Text style={p.podiumName} numberOfLines={1}>{name}</Text>
-					<View style={[p.tierBadge, { backgroundColor: `${tier.color}20` }]}>
-						<Ionicons name={tier.icon as any} size={10} color={tier.color} />
+				<Pressable
+					onPress={() => onOpenProfile?.(entry.userId)}
+					style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+				>
+					<View style={p.avatarMedalWrap}>
+						<View style={p.avatarCenter}>
+							<Avatar
+								uri={entry.avatarUrl}
+								name={name}
+								size={48}
+								isCurrentUser={entry.isCurrentUser}
+								isPremium={entry.isPremium}
+							/>
+						</View>
+						{entry.rank === 1 && (
+							<Ionicons name='medal' size={20} color={C.gold} style={p.firstPlaceMedal} />
+						)}
 					</View>
+					<Text style={p.podiumName} numberOfLines={1}>{name}</Text>
+				
 					<View style={[p.podiumPillar, { height, backgroundColor: rankColor + '22', borderTopColor: rankColor }]}>
 						<Text style={[p.rankNum, { color: rankColor }]}>#{entry.rank}</Text>
 						<Text style={[p.podiumScore, { color: tier.color }]}>
 							{entry.totalScore.toLocaleString()}
 						</Text>
 					</View>
-				</>
+				</Pressable>
 			) : (
 				<View style={[p.podiumPillar, { height, backgroundColor: C.card2 }]}>
 					<Text style={[p.rankNum, { color: C.sub }]}>—</Text>
@@ -155,7 +227,31 @@ const PodiumItem = ({
 
 const p = StyleSheet.create({
 	item: { alignItems: 'center', justifyContent: 'flex-end', width: 100 },
-	crown: { position: 'absolute', top: 0, zIndex: 2 },
+	avatarMedalWrap: {
+		position: 'relative',
+		width: 62,
+		height: 62,
+		marginLeft: 8,
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 2,
+	},
+	avatarCenter: { alignItems: 'center', justifyContent: 'center' },
+	firstPlaceMedal: {
+		position: 'absolute',
+		bottom: 2,
+		right: 2,
+		zIndex: 8,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 1 },
+				shadowOpacity: 0.35,
+				shadowRadius: 2,
+			},
+			android: { elevation: 4 },
+		}),
+	},
 	podiumName: { fontSize: 12, color: C.text, fontWeight: '600', marginTop: 6, marginBottom: 4, maxWidth: 88, textAlign: 'center' },
 	tierBadge: { borderRadius: 8, padding: 3, marginBottom: 6 },
 	podiumPillar: {
@@ -172,20 +268,25 @@ const p = StyleSheet.create({
 const RowItem = ({
 	entry,
 	t,
+	onOpenProfile,
 }: {
 	entry: LeaderboardEntry
 	t: ReturnType<typeof useLanguage>['t']
+	onOpenProfile: (userId: string) => void
 }) => {
 	const tier  = TIER_MAP[entry.tierName]
 	const rankC = RANK_COLORS[entry.rank] ?? C.sub
 	const fullName = [entry.firstName, entry.lastName].filter(Boolean).join(' ') || '—'
 
 	return (
-		<View
-			style={[
+		<Pressable
+			onPress={() => onOpenProfile(entry.userId)}
+			style={({ pressed }) => [
 				r.row,
+				entry.isPremium && r.rowPremium,
 				entry.isCurrentUser && r.rowHighlight,
 				entry.isCurrentUser && r.rowYou,
+				pressed && { opacity: 0.88 },
 			]}
 		>
 			{/* Rank */}
@@ -204,7 +305,13 @@ const RowItem = ({
 			</View>
 
 			{/* Avatar */}
-			<Avatar uri={entry.avatarUrl} name={entry.firstName || '?'} size={40} isCurrentUser={entry.isCurrentUser} />
+			<Avatar
+				uri={entry.avatarUrl}
+				name={entry.firstName || '?'}
+				size={40}
+				isCurrentUser={entry.isCurrentUser}
+				isPremium={entry.isPremium}
+			/>
 
 			{/* Info */}
 			<View style={r.info}>
@@ -215,11 +322,6 @@ const RowItem = ({
 					{entry.isCurrentUser && (
 						<View style={r.youBadge}>
 							<Text style={r.youText}>{t('leaderboard', 'you')}</Text>
-						</View>
-					)}
-					{entry.isPremium && (
-						<View style={r.premBadge}>
-							<Ionicons name='diamond' size={9} color='#000' />
 						</View>
 					)}
 				</View>
@@ -249,7 +351,7 @@ const RowItem = ({
 				</Text>
 				<Text style={r.scoreLabel}>{t('leaderboard', 'score')}</Text>
 			</View>
-		</View>
+		</Pressable>
 	)
 }
 
@@ -283,6 +385,10 @@ const r = StyleSheet.create({
 		borderLeftWidth: 3,
 		borderLeftColor: C.primary,
 	},
+	rowPremium: {
+		borderColor: 'rgba(255, 215, 0, 0.45)',
+		backgroundColor: 'rgba(255, 215, 0, 0.06)',
+	},
 	rankWrap: { width: 28, alignItems: 'center' },
 	rankNum: { fontSize: 13, fontWeight: '800' },
 	info: { flex: 1, gap: 3 },
@@ -294,9 +400,6 @@ const r = StyleSheet.create({
 		paddingHorizontal: 5, paddingVertical: 1,
 	},
 	youText: { fontSize: 9, fontWeight: '800', color: C.primary },
-	premBadge: {
-		backgroundColor: '#FFD700', borderRadius: 6, padding: 3,
-	},
 	statsRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 	tierLabel: { fontSize: 11, fontWeight: '600' },
 	dot: { color: C.sub, fontSize: 10 },
@@ -311,15 +414,17 @@ const r = StyleSheet.create({
 const MyRankCard = ({
 	entry,
 	t,
+	onOpenProfile,
 }: {
 	entry: LeaderboardEntry
 	t: ReturnType<typeof useLanguage>['t']
+	onOpenProfile: (userId: string) => void
 }) => {
 	const tier = TIER_MAP[entry.tierName]
 	const fullName = [entry.firstName, entry.lastName].filter(Boolean).join(' ') || '—'
 
 	return (
-		<View style={m.outer}>
+		<Pressable onPress={() => onOpenProfile(entry.userId)} style={({ pressed }) => [m.outer, pressed && { opacity: 0.92 }]}>
 			<LinearGradient
 				colors={['rgba(52, 199, 89, 0.55)', 'rgba(52, 199, 89, 0.15)', 'rgba(90, 200, 250, 0.12)']}
 				start={{ x: 0, y: 0 }}
@@ -334,7 +439,13 @@ const MyRankCard = ({
 						<Text style={m.cardHeaderLabel}>{t('leaderboard', 'myRank')}</Text>
 					</View>
 					<View style={m.left}>
-						<Avatar uri={entry.avatarUrl} name={entry.firstName || '?'} size={52} isCurrentUser />
+						<Avatar
+							uri={entry.avatarUrl}
+							name={entry.firstName || '?'}
+							size={52}
+							isCurrentUser
+							isPremium={entry.isPremium}
+						/>
 						<View style={m.info}>
 							<Text style={m.name} numberOfLines={1}>
 								{fullName}
@@ -369,7 +480,7 @@ const MyRankCard = ({
 					</View>
 				</View>
 			</LinearGradient>
-		</View>
+		</Pressable>
 	)
 }
 
@@ -402,7 +513,7 @@ const m = StyleSheet.create({
 	},
 	left: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 	info: { flex: 1, gap: 3 },
-	name: { fontSize: 16, fontWeight: '700', color: C.text },
+	name: { fontSize: 16, fontWeight: '700', color: C.text, flexShrink: 1 },
 	tierRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 	tierLabel: { fontSize: 12, fontWeight: '600' },
 	stats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
@@ -451,6 +562,10 @@ export default function LeaderboardScreen() {
 
 	const top3 = [entries[1] ?? null, entries[0] ?? null, entries[2] ?? null]
 
+	const openAthlete = useCallback((userId: string) => {
+		router.push(`/(auth)/(routes)/leaderboard/profile/${userId}`)
+	}, [])
+
 	return (
 		<SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
 			{/* Header */}
@@ -460,7 +575,6 @@ export default function LeaderboardScreen() {
 				</TouchableOpacity>
 				<View style={s.headerCenter}>
 					<Text style={s.title}>{t('leaderboard', 'title')}</Text>
-					<Text style={s.subtitle}>{t('leaderboard', 'subtitle')}</Text>
 				</View>
 				<View style={{ width: 40 }} />
 			</View>
@@ -494,7 +608,7 @@ export default function LeaderboardScreen() {
 						ListHeaderComponent={
 							<>
 								{/* My rank card */}
-								{myRank && <MyRankCard entry={myRank} t={t} />}
+								{myRank && <MyRankCard entry={myRank} t={t} onOpenProfile={openAthlete} />}
 
 								{/* Podium */}
 								{entries.length >= 3 && (
@@ -511,9 +625,9 @@ export default function LeaderboardScreen() {
 											<Text style={s.podiumCardTitle}>{t('leaderboard', 'podiumTitle')}</Text>
 										</View>
 										<View style={s.podiumWrap}>
-											<PodiumItem entry={top3[0]} height={90} />
-											<PodiumItem entry={top3[1]} height={120} />
-											<PodiumItem entry={top3[2]} height={70} />
+											<PodiumItem entry={top3[0]} height={90} onOpenProfile={openAthlete} />
+											<PodiumItem entry={top3[1]} height={120} onOpenProfile={openAthlete} />
+											<PodiumItem entry={top3[2]} height={70} onOpenProfile={openAthlete} />
 										</View>
 									</View>
 								)}
@@ -533,7 +647,7 @@ export default function LeaderboardScreen() {
 								</View>
 							</>
 						}
-						renderItem={({ item }) => <RowItem entry={item} t={t} />}
+						renderItem={({ item }) => <RowItem entry={item} t={t} onOpenProfile={openAthlete} />}
 						ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
 						ListEmptyComponent={
 							<View style={s.empty}>
@@ -573,6 +687,15 @@ const s = StyleSheet.create({
 	headerCenter: { flex: 1, alignItems: 'center' },
 	title: { fontSize: 19, fontWeight: '800', color: C.text, letterSpacing: -0.3 },
 	subtitle: { fontSize: 12, color: C.sub, marginTop: 2 },
+	periodHint: {
+		fontSize: 10,
+		color: C.sub,
+		marginTop: 4,
+		lineHeight: 14,
+		textAlign: 'center',
+		paddingHorizontal: 8,
+		opacity: 0.9,
+	},
 	loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
 	loaderText: { color: C.sub, fontSize: 14, marginTop: 4 },
 

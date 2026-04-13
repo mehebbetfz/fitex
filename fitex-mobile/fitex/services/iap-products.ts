@@ -1,4 +1,6 @@
-import { fetchProducts, ProductSubscription } from 'react-native-iap'
+import type { ProductSubscription } from 'react-native-iap'
+
+import { getReactNativeIap } from './iap-runtime'
 
 /** Must match App Store Connect / Play Console product IDs */
 export const PREMIUM_SUB_SKUS = ['premium_monthly', 'premium_yearly'] as const
@@ -16,6 +18,13 @@ function sortYearlyFirst(products: ProductSubscription[]): ProductSubscription[]
  * return empty briefly) and falls back to type "all" if "subs" returns nothing.
  */
 export async function fetchPremiumSubscriptions(): Promise<ProductSubscription[]> {
+	const iap = getReactNativeIap()
+	if (!iap) {
+		console.warn('[IAP] Unavailable in Expo Go — use a dev build (expo run / EAS)')
+		return []
+	}
+
+	const { fetchProducts } = iap
 	const skus = [...PREMIUM_SUB_SKUS]
 	const want = new Set(skus)
 

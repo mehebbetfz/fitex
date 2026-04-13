@@ -34,6 +34,8 @@ const GROUP_NAMES: Record<string, Record<Language, string>> = {
   'Косые мышцы':     { ru: 'Косые мышцы',    en: 'Obliques',     az: 'Yan əzələlər' },
   'Косыidе мышцы':   { ru: 'Косые мышцы',    en: 'Obliques',     az: 'Yan əzələlər' },
   'Глубокий кор':    { ru: 'Глубокий кор',   en: 'Deep Core',    az: 'Dərin özək' },
+  'Латеральная широкая мышца бедра': { ru: 'Латеральная широкая мышца бедра', en: 'Quads (vastus lateralis)', az: 'Ön budaq (lat. enli əzələ)' },
+  'Верх трапеций':   { ru: 'Верх трапеций',  en: 'Upper traps',  az: 'Üst trapezius' },
 }
 
 // ─── Primary / secondary muscle names ────────────────────────────────────────
@@ -60,6 +62,19 @@ const MUSCLE_NAMES: Record<string, Record<Language, string>> = {
   'Ягодицы':           { ru: 'Ягодицы',            en: 'Glutes',          az: 'Kalça' },
   'Плечи':             { ru: 'Плечи',              en: 'Shoulders',       az: 'Çiynlər' },
   'Стабилизаторы':     { ru: 'Стабилизаторы',      en: 'Stabilizers',     az: 'Stabilizatorlar' },
+  'Икроножные мышцы':  { ru: 'Икроножные мышцы',   en: 'Calves',          az: 'Baldır əzələləri' },
+  'Камбаловидная мышца': { ru: 'Камбаловидная мышца', en: 'Soleus',      az: 'Düzənəkvari əzələ' },
+  'Ягодичные':         { ru: 'Ягодичные',          en: 'Glutes',          az: 'Kalça əzələləri' },
+  'Мышцы спины':       { ru: 'Мышцы спины',        en: 'Back muscles',    az: 'Arxa əzələlər' },
+  'Сердечно-сосудистая система': { ru: 'Сердечно-сосудистая система', en: 'Cardiovascular system', az: 'Ürək-damar sistemi' },
+  'Большая круглая мышца': { ru: 'Большая круглая мышца', en: 'Teres major', az: 'Böyük dairəvi əzələ' },
+  'Задняя дельта':     { ru: 'Задняя дельта',      en: 'Rear deltoid',    az: 'Arxa delta' },
+  'Трапеции (нижняя часть)': { ru: 'Трапеции (нижняя часть)', en: 'Lower traps', az: 'Alt trapezius' },
+  'Ромбовидные':       { ru: 'Ромбовидные',        en: 'Rhomboids',       az: 'Romboşəkilli əzələlər' },
+  'Трапеции (средняя и нижняя части)': { ru: 'Трапеции (средняя и нижняя части)', en: 'Mid & lower traps', az: 'Orta və alt trapezius' },
+  'Трапеции (средняя часть)': { ru: 'Трапеции (средняя часть)', en: 'Mid traps', az: 'Orta trapezius' },
+  'Разгибатели спины': { ru: 'Разгибатели спины',  en: 'Spinal erectors', az: 'Onurğa dartıcıları' },
+  'Брахиалис':         { ru: 'Брахиалис',          en: 'Brachialis',      az: 'Braxialis' },
 }
 
 // ─── Equipment names ──────────────────────────────────────────────────────────
@@ -92,6 +107,27 @@ const EQUIPMENT_NAMES: Record<string, Record<Language, string>> = {
   'Наклонная скамья для пресса':         { ru: 'Наклонная скамья для пресса',      en: 'Decline Bench',          az: 'Meyilli dəzgah (qarın üçün)' },
   'Тренажер для пресса':                 { ru: 'Тренажер для пресса',              en: 'Ab Crunch Machine',      az: 'Qarın trenajoru' },
   'Тренажер "Брусья-пресс"':             { ru: 'Тренажер "Брусья-пресс"',          en: 'Captain\'s Chair',       az: 'Kapitan kürsüsü' },
+  'Тренажер для сгибания ног':           { ru: 'Тренажер для сгибания ног',        en: 'Lying leg curl machine', az: 'Uzanaraq budaq bükən maşın' },
+  'Тренажер для разгибания ног':         { ru: 'Тренажер для разгибания ног',      en: 'Leg extension machine',  az: 'Budaq uzadan maşın' },
+  'Тренажер для сведения ног':           { ru: 'Тренажер для сведения ног',        en: 'Hip adduction machine',  az: 'Budaq yığılan maşın' },
+  'Тренажер для разведения ног':         { ru: 'Тренажер для разведения ног',      en: 'Hip abduction machine',  az: 'Budaq açılan maşın' },
+  'Тренажер для жима ногами':            { ru: 'Тренажер для жима ногами',         en: 'Leg press machine',      az: 'Ayaqla pres maşını' },
+  'Стойки для штанги / Силовая рама':    { ru: 'Стойки для штанги / Силовая рама', en: 'Squat rack / power rack', az: 'Ştanqa stendi / güc stansiyası' },
+  'Тренажер Смита':                      { ru: 'Тренажер Смита',                   en: 'Smith machine',          az: 'Smith maşını' },
+  'Тренажер для ягодиц':                 { ru: 'Тренажер для ягодиц',              en: 'Glute machine',          az: 'Kalça maşını' },
+  'Гакк-машина / V-Squat':               { ru: 'Гакк-машина / V-Squat',            en: 'Hack squat / V-squat',   az: 'Hakk squat / V-squat' },
+  'Рычажный тренажер для ног':           { ru: 'Рычажный тренажер для ног',        en: 'Lever leg machine',      az: 'Ayaq üçün qolu maşın' },
+  'Тренажер для голени сидя':            { ru: 'Тренажер для голени сидя',         en: 'Seated calf machine',    az: 'Oturaraq baldır maşını' },
+  'Эллиптический тренажер':              { ru: 'Эллиптический тренажер',           en: 'Elliptical trainer',     az: 'Elliptik trenajor' },
+  'Велотренажер':                        { ru: 'Велотренажер',                     en: 'Exercise bike',          az: 'Velotrenajor' },
+  'Т-гриф':                              { ru: 'Т-гриф',                           en: 'T-bar',                  az: 'T-bar' },
+  'Тренажер Т-гриф с упором':            { ru: 'Тренажер Т-гриф с упором',         en: 'Chest-supported T-bar',  az: 'Döşə söykənən T-bar' },
+  'Блочный тренажер':                    { ru: 'Блочный тренажер',                 en: 'Plate-loaded machine',   az: 'Bloklu trenajor' },
+  'V-образная рукоять':                  { ru: 'V-образная рукоять',               en: 'V-bar attachment',       az: 'V formalı tutacaq' },
+  'Длинная рукоять':                     { ru: 'Длинная рукоять',                  en: 'Long bar attachment',    az: 'Uzun tutacaq' },
+  'Дуговой тренажёр':                    { ru: 'Дуговой тренажёр',                 en: 'Diverging pulldown machine', az: 'Qövs formalı trenajor' },
+  'Тренажер для гиперэкстензии':         { ru: 'Тренажер для гиперэкстензии',      en: 'Hyperextension bench',   az: 'Hiperextension dəzgahı' },
+  'Турник':                              { ru: 'Турник',                           en: 'Pull-up bar',            az: 'Turnik' },
 }
 
 // ─── Exercise names ────────────────────────────────────────────────────────────
@@ -135,6 +171,34 @@ const EXERCISE_NAMES: Record<string, Record<Language, string>> = {
   'Скручивания на наклонной скамье':                           { ru: 'Скручивания на наклонной скамье',                      en: 'Decline Bench Sit-Ups',                     az: 'Meyilli dəzgahda bükülmə' },
   'Скручивания в тренажере':                                   { ru: 'Скручивания в тренажере',                               en: 'Seated Machine Crunch',                     az: 'Maşında oturaraq bükülmə' },
   'Подъем ног в упоре на брусьях':                             { ru: 'Подъем ног в упоре на брусьях',                        en: "Captain's Chair Leg Raise",                 az: 'Kapitan kürsüsündə ayaq qaldırma' },
+  // Ноги
+  'Сгибания ног лежа':                                         { ru: 'Сгибания ног лежа',                                    en: 'Lying leg curl',                            az: 'Uzanaraq budaq bükülməsi' },
+  'Разгибания ног сидя':                                       { ru: 'Разгибания ног сидя',                                  en: 'Seated leg extension',                      az: 'Oturaraq budaq uzanması' },
+  'Сведение ног в тренажере сидя':                             { ru: 'Сведение ног в тренажере сидя',                        en: 'Seated hip adduction',                      az: 'Oturaraq budaq yığılması' },
+  'Разведение ног в тренажере сидя':                           { ru: 'Разведение ног в тренажере сидя',                      en: 'Seated hip abduction',                      az: 'Oturaraq budaq açılması' },
+  'Жим ногами в тренажере':                                    { ru: 'Жим ногами в тренажере',                               en: 'Leg press',                                 az: 'Ayaqla pres' },
+  'Приседания со штангой на плечах':                           { ru: 'Приседания со штангой на плечах',                      en: 'Barbell back squat',                        az: 'Çiyində ştanqa ilə squat' },
+  'Приседания в Смите (узкая постановка)':                     { ru: 'Приседания в Смите (узкая постановка)',               en: 'Smith squat (narrow stance)',               az: 'Smith squat (dar dayaq)' },
+  'Отведения ноги назад в тренажере':                         { ru: 'Отведения ноги назад в тренажере',                     en: 'Cable kickback / hip extension',            az: 'Maşında budaq geri aparma' },
+  'Гакк-приседания в тренажере':                               { ru: 'Гакк-приседания в тренажере',                          en: 'Hack squat',                                az: 'Hakk squat' },
+  'Разгибания ног в рычажном тренажере':                       { ru: 'Разгибания ног в рычажном тренажере',                  en: 'Lever leg extension',                       az: 'Qolu maşınında budaq uzanması' },
+  'Подъем на носки сидя (рычажный)':                           { ru: 'Подъем на носки сидя (рычажный)',                     en: 'Seated calf raise (machine)',               az: 'Oturaraq baldır (maşın)' },
+  'Эллиптический тренажер':                                    { ru: 'Эллиптический тренажер',                               en: 'Elliptical trainer',                        az: 'Elliptik trenajor' },
+  'Велотренажер (вертикальный)':                               { ru: 'Велотренажер (вертикальный)',                          en: 'Upright exercise bike',                   az: 'Şaquli velotrenajor' },
+  // Спина
+  'Тяга штанги в наклоне':                                     { ru: 'Тяга штанги в наклоне',                                en: 'Bent-over barbell row',                     az: 'Əyilmiş ştanqa çəkişi' },
+  'Становая тяга со штангой':                                  { ru: 'Становая тяга со штангой',                             en: 'Barbell deadlift',                          az: 'Ştanqa ilə deadlift' },
+  'Шраги со штангой':                                          { ru: 'Шраги со штангой',                                     en: 'Barbell shrugs',                            az: 'Ştanqa ilə çiyn qaldırma' },
+  'Горизонтальная тяга в тренажере (Hammer)':                  { ru: 'Горизонтальная тяга в тренажере (Hammer)',             en: 'Hammer Strength row',                       az: 'Hammer üfüqi çəkiş' },
+  'Тяга Т-грифа в наклоне':                                    { ru: 'Тяга Т-грифа в наклоне',                               en: 'T-bar row',                                 az: 'T-bar çəkişi' },
+  'Тяга Т-грифа с упором в грудь':                             { ru: 'Тяга Т-грифа с упором в грудь',                        en: 'Chest-supported T-bar row',               az: 'Döşə söykənən T-bar çəkişi' },
+  'Рычажная тяга с упором грудью':                             { ru: 'Рычажная тяга с упором грудью',                        en: 'Chest-supported lever row',               az: 'Döşə söykənən qolu çəkiş' },
+  'Вертикальная тяга параллельным хватом':                     { ru: 'Вертикальная тяга параллельным хватом',               en: 'Neutral-grip lat pulldown',                 az: 'Neytral tutumlu lat aşağı çəkiş' },
+  'Тяга верхнего блока к груди (широкий хват)':                { ru: 'Тяга верхнего блока к груди (широкий хват)',          en: 'Wide-grip lat pulldown',                    az: 'Geniş tutumlu lat çəkişi' },
+  'Рычажная тяга параллельным хватом':                         { ru: 'Рычажная тяга параллельным хватом',                    en: 'Seated lever row (neutral grip)',           az: 'Neytral tutumlu qolu çəkiş' },
+  'Тяга верхнего блока (дуговой тренажёр)':                    { ru: 'Тяга верхнего блока (дуговой тренажёр)',              en: 'Diverging lat pulldown',                    az: 'Qövs lat aşağı çəkişi' },
+  'Гиперэкстензия':                                            { ru: 'Гиперэкстензия',                                       en: 'Back extension (hyperextension)',         az: 'Arxa uzanması (hiperextension)' },
+  'Подтягивания широким хватом':                               { ru: 'Подтягивания широким хватом',                          en: 'Wide-grip pull-ups',                        az: 'Geniş tutumlu dartılmalar' },
 }
 
 // ─── Difficulty labels ────────────────────────────────────────────────────────

@@ -12,19 +12,11 @@ import {
 	TouchableOpacity,
 	View,
 } from 'react-native'
-import {
-	ErrorCode,
-	Purchase,
-	ProductSubscription,
-	endConnection,
-	initConnection,
-	purchaseErrorListener,
-	purchaseUpdatedListener,
-	requestPurchase,
-} from 'react-native-iap'
+import type { Purchase, ProductSubscription } from 'react-native-iap'
 
 import { useLanguage } from '@/contexts/language-context'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
+import { getReactNativeIap } from '@/services/iap-runtime'
 import { getStorefrontPrice } from '@/services/iap-price'
 import { syncAlreadyOwnedSubscription, verifySubscriptionOnServer } from '@/services/subscription-verify'
 import { useAuth } from '../contexts/auth-context'
@@ -121,6 +113,23 @@ export default function SubscriptionScreen() {
 		let mounted = true
 
 		const init = async () => {
+			const iap = getReactNativeIap()
+			if (!iap) {
+				logWarn('IAP unavailable (Expo Go — use dev build)')
+				if (mounted) {
+					setProducts([])
+					setInitializing(false)
+				}
+				return
+			}
+
+			const {
+				initConnection,
+				purchaseUpdatedListener,
+				purchaseErrorListener,
+				ErrorCode,
+			} = iap
+
 			try {
 				log('Calling initConnection()...')
 				await initConnection()
@@ -201,7 +210,8 @@ export default function SubscriptionScreen() {
 			purchaseErrorSub.current?.remove()
 
 			log('Calling endConnection()')
-			endConnection()
+			const iapCleanup = getReactNativeIap()
+			if (iapCleanup) void iapCleanup.endConnection()
 			log('endConnection() called')
 		}
 	}, [handlePurchase, t, refreshProfile])
@@ -222,10 +232,17 @@ export default function SubscriptionScreen() {
 			return
 		}
 
+		const iap = getReactNativeIap()
+		if (!iap) {
+			Alert.alert(t('common', 'error'), t('trial', 'storeUnavailable'))
+			return
+		}
+
 		setLoading(true)
 		log('setLoading(true)')
 
 		try {
+			const { requestPurchase } = iap
 			log('Calling requestPurchase', { productId, type: 'subs' })
 			if (Platform.OS === 'ios') {
 				await requestPurchase({
@@ -265,9 +282,10 @@ export default function SubscriptionScreen() {
 				code: error.code,
 				message: error.message,
 			})
-		if (error.code !== ErrorCode.UserCancelled) {
-					Alert.alert(t('common', 'error'), error.message)
-				} else {
+			const EC = iap.ErrorCode
+			if (error.code !== EC.UserCancelled) {
+				Alert.alert(t('common', 'error'), error.message)
+			} else {
 				log('User cancelled purchase in requestPurchase catch')
 			}
 			log('setLoading(false) after requestPurchase error')

@@ -1,15 +1,9 @@
 import { useLanguage } from '@/contexts/language-context'
 import type { User } from '@/app/contexts/auth-context'
-import { Ionicons } from '@expo/vector-icons'
-import React, { useMemo, useState } from 'react'
-import {
-	ScrollView,
-	StyleSheet,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View,
-} from 'react-native'
+import React, { useMemo } from 'react'
+import { StyleSheet, Text, View } from 'react-native'
+
+import { WheelPicker } from '@/components/wheel-picker'
 
 const C = {
 	bg: '#0A0A0A',
@@ -20,49 +14,44 @@ const C = {
 	primary: '#34C759',
 } as const
 
-type Opt = { id: string; label: string }
-
-function ChipRow({
-	label,
-	options,
-	value,
-	onChange,
-}: {
-	label: string
-	options: Opt[]
-	value: string
-	onChange: (v: string) => void
-}) {
-	return (
-		<View style={s.field}>
-			<Text style={s.label}>{label}</Text>
-			<View style={s.chips}>
-				{options.map(o => {
-					const active = value === o.id
-					return (
-						<TouchableOpacity
-							key={o.id}
-							style={[s.chip, active && s.chipOn]}
-							onPress={() => onChange(o.id)}
-							activeOpacity={0.7}
-						>
-							<Text style={[s.chipText, active && s.chipTextOn]}>{o.label}</Text>
-						</TouchableOpacity>
-					)
-				})}
-			</View>
-		</View>
-	)
-}
-
-export function buildPayloadFromState(st: {
+export type BodyStatsState = {
 	height: string
 	weight: string
 	age: string
 	sex: string
 	fitnessGoal: string
 	activityLevel: string
-}) {
+}
+
+export function intRangeString(min: number, max: number) {
+	return Array.from({ length: max - min + 1 }, (_, i) => String(min + i))
+}
+
+function normalizeIntString(raw: string, fallback: string, min: number, max: number) {
+	const n = parseFloat(String(raw).replace(',', '.'))
+	if (!Number.isFinite(n)) return fallback
+	const r = Math.round(n)
+	return String(Math.min(max, Math.max(min, r)))
+}
+
+/** Только male / female для API и пикера */
+export function normalizeSexId(raw: string | undefined | null): 'male' | 'female' {
+	return raw === 'female' ? 'female' : 'male'
+}
+
+/** Ensures numeric fields are valid picker values; use for onboarding initial state */
+export function mergeBodyStatsWithDefaults(initial: BodyStatsState): BodyStatsState {
+	return {
+		height: normalizeIntString(initial.height, '175', 100, 250),
+		weight: normalizeIntString(initial.weight, '70', 30, 300),
+		age: normalizeIntString(initial.age, '25', 13, 120),
+		sex: normalizeSexId(initial.sex),
+		fitnessGoal: initial.fitnessGoal || 'unspecified',
+		activityLevel: initial.activityLevel || 'unspecified',
+	}
+}
+
+export function buildPayloadFromState(st: BodyStatsState) {
 	const heightCm = parseFloat(st.height.replace(',', '.'))
 	const weightKg = parseFloat(st.weight.replace(',', '.'))
 	const age = parseInt(st.age, 10)
@@ -80,13 +69,13 @@ export function buildPayloadFromState(st: {
 	}
 }
 
-export function useBodyStatsInitial(user: User | null) {
+export function useBodyStatsInitial(user: User | null): BodyStatsState {
 	return useMemo(
 		() => ({
-			height: user?.heightCm != null ? String(user.heightCm) : '',
-			weight: user?.weightKg != null ? String(user.weightKg) : '',
+			height: user?.heightCm != null ? String(Math.round(user.heightCm)) : '',
+			weight: user?.weightKg != null ? String(Math.round(user.weightKg)) : '',
 			age: user?.age != null ? String(user.age) : '',
-			sex: user?.sex ?? 'unspecified',
+			sex: normalizeSexId(user?.sex),
 			fitnessGoal: user?.fitnessGoal ?? 'unspecified',
 			activityLevel: user?.activityLevel ?? 'unspecified',
 		}),
@@ -94,21 +83,25 @@ export function useBodyStatsInitial(user: User | null) {
 	)
 }
 
+type Opt = { id: string; label: string }
+
 export function BodyStatsFormSections({
 	state,
 	setState,
 }: {
-	state: ReturnType<typeof useBodyStatsInitial>
-	setState: React.Dispatch<React.SetStateAction<ReturnType<typeof useBodyStatsInitial>>>
+	state: BodyStatsState
+	setState: React.Dispatch<React.SetStateAction<BodyStatsState>>
 }) {
 	const { t } = useLanguage()
+
+	const heightValues = useMemo(() => intRangeString(100, 250), [])
+	const weightValues = useMemo(() => intRangeString(30, 300), [])
+	const ageValues = useMemo(() => intRangeString(13, 120), [])
 
 	const sexOpts: Opt[] = useMemo(
 		() => [
 			{ id: 'male', label: t('bodyProfile', 'sexMale') },
 			{ id: 'female', label: t('bodyProfile', 'sexFemale') },
-			{ id: 'other', label: t('bodyProfile', 'sexOther') },
-			{ id: 'unspecified', label: t('bodyProfile', 'sexUnspecified') },
 		],
 		[t],
 	)
@@ -134,100 +127,105 @@ export function BodyStatsFormSections({
 		[t],
 	)
 
+	const sexIds = useMemo(() => sexOpts.map(o => o.id), [sexOpts])
+	const goalIds = useMemo(() => goalOpts.map(o => o.id), [goalOpts])
+	const actIds = useMemo(() => actOpts.map(o => o.id), [actOpts])
+
+	const sexLabel = useMemo(
+		() => Object.fromEntries(sexOpts.map(o => [o.id, o.label])) as Record<string, string>,
+		[sexOpts],
+	)
+	const goalLabel = useMemo(
+		() => Object.fromEntries(goalOpts.map(o => [o.id, o.label])) as Record<string, string>,
+		[goalOpts],
+	)
+	const actLabel = useMemo(
+		() => Object.fromEntries(actOpts.map(o => [o.id, o.label])) as Record<string, string>,
+		[actOpts],
+	)
+
+	const safeHeight = heightValues.includes(state.height) ? state.height : '175'
+	const safeWeight = weightValues.includes(state.weight) ? state.weight : '70'
+	const safeAge = ageValues.includes(state.age) ? state.age : '25'
+	const safeSex = sexIds.includes(state.sex) ? state.sex : 'male'
+	const safeGoal = goalIds.includes(state.fitnessGoal) ? state.fitnessGoal : 'unspecified'
+	const safeAct = actIds.includes(state.activityLevel) ? state.activityLevel : 'unspecified'
+
 	return (
 		<>
-			<View style={s.row2}>
-				<View style={s.half}>
-					<Text style={s.label}>{t('bodyProfile', 'height')} ({t('bodyProfile', 'cm')})</Text>
-					<TextInput
-						style={s.input}
-						keyboardType='decimal-pad'
-						placeholder='175'
-						placeholderTextColor={C.sub}
-						value={state.height}
-						onChangeText={v => setState(p => ({ ...p, height: v }))}
-					/>
-				</View>
-				<View style={s.half}>
-					<Text style={s.label}>{t('bodyProfile', 'weight')} ({t('bodyProfile', 'kg')})</Text>
-					<TextInput
-						style={s.input}
-						keyboardType='decimal-pad'
-						placeholder='70'
-						placeholderTextColor={C.sub}
-						value={state.weight}
-						onChangeText={v => setState(p => ({ ...p, weight: v }))}
-					/>
-				</View>
-			</View>
 			<View style={s.field}>
-				<Text style={s.label}>{t('bodyProfile', 'age')} ({t('bodyProfile', 'years')})</Text>
-				<TextInput
-					style={s.input}
-					keyboardType='number-pad'
-					placeholder='25'
-					placeholderTextColor={C.sub}
-					value={state.age}
-					onChangeText={v => setState(p => ({ ...p, age: v.replace(/\D/g, '') }))}
+				<Text style={s.wheelSectionTitle}>{t('bodyProfile', 'weight')}</Text>
+				<WheelPicker
+					syncKey='weight'
+					values={weightValues}
+					selectedValue={safeWeight}
+					onValueChange={v => setState(p => ({ ...p, weight: v }))}
+					formatLabel={val => `${val} ${t('bodyProfile', 'kg')}`}
 				/>
 			</View>
-			<ChipRow
-				label={t('bodyProfile', 'sex')}
-				options={sexOpts}
-				value={state.sex}
-				onChange={v => setState(p => ({ ...p, sex: v }))}
-			/>
-			<ChipRow
-				label={t('bodyProfile', 'goal')}
-				options={goalOpts}
-				value={state.fitnessGoal}
-				onChange={v => setState(p => ({ ...p, fitnessGoal: v }))}
-			/>
-			<ChipRow
-				label={t('bodyProfile', 'activity')}
-				options={actOpts}
-				value={state.activityLevel}
-				onChange={v => setState(p => ({ ...p, activityLevel: v }))}
-			/>
+			<View style={s.field}>
+				<Text style={s.wheelSectionTitle}>{t('bodyProfile', 'height')}</Text>
+				<WheelPicker
+					syncKey='height'
+					values={heightValues}
+					selectedValue={safeHeight}
+					onValueChange={v => setState(p => ({ ...p, height: v }))}
+					formatLabel={val => `${val} ${t('bodyProfile', 'cm')}`}
+				/>
+			</View>
+			<View style={s.field}>
+				<Text style={s.wheelSectionTitle}>{t('bodyProfile', 'age')}</Text>
+				<WheelPicker
+					syncKey='age'
+					values={ageValues}
+					selectedValue={safeAge}
+					onValueChange={v => setState(p => ({ ...p, age: v }))}
+					formatLabel={val => `${val} ${t('bodyProfile', 'years')}`}
+				/>
+			</View>
+			<View style={s.field}>
+				<Text style={s.wheelSectionTitle}>{t('bodyProfile', 'sex')}</Text>
+				<WheelPicker
+					syncKey='sex'
+					values={sexIds}
+					selectedValue={safeSex}
+					onValueChange={v => setState(p => ({ ...p, sex: v }))}
+					formatLabel={id => sexLabel[id] ?? id}
+				/>
+			</View>
+			<View style={s.field}>
+				<Text style={s.wheelSectionTitle}>{t('bodyProfile', 'goal')}</Text>
+				<WheelPicker
+					syncKey='goal'
+					values={goalIds}
+					selectedValue={safeGoal}
+					onValueChange={v => setState(p => ({ ...p, fitnessGoal: v }))}
+					formatLabel={id => goalLabel[id] ?? id}
+				/>
+			</View>
+			<View style={[s.field, { marginBottom: 8 }]}>
+				<Text style={s.wheelSectionTitle}>{t('bodyProfile', 'activity')}</Text>
+				<WheelPicker
+					syncKey='activity'
+					values={actIds}
+					selectedValue={safeAct}
+					onValueChange={v => setState(p => ({ ...p, activityLevel: v }))}
+					formatLabel={id => actLabel[id] ?? id}
+				/>
+			</View>
 		</>
 	)
 }
 
 const s = StyleSheet.create({
-	field: { marginBottom: 18 },
-	row2: { flexDirection: 'row', gap: 12, marginBottom: 18 },
-	half: { flex: 1 },
-	label: {
-		fontSize: 13,
+	field: { marginBottom: 8 },
+	wheelSectionTitle: {
+		fontSize: 15,
 		color: C.sub,
-		marginBottom: 8,
+		marginBottom: 4,
 		fontWeight: '600',
+		textAlign: 'center',
 	},
-	input: {
-		backgroundColor: C.card,
-		borderWidth: 1,
-		borderColor: C.border,
-		borderRadius: 12,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		fontSize: 17,
-		color: C.text,
-	},
-	chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-	chip: {
-		paddingVertical: 8,
-		paddingHorizontal: 12,
-		borderRadius: 20,
-		backgroundColor: C.card,
-		borderWidth: 1,
-		borderColor: C.border,
-	},
-	chipOn: {
-		borderColor: C.primary,
-		backgroundColor: 'rgba(52,199,89,0.12)',
-	},
-	chipText: { fontSize: 13, color: C.sub },
-	chipTextOn: { color: C.primary, fontWeight: '600' },
 })
 
 export const bodyStatsStyles = s

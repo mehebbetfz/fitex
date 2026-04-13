@@ -1,9 +1,9 @@
 import { api } from '@/services/api'
 import { Platform } from 'react-native'
 import type { Purchase } from 'react-native-iap'
-import { finishTransaction, getAvailablePurchases } from 'react-native-iap'
 
 import { getIosAppStoreReceiptForVerify } from './iap-receipt'
+import { getReactNativeIap } from './iap-runtime'
 
 const PREMIUM_IDS = new Set(['premium_monthly', 'premium_yearly'])
 
@@ -31,7 +31,10 @@ export async function verifySubscriptionOnServer(purchase: Purchase): Promise<Ve
 		})
 
 		if (response.data?.success) {
-			await finishTransaction({ purchase, isConsumable: false })
+			const iap = getReactNativeIap()
+			if (iap) {
+				await iap.finishTransaction({ purchase, isConsumable: false })
+			}
 			return { ok: true, premiumExpiresAt: response.data.premiumExpiresAt }
 		}
 
@@ -51,7 +54,10 @@ export async function verifySubscriptionOnServer(purchase: Purchase): Promise<Ve
  * When the store says the item is already owned, sync entitlement using current receipt / active purchases.
  */
 export async function syncAlreadyOwnedSubscription(): Promise<VerifyOk | VerifyFail> {
-	const purchases = await getAvailablePurchases({ onlyIncludeActiveItemsIOS: true })
+	const iap = getReactNativeIap()
+	const purchases = iap
+		? await iap.getAvailablePurchases({ onlyIncludeActiveItemsIOS: true })
+		: []
 
 	const active = (Array.isArray(purchases) ? purchases : []).filter(p =>
 		PREMIUM_IDS.has(p.productId),

@@ -201,6 +201,91 @@ export const calculateExerciseFatigue = (
 }
 
 
+/** Колонки таблицы recovery_data (после рефакторинга с muscle_id / group_name / fatigue). */
+const RECOVERY_DATA_TABLE_SQL = `
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    muscle_id TEXT NOT NULL UNIQUE,
+    muscle_name TEXT NOT NULL,
+    group_name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'not_trained',
+    recovery INTEGER NOT NULL,
+    fatigue REAL DEFAULT 0,
+    last_trained TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+`
+
+/**
+ * Старые БД создавали recovery_data только с muscle_name, … без muscle_id.
+ * CREATE TABLE IF NOT EXISTS не добавляет колонки — пересоздаём таблицу.
+ */
+async function migrateRecoveryDataIfNeeded(
+	db: ReturnType<typeof openDatabase>,
+): Promise<void> {
+	let info: { name: string }[] = []
+	try {
+		info = (await db.getAllAsync(`PRAGMA table_info(recovery_data)`)) as {
+			name: string
+		}[]
+	} catch {
+		return
+	}
+	if (info.length === 0) return
+
+	const names = new Set(info.map(c => c.name))
+	if (
+		names.has('muscle_id') &&
+		names.has('group_name') &&
+		names.has('fatigue')
+	) {
+		return
+	}
+
+	console.log('[DB] Migration: rebuilding recovery_data (legacy schema, no muscle_id et al.)')
+	await db.execAsync('DROP TABLE recovery_data')
+	await db.execAsync(
+		`CREATE TABLE IF NOT EXISTS recovery_data (${RECOVERY_DATA_TABLE_SQL})`,
+	)
+}
+
+/**
+ * Старые установки: таблицы уже есть без колонки soft-delete.
+ * `CREATE TABLE IF NOT EXISTS` новые колонки не добавляет — только ALTER.
+ */
+async function ensureDeletedAtColumns(
+	db: ReturnType<typeof openDatabase>,
+): Promise<void> {
+	const tables = ['workouts', 'body_measurements', 'personal_records'] as const
+	for (const table of tables) {
+		const info = (await db.getAllAsync(`PRAGMA table_info(${table})`)) as {
+			name: string
+		}[]
+		const has = info.some(col => col.name === 'deleted_at')
+		if (!has) {
+			await db.execAsync(
+				`ALTER TABLE ${table} ADD COLUMN deleted_at TEXT DEFAULT NULL`,
+			)
+			console.log(`[DB] Migration: added deleted_at to ${table}`)
+		}
+	}
+}
+
+/**
+ * Старые таблицы без колонки synced (синхронизация с сервером).
+ */
+async function ensureSyncColumns(db: ReturnType<typeof openDatabase>): Promise<void> {
+	const tables = ['workouts', 'body_measurements', 'personal_records'] as const
+	for (const table of tables) {
+		const info = (await db.getAllAsync(`PRAGMA table_info(${table})`)) as {
+			name: string
+		}[]
+		if (info.length === 0) continue
+		const has = info.some(col => col.name === 'synced')
+		if (!has) {
+			await db.execAsync(`ALTER TABLE ${table} ADD COLUMN synced INTEGER DEFAULT 0`)
+			console.log(`[DB] Migration: added synced to ${table}`)
+		}
+	}
+}
 
 // Инициализация базы данных
 export const initDatabase = async () => {
@@ -275,17 +360,11 @@ export const initDatabase = async () => {
 		)`)
 
 
-		await db.execAsync(`CREATE TABLE IF NOT EXISTS recovery_data (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    muscle_id TEXT NOT NULL UNIQUE,  -- уникальный ID мышцы
-    muscle_name TEXT NOT NULL,        -- отображаемое имя
-    group_name TEXT NOT NULL,         -- группа для группировки
-    status TEXT NOT NULL DEFAULT 'not_trained',
-    recovery INTEGER NOT NULL,
-    fatigue REAL DEFAULT 0,           -- текущая усталость (0-100)
-    last_trained TEXT NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`)
+		await db.execAsync(
+			`CREATE TABLE IF NOT EXISTS recovery_data (${RECOVERY_DATA_TABLE_SQL})`,
+		)
+
+		await migrateRecoveryDataIfNeeded(db)
 
 		await db.execAsync(`CREATE TABLE IF NOT EXISTS user_stats (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -309,6 +388,9 @@ export const initDatabase = async () => {
 			avatar_url TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`)
+
+		await ensureDeletedAtColumns(db)
+		await ensureSyncColumns(db)
 
 		console.log('Database initialized successfully')
 		return true

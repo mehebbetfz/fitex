@@ -32,6 +32,7 @@
     "@nestjs/mongoose": "^11.0.4",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/schedule": "^4.1.2",
     "@nestjs/throttler": "^6.5.0",
     "@types/nodemailer": "^8.0.0",
     "apple-signin-auth": "^2.0.0",

@@ -508,6 +508,7 @@ export interface Translations {
     success: string
     optional: string
     unknownError: string
+    retry: string
     delete: string
     edit: string
     add: string
@@ -542,6 +543,22 @@ export interface Translations {
     topPlayers: string
     syncHint: string
     podiumTitle: string
+    dailyLeadersTitle: string
+    dailyLeadersSubtitle: string
+    openLeaderboard: string
+    athleteProfile: string
+    thisMonth: string
+    lifetime: string
+    podiumHistory: string
+    firstPlaces: string
+    secondPlaces: string
+    thirdPlaces: string
+    bestRecords: string
+    noRecords: string
+    sets: string
+    prs: string
+    profileLoadError: string
+    monthlyRatingHint: string
   }
   languageSelect: {
     title: string
@@ -693,6 +710,9 @@ export interface Translations {
     actVery: string
     actUnspecified: string
     fillRequired: string
+    next: string
+    back: string
+    stepProgress: string
   }
   history: {
     title: string
@@ -1065,7 +1085,7 @@ export const ru: Translations = {
     total: 'Всего',
     inSync: 'В облаке',
     notSynced: 'Не синхр.',
-    cloudInfo: 'Данные хранятся на сервере FitEx и доступны со всех ваших устройств',
+    cloudInfo: 'Данные хранятся на сервере Fitex и доступны со всех ваших устройств',
   },
   notifications: {
     workoutReminder: 'Не забудь про сегодняшнюю тренировку — ты уже так далеко зашёл(ла)!',
@@ -1120,7 +1140,7 @@ export const ru: Translations = {
     filter_nutrition: 'Питание',
   },
   gymPass: {
-    title: 'FitEx Pass',
+    title: 'Fitex Pass',
     myPass: 'Мой пропуск',
     noMembership: 'Нет активного абонемента',
     noMembershipSubtitle: 'Купите абонемент для доступа в партнёрские залы',
@@ -1310,6 +1330,7 @@ export const ru: Translations = {
     success: 'Успех',
     optional: 'опционально',
     unknownError: 'Что-то пошло не так',
+    retry: 'Повторить',
     delete: 'Удалить',
     edit: 'Изменить',
     add: 'Добавить',
@@ -1317,7 +1338,7 @@ export const ru: Translations = {
     unitCm: 'см',
   },
   upsell: {
-    title: 'Разблокируй FitEx Premium',
+    title: 'Разблокируй Fitex Premium',
     titleTrial: 'дн. осталось в пробном периоде',
     subtitle: 'Рейтинг, достижения, лидерборд, синхронизация и многое другое.',
     featureSync: 'Синхронизация',
@@ -1330,7 +1351,7 @@ export const ru: Translations = {
   },
   leaderboard: {
     title: 'Таблица лидеров',
-    subtitle: 'Топ спортсменов FitEx',
+    subtitle: 'Месячный рейтинг (UTC). Топ-3 за месяц сохраняется в историю.',
     myRank: 'Мой ранг',
     rank: 'Ранг',
     score: 'Очки',
@@ -1344,6 +1365,22 @@ export const ru: Translations = {
     topPlayers: 'Топ игроков',
     syncHint: 'Синхронизируйте данные чтобы обновить рейтинг',
     podiumTitle: 'Топ-3',
+    dailyLeadersTitle: 'Лидеры дня',
+    dailyLeadersSubtitle: 'Топ игроков Fitex на сегодня. Подписка — бриллиант на аватаре.',
+    openLeaderboard: 'Вся таблица',
+    athleteProfile: 'Спортсмен',
+    thisMonth: 'Текущий месяц',
+    lifetime: 'За всё время',
+    podiumHistory: 'Топ-3 по месяцам',
+    firstPlaces: '1-е места',
+    secondPlaces: '2-е места',
+    thirdPlaces: '3-е места',
+    bestRecords: 'Лучшие рекорды',
+    noRecords: 'Нет данных по рекордам',
+    sets: 'Подходы',
+    prs: 'Рекорды',
+    profileLoadError: 'Не удалось загрузить профиль',
+    monthlyRatingHint: 'Очки в таблице — за текущий календарный месяц (UTC). В конце месяца топ-3 получает засчитанный подиум.',
   },
   languageSelect: {
     title: 'Выберите язык',
@@ -1496,6 +1533,9 @@ export const ru: Translations = {
     actVery: 'Очень высокая',
     actUnspecified: 'Не указывать',
     fillRequired: 'Укажите рост, вес и возраст',
+    next: 'Далее',
+    back: 'Назад',
+    stepProgress: 'Шаг {current} из {total}',
   },
   history: {
     title: 'Вся история',
@@ -1520,7 +1560,7 @@ export const ru: Translations = {
     ratingEntrySubtitle: 'Уровень, достижения и очки',
     marketplaceEntry: 'Маркетплейс',
     marketplaceSubtitle: 'Тренеры и планы тренировок',
-    gymPassEntry: 'FitEx Pass',
+    gymPassEntry: 'Fitex Pass',
     gymPassSubtitle: 'Абонемент в партнёрские залы',
     premium: 'Премиум',
     basic: 'Базовый',
@@ -1870,7 +1910,7 @@ export const en: Translations = {
     total: 'Total',
     inSync: 'In Cloud',
     notSynced: 'Not Synced',
-    cloudInfo: 'Your data is stored on FitEx servers and available across all your devices',
+    cloudInfo: 'Your data is stored on Fitex servers and available across all your devices',
   },
   notifications: {
     workoutReminder: "Don't forget today's workout — you've come so far!",
@@ -1925,7 +1965,7 @@ export const en: Translations = {
     filter_nutrition: 'Nutrition',
   },
   gymPass: {
-    title: 'FitEx Pass',
+    title: 'Fitex Pass',
     myPass: 'My Pass',
     noMembership: 'No active membership',
     noMembershipSubtitle: 'Buy a membership to access partner gyms',
@@ -2115,6 +2155,7 @@ export const en: Translations = {
     success: 'Success',
     optional: 'optional',
     unknownError: 'Something went wrong',
+    retry: 'Retry',
     delete: 'Delete',
     edit: 'Edit',
     add: 'Add',
@@ -2122,7 +2163,7 @@ export const en: Translations = {
     unitCm: 'cm',
   },
   upsell: {
-    title: 'Unlock FitEx Premium',
+    title: 'Unlock Fitex Premium',
     titleTrial: 'days left in trial',
     subtitle: 'Ratings, achievements, leaderboard, cloud sync and more.',
     featureSync: 'Cloud Sync',
@@ -2135,7 +2176,7 @@ export const en: Translations = {
   },
   leaderboard: {
     title: 'Leaderboard',
-    subtitle: 'Top FitEx Athletes',
+    subtitle: 'Monthly leaderboard (UTC). Top-3 each month is saved to history.',
     myRank: 'My Rank',
     rank: 'Rank',
     score: 'Score',
@@ -2149,6 +2190,22 @@ export const en: Translations = {
     topPlayers: 'Top Players',
     syncHint: 'Sync your data to update the leaderboard',
     podiumTitle: 'Top 3',
+    dailyLeadersTitle: "Today's leaders",
+    dailyLeadersSubtitle: 'Top Fitex players today. Subscribers show a diamond on the avatar.',
+    openLeaderboard: 'Full leaderboard',
+    athleteProfile: 'Athlete',
+    thisMonth: 'This month',
+    lifetime: 'All time',
+    podiumHistory: 'Monthly podium',
+    firstPlaces: '1st places',
+    secondPlaces: '2nd places',
+    thirdPlaces: '3rd places',
+    bestRecords: 'Best records',
+    noRecords: 'No record data',
+    sets: 'Sets',
+    prs: 'PRs',
+    profileLoadError: 'Could not load profile',
+    monthlyRatingHint: 'Leaderboard points are for the current calendar month (UTC). At month end, top-3 finishers earn podium counts.',
   },
   languageSelect: {
     title: 'Choose Language',
@@ -2301,6 +2358,9 @@ export const en: Translations = {
     actVery: 'Very active',
     actUnspecified: 'Prefer not to say',
     fillRequired: 'Enter height, weight and age',
+    next: 'Next',
+    back: 'Back',
+    stepProgress: 'Step {current} of {total}',
   },
   history: {
     title: 'Full History',
@@ -2325,7 +2385,7 @@ export const en: Translations = {
     ratingEntrySubtitle: 'Level, achievements & score',
     marketplaceEntry: 'Marketplace',
     marketplaceSubtitle: 'Trainers and workout plans',
-    gymPassEntry: 'FitEx Pass',
+    gymPassEntry: 'Fitex Pass',
     gymPassSubtitle: 'Gym membership for partner clubs',
     premium: 'Premium',
     basic: 'Basic',
@@ -2675,7 +2735,7 @@ export const az: Translations = {
     total: 'Cəmi',
     inSync: 'Bulutda',
     notSynced: 'Sinxr. deyil',
-    cloudInfo: 'Məlumatlarınız FitEx serverlərində saxlanılır və bütün cihazlarınızda əlçatandır',
+    cloudInfo: 'Məlumatlarınız Fitex serverlərində saxlanılır və bütün cihazlarınızda əlçatandır',
   },
   notifications: {
     workoutReminder: 'Bu günkü məşqi unutma — çox irəliləmisən!',
@@ -2730,7 +2790,7 @@ export const az: Translations = {
     filter_nutrition: 'Qidalanma',
   },
   gymPass: {
-    title: 'FitEx Pass',
+    title: 'Fitex Pass',
     myPass: 'Mənim pasım',
     noMembership: 'Aktiv abunə yoxdur',
     noMembershipSubtitle: 'Tərəfdaş zallara giriş üçün abunə alın',
@@ -2920,6 +2980,7 @@ export const az: Translations = {
     success: 'Uğur',
     optional: 'isteğe bağlı',
     unknownError: 'Bir şeylər səhv getdi',
+    retry: 'Yenidən cəhd et',
     delete: 'Sil',
     edit: 'Düzənlə',
     add: 'Əlavə et',
@@ -2927,7 +2988,7 @@ export const az: Translations = {
     unitCm: 'sm',
   },
   upsell: {
-    title: 'FitEx Premium-u açın',
+    title: 'Fitex Premium-u açın',
     titleTrial: 'sınaq müddəti qalıb',
     subtitle: 'Reytinq, nailiyyətlər, liderlik cədvəli, sinxronizasiya və daha çox.',
     featureSync: 'Sinxronizasiya',
@@ -2940,7 +3001,7 @@ export const az: Translations = {
   },
   leaderboard: {
     title: 'Liderlik cədvəli',
-    subtitle: 'Ən yaxşı FitEx idmançıları',
+    subtitle: 'Aylıq reytinq (UTC). Hər ayın top-3-ü tarixə yazılır.',
     myRank: 'Mənim reytinqim',
     rank: 'Yer',
     score: 'Xal',
@@ -2954,6 +3015,22 @@ export const az: Translations = {
     topPlayers: 'Ən yaxşılar',
     syncHint: 'Reytinqi yeniləmək üçün məlumatları sinxronizasiya edin',
     podiumTitle: 'Top 3',
+    dailyLeadersTitle: 'Günün liderləri',
+    dailyLeadersSubtitle: 'Bu gün üçün Fitex TOP. Abunəçilər avatarda brilyant nişanı ilə.',
+    openLeaderboard: 'Tam cədvəl',
+    athleteProfile: 'İdmançı',
+    thisMonth: 'Bu ay',
+    lifetime: 'Ümumi',
+    podiumHistory: 'Aylıq top-3',
+    firstPlaces: '1-ci yerlər',
+    secondPlaces: '2-ci yerlər',
+    thirdPlaces: '3-cü yerlər',
+    bestRecords: 'Ən yaxşı rekordlar',
+    noRecords: 'Rekord məlumatı yoxdur',
+    sets: 'Setlər',
+    prs: 'PR',
+    profileLoadError: 'Profil yüklənmədi',
+    monthlyRatingHint: 'Cədvəldəki xallar cari təqvim ayı (UTC) üçündür. Ayın sonunda top-3 podyum sayğacına yazılır.',
   },
   languageSelect: {
     title: 'Dil seçin',
@@ -3106,6 +3183,9 @@ export const az: Translations = {
     actVery: 'Çox yüksək',
     actUnspecified: 'Göstərmə',
     fillRequired: 'Boy, çəki və yaş daxil edin',
+    next: 'Növbəti',
+    back: 'Geri',
+    stepProgress: 'Addım {current} / {total}',
   },
   history: {
     title: 'Tam tarixçə',
@@ -3130,7 +3210,7 @@ export const az: Translations = {
     ratingEntrySubtitle: 'Səviyyə, nailiyyətlər və bal',
     marketplaceEntry: 'Bazar',
     marketplaceSubtitle: 'Məşqçilər və məşq planları',
-    gymPassEntry: 'FitEx Pass',
+    gymPassEntry: 'Fitex Pass',
     gymPassSubtitle: 'Tərəfdaş zallara abunə',
     premium: 'Premium',
     basic: 'Əsas',

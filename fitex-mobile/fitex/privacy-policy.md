@@ -1,8 +1,8 @@
-# Privacy Policy — FitEx
+# Privacy Policy — Fitex
 
 **Last updated: April 5, 2026**
 
-FitEx ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use the FitEx mobile application.
+Fitex ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use the Fitex mobile application.
 
 ---
 
@@ -48,7 +48,7 @@ Your data is stored on secure servers hosted by Hetzner (Germany, EU). We use in
 
 ## 4. Third-Party Services
 
-FitEx uses the following third-party services:
+Fitex uses the following third-party services:
 
 | Service | Purpose |
 |---------|---------|
@@ -64,7 +64,7 @@ Each of these services has its own privacy policy. We recommend reviewing them s
 
 ## 5. In-App Purchases & Subscriptions
 
-FitEx offers optional premium subscriptions. All payments are processed by Apple through the App Store. We do not store or process your payment card information.
+Fitex offers optional premium subscriptions. All payments are processed by Apple through the App Store. We do not store or process your payment card information.
 
 You can manage or cancel your subscription at any time through your Apple ID settings.
 
@@ -78,7 +78,7 @@ We retain your data as long as your account is active. You can request deletion 
 
 ## 7. Children's Privacy
 
-FitEx is not directed to children under the age of 13. We do not knowingly collect personal information from children under 13.
+Fitex is not directed to children under the age of 13. We do not knowingly collect personal information from children under 13.
 
 ---
 
@@ -110,4 +110,4 @@ If you have any questions about this Privacy Policy, please contact us:
 
 ---
 
-*FitEx — Track your fitness, protect your privacy.*
+*Fitex — Track your fitness, protect your privacy.*

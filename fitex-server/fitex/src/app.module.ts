@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
+import { ScheduleModule } from '@nestjs/schedule'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AuthModule } from './modules/auth/auth.module'
@@ -28,6 +29,7 @@ import configuration from './strategies/configuration'
         uri: config.get('MONGODB_URI'),
       }),
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UserModule,
     SubscriptionModule,

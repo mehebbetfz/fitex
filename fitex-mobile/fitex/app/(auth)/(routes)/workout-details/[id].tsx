@@ -1,3 +1,4 @@
+import { STATS_HISTORY_COLORS as ThemeColors, STATS_HISTORY_THEME as Theme } from '@/constants/stats-history-theme'
 import { useLanguage } from '@/contexts/language-context'
 import { translateExerciseName, translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
 import { useDatabase } from '@/app/contexts/database-context'
@@ -18,16 +19,16 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Exercise, ExerciseSet, Workout } from '@/scripts/database'
 
 const C = {
-	bg: '#0A0A0A',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#2C2C2E',
-	primary: '#34C759',
-	text: '#FFFFFF',
-	subtext: '#8E8E93',
-	error: '#FF3B30',
-	gold: '#FFD60A',
-	info: '#5AC8FA',
+	bg: Theme.background,
+	card: ThemeColors.card,
+	cardLight: ThemeColors.cardLight,
+	border: Theme.borderSubtle,
+	primary: Theme.primary,
+	text: Theme.text,
+	subtext: Theme.textSecondary,
+	error: Theme.error,
+	gold: Theme.gold,
+	info: Theme.info,
 } as const
 
 const { width: SW } = Dimensions.get('window')

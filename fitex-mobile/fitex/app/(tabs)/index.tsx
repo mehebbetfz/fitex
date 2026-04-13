@@ -1,3 +1,4 @@
+import { STATS_HISTORY_COLORS as COLORS, STATS_HISTORY_THEME as T } from '@/constants/stats-history-theme'
 import { hasActivePremium, useAuth } from '../contexts/auth-context'
 import { useDatabase } from '../contexts/database-context'
 import { useLanguage } from '@/contexts/language-context'
@@ -27,22 +28,6 @@ import {
 } from 'react-native'
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit'
 import { SafeAreaView } from 'react-native-safe-area-context'
-
-const COLORS = {
-	green: '#1cd22eff',
-	primary: '#34C759',
-	primaryDark: '#2CAE4E',
-	background: '#000',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#3A3A3C',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	error: '#FF3B30',
-	warning: '#FF9500',
-	success: '#34C759',
-	info: '#5AC8FA',
-} as const
 
 /** Числа из SQLite/синхронизации — защита от NaN в графиках и .toFixed() */
 function safeNum(n: unknown, fallback = 0): number {
@@ -323,14 +308,14 @@ function buildMuscleVolumePie(
 }
 
 const CHART_CONFIG_GREEN = {
-	backgroundGradientFrom: '#1C1C1E',
-	backgroundGradientTo: '#1C1C1E',
+	backgroundGradientFrom: T.surface,
+	backgroundGradientTo: T.surface,
 	decimalPlaces: 1,
 	color: (opacity = 1) => `rgba(52, 199, 89, ${opacity})`,
 	labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.92})`,
 	propsForBackgroundLines: {
 		strokeDasharray: '',
-		stroke: 'rgba(255,255,255,0.08)',
+		stroke: T.borderHairline,
 	},
 }
 
@@ -1069,12 +1054,12 @@ export default function StatisticsTab() {
 			width={screenWidth - 32}
 			height={240}
 			chartConfig={{
-				backgroundGradientFrom: '#1C1C1E',
-				backgroundGradientTo: '#1C1C1E',
-				color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
+				backgroundGradientFrom: T.surface,
+				backgroundGradientTo: T.surface,
+				color: (opacity = 1) => `rgba(52, 199, 89, ${opacity})`,
 				labelColor: (opacity = 1) => `rgba(255,255,255,${opacity})`,
 				strokeWidth: 2,
-				propsForDots: { r: '4', strokeWidth: '2', stroke: '#1aff92' },
+				propsForDots: { r: '4', strokeWidth: '2', stroke: T.primary },
 				decimalPlaces: 1,
 			}}
 			bezier
@@ -1545,7 +1530,7 @@ export default function StatisticsTab() {
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212', paddingBottom: -40 },
+	container: { flex: 1, backgroundColor: COLORS.background, paddingBottom: -40 },
 	header: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -1563,7 +1548,7 @@ const styles = StyleSheet.create({
 		width: 38,
 		height: 38,
 		borderRadius: 12,
-		backgroundColor: '#1C1C1E',
+		backgroundColor: COLORS.card,
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
@@ -1590,21 +1575,21 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 14,
 		paddingVertical: 8,
 		borderRadius: 20,
-		backgroundColor: '#1E1E1E',
+		backgroundColor: T.chipInactive,
 		borderWidth: 1,
 		borderColor: COLORS.border,
 	},
-	activeMetricButton: { backgroundColor: '#34C759', borderColor: '#34C759' },
+	activeMetricButton: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
 	metricText: { fontSize: 13, fontWeight: '600', color: '#8E8E93' },
 	activeMetricText: { color: '#FFFFFF' },
 	chartWrapper: {
-		backgroundColor: '#1C1C1E',
+		backgroundColor: COLORS.surface,
 		borderRadius: 16,
 		borderWidth: 1,
 		borderColor: COLORS.border,
 	},
 	currentValueIndicator: {
-		backgroundColor: '#1C1C1E',
+		backgroundColor: COLORS.surface,
 		paddingHorizontal: 12,
 		paddingVertical: 8,
 		borderRadius: 12,
@@ -1624,12 +1609,12 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		backgroundColor: '#1C1C1E',
+		backgroundColor: COLORS.surface,
 		borderRadius: 12,
 		paddingHorizontal: 12,
 		paddingVertical: 10,
 		borderWidth: 1,
-		borderColor: '#2C2C2E',
+		borderColor: T.borderSubtle,
 	},
 	measurementGridLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 	measurementGridRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -1666,12 +1651,12 @@ const styles = StyleSheet.create({
 	recordCard: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: '#1C1C1E',
+		backgroundColor: COLORS.surface,
 		borderRadius: 12,
 		paddingHorizontal: 12,
 		paddingVertical: 10,
 		borderWidth: 1,
-		borderColor: '#2C2C2E',
+		borderColor: T.borderSubtle,
 		gap: 10,
 	},
 	recordIconWrap: {
@@ -1694,7 +1679,7 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	recordWeightBadge: {
-		backgroundColor: '#34C759',
+		backgroundColor: COLORS.primary,
 		paddingHorizontal: 10,
 		paddingVertical: 6,
 		borderRadius: 12,
@@ -1722,7 +1707,7 @@ const styles = StyleSheet.create({
 		padding: 20,
 	},
 	modalContent: {
-		backgroundColor: '#1E1E1E',
+		backgroundColor: T.modalSurface,
 		borderRadius: 20,
 		padding: 20,
 		width: '100%',
@@ -1740,7 +1725,7 @@ const styles = StyleSheet.create({
 	measurementInputRow: { marginBottom: 16 },
 	measurementLabel: { fontSize: 16, color: '#FFFFFF', marginBottom: 8 },
 	measurementInput: {
-		backgroundColor: '#2C2C2E',
+		backgroundColor: COLORS.cardLight,
 		borderRadius: 8,
 		padding: 12,
 		color: '#FFFFFF',
@@ -1764,7 +1749,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: '#8E8E93',
 	},
-	saveButton: { backgroundColor: '#34C759', marginLeft: 8 },
+	saveButton: { backgroundColor: COLORS.primary, marginLeft: 8 },
 	skipButtonText: { color: '#8E8E93', fontSize: 16, fontWeight: '600' },
 	saveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 	// Skeleton
@@ -1821,7 +1806,7 @@ const styles = StyleSheet.create({
 		width: 80,
 		height: 80,
 		borderRadius: 40,
-		backgroundColor: '#121212',
+		backgroundColor: COLORS.background,
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginBottom: 20,
@@ -1831,7 +1816,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: '#121212',
+		backgroundColor: COLORS.background,
 	},
 	emptyHero: {
 		alignItems: 'center',
@@ -1864,11 +1849,6 @@ const styles = StyleSheet.create({
 		paddingVertical: 16,
 		paddingHorizontal: 32,
 		borderRadius: 16,
-		shadowColor: COLORS.primary,
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.35,
-		shadowRadius: 14,
-		elevation: 6,
 	},
 	ctaStartWorkoutText: {
 		color: '#fff',

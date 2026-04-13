@@ -77,7 +77,7 @@ const MembershipCard = ({
 				<View style={cardStyles.topRow}>
 					<View style={cardStyles.logoArea}>
 						<Ionicons name='fitness' size={22} color={COLORS.primary} />
-						<Text style={cardStyles.logoText}>FitEx Pass</Text>
+						<Text style={cardStyles.logoText}>Fitex Pass</Text>
 					</View>
 					<View style={[cardStyles.statusDot, membership.status === 'active' ? cardStyles.statusActive : cardStyles.statusExpired]} />
 				</View>

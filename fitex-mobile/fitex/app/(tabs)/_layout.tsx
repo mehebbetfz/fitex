@@ -1,19 +1,95 @@
 // app/(tabs)/_layout.tsx
+import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import TemplateSelectionModal from '@/app/modals/template-selection-modal'
+import DailyLeadersModal, {
+	DAILY_LEADERS_STORAGE_KEY,
+	type DailyLeaderRow,
+} from '@/components/daily-leaders-modal'
+import { HapticTab } from '@/components/haptic-tab'
 import { useLanguage } from '@/contexts/language-context'
+import { api } from '@/services/api'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
+import * as Haptics from 'expo-haptics'
 import { Tabs, useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Platform, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+function localTodayKey() {
+	return new Date().toLocaleDateString('en-CA')
+}
 
 export default function TabsLayout() {
 	const { bottom } = useSafeAreaInsets()
 	const router = useRouter()
+	const { user, isLoading: authLoading } = useAuth()
 	const [showTemplateModal, setShowTemplateModal] = useState(false)
+	const [dailyModalVisible, setDailyModalVisible] = useState(false)
+	const [dailyRows, setDailyRows] = useState<DailyLeaderRow[]>([])
+	const dailyFetchInFlight = useRef(false)
+	/** null = ещё не измеряли; иначе был ли Premium в прошлом проходе эффекта (для free→premium) */
+	const hadPremiumRef = useRef<boolean | null>(null)
+	const lastUserIdForLeadersRef = useRef<string | undefined>(undefined)
 	const { t } = useLanguage()
+
+	const dismissDailyLeaders = useCallback(async () => {
+		if (user?.id) {
+			const stamp = `${user.id}|${localTodayKey()}`
+			await AsyncStorage.setItem(DAILY_LEADERS_STORAGE_KEY, stamp)
+		}
+		setDailyModalVisible(false)
+	}, [user?.id])
+
+	useEffect(() => {
+		if (authLoading) return
+		if (!user) {
+			hadPremiumRef.current = null
+			lastUserIdForLeadersRef.current = undefined
+			return
+		}
+
+		const prevUserId = lastUserIdForLeadersRef.current
+		if (prevUserId !== undefined && prevUserId !== user.id) {
+			hadPremiumRef.current = null
+		}
+		lastUserIdForLeadersRef.current = user.id
+
+		const premiumNow = hasActivePremium(user)
+		// Только что оформили Premium: снимаем «уже показали сегодня», чтобы окно открылось в этот же день
+		if (hadPremiumRef.current === false && premiumNow) {
+			void AsyncStorage.removeItem(DAILY_LEADERS_STORAGE_KEY)
+		}
+		hadPremiumRef.current = premiumNow
+
+		if (!premiumNow) return
+		if (dailyFetchInFlight.current) return
+		dailyFetchInFlight.current = true
+		let cancelled = false
+		;(async () => {
+			try {
+				const today = localTodayKey()
+				const last = await AsyncStorage.getItem(DAILY_LEADERS_STORAGE_KEY)
+				if (last === `${user.id}|${today}` || cancelled) return
+				const { data } = await api.get('/leaderboard')
+				if (cancelled) return
+				const raw = (data.entries ?? []) as DailyLeaderRow[]
+				if (raw.length === 0) return
+				setDailyRows(raw.slice(0, 15))
+				setDailyModalVisible(true)
+			} catch {
+				// сеть / API — не показываем модалку
+			} finally {
+				dailyFetchInFlight.current = false
+			}
+		})()
+		return () => {
+			cancelled = true
+			dailyFetchInFlight.current = false
+		}
+	}, [authLoading, user])
 
 	const handleStartWorkout = () => {
 		setShowTemplateModal(true)
@@ -80,6 +156,7 @@ export default function TabsLayout() {
 					},
 					tabBarIconStyle: { marginBottom: 0 },
 					tabBarItemStyle: { paddingVertical: 6 },
+					tabBarButton: props => <HapticTab {...props} />,
 				}}
 			>
 			<Tabs.Screen
@@ -116,6 +193,11 @@ export default function TabsLayout() {
 								}}
 							>
 								<TouchableOpacity
+									onPressIn={() => {
+										if (Platform.OS !== 'web') {
+											void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+										}
+									}}
 									onPress={handleStartWorkout}
 									style={{
 										top: -25,
@@ -168,6 +250,8 @@ export default function TabsLayout() {
 			onSelectTemplate={handleSelectTemplate}
 			onStartEmpty={handleStartEmpty}
 		/>
+
+		<DailyLeadersModal visible={dailyModalVisible} onClose={dismissDailyLeaders} entries={dailyRows} t={t} />
 	</>
 	)
 }

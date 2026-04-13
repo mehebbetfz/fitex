@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard'
 import { LeaderboardService } from './leaderboard.service'
 
@@ -14,5 +14,10 @@ export class LeaderboardController {
 	) {
 		const l = Math.min(Number(limit) || 100, 200)
 		return this.service.getLeaderboard(req.user.userId, l)
+	}
+
+	@Get('profile/:userId')
+	async getAthleteProfile(@Req() req: any, @Param('userId') userId: string) {
+		return this.service.getAthleteProfile(req.user.userId, userId)
 	}
 }

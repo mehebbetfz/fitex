@@ -1,3 +1,4 @@
+import { STATS_HISTORY_COLORS as COLORS, STATS_HISTORY_THEME as T } from '@/constants/stats-history-theme'
 import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
@@ -309,20 +310,20 @@ export default function FullHistoryScreen() {
 
 			<View style={styles.workoutStats}>
 				<View style={styles.statItem}>
-					<Ionicons name='barbell' size={16} color='#8E8E93' />
+					<Ionicons name='barbell' size={16} color={COLORS.textSecondary} />
 					<Text style={styles.statText}>{item.exercises} {t('history', 'exercises')}</Text>
 				</View>
 				<View style={styles.statItem}>
-					<Ionicons name='repeat' size={16} color='#8E8E93' />
+					<Ionicons name='repeat' size={16} color={COLORS.textSecondary} />
 					<Text style={styles.statText}>{item.sets} {t('history', 'sets')}</Text>
 				</View>
 				<View style={styles.statItem}>
-					<Ionicons name='time' size={16} color='#8E8E93' />
+					<Ionicons name='time' size={16} color={COLORS.textSecondary} />
 					<Text style={styles.statText}>{item.duration}</Text>
 				</View>
 				{item.volume > 0 && (
 					<View style={styles.statItem}>
-						<Ionicons name='trending-up' size={16} color='#8E8E93' />
+						<Ionicons name='trending-up' size={16} color={COLORS.textSecondary} />
 						<Text style={styles.statText}>
 							{item.volume.toLocaleString()} {t('history', 'kg')}
 						</Text>
@@ -352,13 +353,13 @@ export default function FullHistoryScreen() {
 					<Text style={styles.monthTitle}>{month}</Text>
 					<View style={styles.monthStats}>
 						<View style={styles.monthStat}>
-							<Ionicons name='barbell-outline' size={14} color='#8E8E93' />
+							<Ionicons name='barbell-outline' size={14} color={COLORS.textSecondary} />
 							<Text style={styles.monthStatText}>
 								{totalWorkouts} {t('history', 'workout5')}
 							</Text>
 						</View>
 						<View style={styles.monthStat}>
-							<Ionicons name='time-outline' size={14} color='#8E8E93' />
+							<Ionicons name='time-outline' size={14} color={COLORS.textSecondary} />
 							<Text style={styles.monthStatText}>{totalTime} {t('history', 'min')}</Text>
 						</View>
 						{totalVolume > 0 && (
@@ -366,7 +367,7 @@ export default function FullHistoryScreen() {
 								<Ionicons
 									name='trending-up-outline'
 									size={14}
-									color='#8E8E93'
+									color={COLORS.textSecondary}
 								/>
 								<Text style={styles.monthStatText}>
 									{totalVolume.toLocaleString()} {t('history', 'kg')}
@@ -413,7 +414,7 @@ export default function FullHistoryScreen() {
 					style={styles.backButton}
 					onPress={() => navigation.goBack()}
 				>
-					<Ionicons name='arrow-back' size={24} color='#FFFFFF' />
+					<Ionicons name='arrow-back' size={24} color={COLORS.text} />
 				</TouchableOpacity>
 				<View>
 				<Text style={styles.title}>{t('history', 'title')}</Text>
@@ -463,7 +464,7 @@ export default function FullHistoryScreen() {
 				showsVerticalScrollIndicator={false}
 				ListEmptyComponent={
 					<View style={styles.emptyState}>
-						<Ionicons name='barbell-outline' size={64} color='#3A3A3C' />
+						<Ionicons name='barbell-outline' size={64} color={COLORS.border} />
 						<Text style={styles.emptyStateTitle}>{t('history', 'noWorkouts')}</Text>
 						<Text style={styles.emptyStateText}>
 							{t('history', 'noWorkoutsFilter')}
@@ -478,16 +479,14 @@ export default function FullHistoryScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#121212',
+		backgroundColor: T.background,
 	},
 	header: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		paddingHorizontal: 10,
 		paddingTop: 20,
-		paddingBottom: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
+		paddingBottom: 10,
 	},
 	backButton: {
 		marginRight: 16,
@@ -499,48 +498,51 @@ const styles = StyleSheet.create({
 	title: {
 		fontSize: 24,
 		fontWeight: 'bold',
-		color: '#FFFFFF',
+		color: T.text,
 	},
 	subtitle: {
 		fontSize: 14,
-		color: '#8E8E93',
+		color: COLORS.textSecondary,
 		marginTop: 4,
 	},
 	filtersSection: {
-		paddingVertical: 16,
+		paddingTop: 12,
+		paddingBottom: 12,
 		paddingHorizontal: 10,
 		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
+		borderBottomColor: T.borderSubtle,
 	},
 	filtersTitle: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		marginBottom: 12,
+		fontSize: 20,
+		fontWeight: '700',
+		color: T.text,
+		marginBottom: 10,
 	},
 	filtersContainer: {
-		paddingRight: 20,
+		paddingRight: 16,
+		gap: 8,
+		flexDirection: 'row',
 	},
 	filterButton: {
-		paddingHorizontal: 16,
+		paddingHorizontal: 14,
 		paddingVertical: 8,
-		backgroundColor: '#1C1C1E',
 		borderRadius: 20,
-		marginRight: 8,
+		marginRight: 0,
+		backgroundColor: T.chipInactive,
 		borderWidth: 1,
-		borderColor: '#2C2C2E',
+		borderColor: COLORS.border,
 	},
 	filterButtonActive: {
-		backgroundColor: '#00ff2aff',
-		borderColor: '#00ff2fff',
+		backgroundColor: COLORS.primary,
+		borderColor: COLORS.primary,
 	},
 	filterText: {
-		fontSize: 14,
-		color: '#8E8E93',
-		fontWeight: '500',
+		fontSize: 13,
+		color: COLORS.textSecondary,
+		fontWeight: '600',
 	},
 	filterTextActive: {
-		color: '#FFFFFF',
+		color: T.text,
 		fontWeight: '600',
 	},
 	listContent: {
@@ -555,9 +557,9 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 	},
 	monthTitle: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#FFFFFF',
+		fontSize: 18,
+		fontWeight: '700',
+		color: T.text,
 		marginBottom: 8,
 	},
 	monthStats: {
@@ -572,16 +574,18 @@ const styles = StyleSheet.create({
 	},
 	monthStatText: {
 		fontSize: 13,
-		color: '#8E8E93',
+		color: T.textSecondary,
 		marginLeft: 6,
 	},
 	workoutsList: {
 		gap: 12,
 	},
 	workoutCard: {
-		backgroundColor: '#1C1C1E',
+		backgroundColor: COLORS.card,
 		borderRadius: 16,
 		padding: 16,
+		borderWidth: 1,
+		borderColor: COLORS.border,
 	},
 	workoutHeader: {
 		flexDirection: 'row',

@@ -17,7 +17,6 @@ import {
 	toggleWorkoutReminders,
 } from '@/services/notifications'
 import { Ionicons } from '@expo/vector-icons'
-import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -26,6 +25,7 @@ import {
 	Animated,
 	AppState,
 	AppStateStatus,
+	Image,
 	Linking,
 	Modal,
 	Platform,
@@ -50,6 +50,14 @@ const COLORS = {
 	accent: '#FF9500',
 	error: '#FF3B30',
 } as const
+
+/** Безопасный URL для <Image source={{ uri }}> — иначе нативный рендер может падать. */
+function isRemoteAvatarUrl(raw: string | null | undefined): raw is string {
+	if (!raw || typeof raw !== 'string') return false
+	const u = raw.trim()
+	if (u.length < 8) return false
+	return /^https?:\/\//i.test(u)
+}
 
 /** До окончания текущего периода подписки (сервер: premiumExpiresAt). */
 function formatNextBillingRelative(
@@ -655,6 +663,7 @@ export default function ProfileScreen() {
 	}, [t, refreshProfile, openSubscriptionStore])
 
 	const userInitial = user?.firstName?.[0] || user?.email?.[0] || '?'
+	const avatarUri = user?.avatarUrl
 
 	return (
 		<SafeAreaView style={styles.container} edges={['top']}>
@@ -734,12 +743,11 @@ export default function ProfileScreen() {
 								disabled={avatarBusy}
 								activeOpacity={0.82}
 							>
-								{user?.avatarUrl ? (
+								{isRemoteAvatarUrl(avatarUri) ? (
 									<Image
-										source={{ uri: user.avatarUrl }}
+										source={{ uri: avatarUri.trim() }}
 										style={styles.avatarImage}
-										contentFit='cover'
-										transition={200}
+										resizeMode='cover'
 									/>
 								) : (
 									<Text style={styles.avatarText}>{userInitial}</Text>

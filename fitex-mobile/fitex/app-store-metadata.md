@@ -1,7 +1,7 @@
-# FitEx — App Store Connect Metadata
+# Fitex — App Store Connect Metadata
 
 > Готовые тексты для публикации в App Store (iOS).  
-> Заполняй через **App Store Connect → My Apps → FitEx → Distribution → App Store → App Information / Version Information**.
+> Заполняй через **App Store Connect → My Apps → Fitex → Distribution → App Store → App Information / Version Information**.
 
 ---
 
@@ -25,9 +25,9 @@
 
 ### App Name
 ```
-FitEx — Workout & Fitness Tracker
+Fitex — Workout & Fitness Tracker
 ```
-*(максимум 30 символов — если не влезает, сократи до `FitEx — Fitness Tracker`)*
+*(максимум 30 символов — если не влезает, сократи до `Fitex — Fitness Tracker`)*
 
 ### Subtitle
 ```
@@ -37,14 +37,14 @@ Track Workouts, Reach Your Goals
 
 ### Promotional Text *(170 символов, показывается без обновления)*
 ```
-Start your 30-day free trial and unlock the full power of FitEx. Track workouts, monitor recovery, and hit new personal records every week!
+Start your 30-day free trial and unlock the full power of Fitex. Track workouts, monitor recovery, and hit new personal records every week!
 ```
 
 ### Description *(4000 символов)*
 ```
-FitEx is your all-in-one fitness companion designed for people who are serious about progress.
+Fitex is your all-in-one fitness companion designed for people who are serious about progress.
 
-Whether you're a beginner logging your first lift or an experienced athlete optimizing every session — FitEx gives you the tools to train smarter, recover better, and grow consistently.
+Whether you're a beginner logging your first lift or an experienced athlete optimizing every session — Fitex gives you the tools to train smarter, recover better, and grow consistently.
 
 ──────────────────────────
 🏋️ WORKOUT TRACKING
@@ -81,8 +81,8 @@ Whether you're a beginner logging your first lift or an experienced athlete opti
 🏅 PREMIUM FEATURES
 ──────────────────────────
 • Cloud sync across devices — your data is always safe
-• FitEx Rating — compete with yourself using a points-based leaderboard
-• FitEx Pass — NFC-enabled gym membership for partner fitness clubs
+• Fitex Rating — compete with yourself using a points-based leaderboard
+• Fitex Pass — NFC-enabled gym membership for partner fitness clubs
 • Trainer Marketplace — browse and purchase plans from certified coaches
 
 ──────────────────────────
@@ -93,7 +93,7 @@ Whether you're a beginner logging your first lift or an experienced athlete opti
 ──────────────────────────
 💎 FREE TRIAL & SUBSCRIPTION
 ──────────────────────────
-FitEx Premium is available as a monthly or yearly subscription.
+Fitex Premium is available as a monthly or yearly subscription.
 New users get a **30-day FREE trial** — no charge until the trial ends.
 
 • Monthly Premium — full access, billed monthly
@@ -113,7 +113,7 @@ workout,fitness,gym,training,tracker,exercise,lifting,weights,muscle,recovery,pr
 
 ### What's New (Release Notes v1.0.0)
 ```
-Welcome to FitEx! 🎉
+Welcome to Fitex! 🎉
 
 This is our very first release. Here's what you get on day one:
 
@@ -133,7 +133,7 @@ Available in English, Russian, and Azerbaijani.
 
 ### App Name
 ```
-FitEx — Трекер тренировок
+Fitex — Трекер тренировок
 ```
 
 ### Subtitle
@@ -148,9 +148,9 @@ FitEx — Трекер тренировок
 
 ### Description
 ```
-FitEx — твой персональный помощник в зале. Для тех, кто хочет тренироваться осознанно и видеть реальный прогресс.
+Fitex — твой персональный помощник в зале. Для тех, кто хочет тренироваться осознанно и видеть реальный прогресс.
 
-Неважно, начинаешь ты свой путь в спорте или оттачиваешь технику опытного атлета — FitEx даёт все инструменты, чтобы тренироваться умнее, восстанавливаться правильно и расти каждую неделю.
+Неважно, начинаешь ты свой путь в спорте или оттачиваешь технику опытного атлета — Fitex даёт все инструменты, чтобы тренироваться умнее, восстанавливаться правильно и расти каждую неделю.
 
 ──────────────────────────
 🏋️ ТРЕКЕР ТРЕНИРОВОК
@@ -187,8 +187,8 @@ FitEx — твой персональный помощник в зале. Для
 🏅 ПРЕМИУМ ВОЗМОЖНОСТИ
 ──────────────────────────
 • Облачная синхронизация — данные всегда в безопасности
-• FitEx Rating — очковый рейтинг и достижения
-• FitEx Pass — NFC-абонемент для входа в партнёрские залы
+• Fitex Rating — очковый рейтинг и достижения
+• Fitex Pass — NFC-абонемент для входа в партнёрские залы
 • Маркетплейс тренеров — покупай программы от сертифицированных тренеров
 
 ──────────────────────────
@@ -199,7 +199,7 @@ FitEx — твой персональный помощник в зале. Для
 ──────────────────────────
 💎 ПРОБНЫЙ ПЕРИОД И ПОДПИСКА
 ──────────────────────────
-FitEx Premium доступен по ежемесячной или годовой подписке.
+Fitex Premium доступен по ежемесячной или годовой подписке.
 Новые пользователи получают **30 дней бесплатно** — плата списывается только после окончания пробного периода.
 
 Подписки управляются через Apple ID. Подписка автоматически продлевается, если не отменить её за 24 часа до конца текущего периода в настройках Apple ID.
@@ -215,7 +215,7 @@ FitEx Premium доступен по ежемесячной или годовой
 
 ### What's New (v1.0.0)
 ```
-Добро пожаловать в FitEx! 🎉
+Добро пожаловать в Fitex! 🎉
 
 Это наш первый релиз. Вот что доступно с первого дня:
 
@@ -235,7 +235,7 @@ FitEx Premium доступен по ежемесячной или годовой
 
 ### App Name
 ```
-FitEx — Məşq İzləyicisi
+Fitex — Məşq İzləyicisi
 ```
 
 ### Subtitle
@@ -250,9 +250,9 @@ Daha ağıllı məşq et, daha sürətli böyü
 
 ### Description
 ```
-FitEx — ciddi nəticə istəyənlər üçün şəxsi fitnes köməkçin.
+Fitex — ciddi nəticə istəyənlər üçün şəxsi fitnes köməkçin.
 
-İstər idmanla yenicə tanış ol, istər təcrübəli bir atlet ol — FitEx sənə daha ağıllı məşq etmək, düzgün bərpa olmaq və hər həftə inkişaf etmək üçün bütün alətləri verir.
+İstər idmanla yenicə tanış ol, istər təcrübəli bir atlet ol — Fitex sənə daha ağıllı məşq etmək, düzgün bərpa olmaq və hər həftə inkişaf etmək üçün bütün alətləri verir.
 
 ──────────────────────────
 🏋️ MƏŞQ İZLƏYİCİSİ
@@ -289,8 +289,8 @@ FitEx — ciddi nəticə istəyənlər üçün şəxsi fitnes köməkçin.
 🏅 PREMİUM İMKANLAR
 ──────────────────────────
 • Bulud sinxronizasiyası — məlumatların həmişə qorunur
-• FitEx Reytinq — bal əsaslı liderlik cədvəli
-• FitEx Pass — tərəfdaş idman zallarına NFC girişi
+• Fitex Reytinq — bal əsaslı liderlik cədvəli
+• Fitex Pass — tərəfdaş idman zallarına NFC girişi
 • Məşqçi Bazar Yeri — sertifikatlı məşqçilərdən proqramlar al
 
 ──────────────────────────
@@ -301,7 +301,7 @@ FitEx — ciddi nəticə istəyənlər üçün şəxsi fitnes köməkçin.
 ──────────────────────────
 💎 SINAMA MÜDDƏTİ VƏ ABUNƏLIK
 ──────────────────────────
-FitEx Premium aylıq və ya illik abunəlik kimi əlçatandır.
+Fitex Premium aylıq və ya illik abunəlik kimi əlçatandır.
 Yeni istifadəçilər **30 gün pulsuz** istifadə edir — sınaq müddəti bitənə qədər heç bir ödəniş tutulmur.
 
 Abunəliklər Apple ID vasitəsilə idarə olunur. Cari dövrün bitməsindən ən azı 24 saat əvvəl ləğv edilmədiyi halda abunəlik avtomatik yenilənir.
@@ -317,7 +317,7 @@ məşq,fitnes,zal,hərəkət,izləyici,rekord,bərpa,tərəqqi,bədənquruculuq
 
 ### What's New (v1.0.0)
 ```
-FitEx-ə xoş gəldiniz! 🎉
+Fitex-ə xoş gəldiniz! 🎉
 
 Bu bizim ilk versiyamızdır. İlk gündən əlçatan olanlar:
 
@@ -396,7 +396,7 @@ When filling out the Age Rating in App Store Connect:
 | Yearly Premium | `premium_yearly` | Auto-Renewable Subscription | ~$39.99/yr |
 
 Both should have:
-- **Subscription Group**: `FitEx Premium`
+- **Subscription Group**: `Fitex Premium`
 - **Free Trial**: 3 days introductory offer (or as configured)
 - **Localizations**: EN, RU, AZ descriptions matching the descriptions above
 

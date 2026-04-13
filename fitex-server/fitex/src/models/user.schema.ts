@@ -79,6 +79,32 @@ export class User {
 	@Prop({ default: 0 })
 	prCount: number
 
+	/** За всё время: сколько раз финишировал в топ-3 месячного лидерборда */
+	@Prop({ default: 0 })
+	podiumFirst: number
+
+	@Prop({ default: 0 })
+	podiumSecond: number
+
+	@Prop({ default: 0 })
+	podiumThird: number
+
+	/** Месячный рейтинг (UTC): только тренировки с датой в текущем календарном месяце по UTC */
+	@Prop({ default: 0 })
+	monthlyScore: number
+
+	@Prop({ default: 0 })
+	monthlyWorkouts: number
+
+	@Prop({ default: 0 })
+	monthlyVolume: number
+
+	@Prop({ default: 0 })
+	monthlySets: number
+
+	@Prop({ default: 0 })
+	monthlyStreakDays: number
+
 	@Prop({ default: true })
 	showOnLeaderboard: boolean
 

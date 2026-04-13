@@ -24,7 +24,7 @@ export class UpdateProfileDto {
 	age?: number
 
 	@IsOptional()
-	@IsIn(['male', 'female', 'other', 'unspecified'])
+	@IsIn(['male', 'female'])
 	sex?: string
 
 	@IsOptional()

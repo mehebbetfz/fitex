@@ -15,17 +15,9 @@ import {
 	TouchableOpacity,
 	View,
 } from 'react-native'
-import {
-	ErrorCode,
-	Purchase,
-	ProductSubscription,
-	endConnection,
-	initConnection,
-	purchaseErrorListener,
-	purchaseUpdatedListener,
-	requestPurchase,
-} from 'react-native-iap'
+import type { Purchase, ProductSubscription } from 'react-native-iap'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
+import { getReactNativeIap } from '@/services/iap-runtime'
 import { getStorefrontPrice } from '@/services/iap-price'
 import { syncAlreadyOwnedSubscription, verifySubscriptionOnServer } from '@/services/subscription-verify'
 import { useAuth } from '../contexts/auth-context'
@@ -85,6 +77,24 @@ export default function TrialPaywallScreen() {
 		let mounted = true
 
 		const init = async () => {
+			const iap = getReactNativeIap()
+			if (!iap) {
+				if (mounted) {
+					setProducts([])
+					setStoreReady(false)
+					setInitializing(false)
+				}
+				return
+			}
+
+			const {
+				initConnection,
+				purchaseUpdatedListener,
+				purchaseErrorListener,
+				endConnection,
+				ErrorCode,
+			} = iap
+
 			try {
 				await initConnection()
 
@@ -148,13 +158,23 @@ export default function TrialPaywallScreen() {
 			mounted = false
 			purchaseUpdateSub.current?.remove()
 			purchaseErrorSub.current?.remove()
-			endConnection()
+			const iap = getReactNativeIap()
+			if (iap) void iap.endConnection()
 		}
 	}, [handlePurchase, t, dismissTrialPaywall, refreshProfile])
 
 	// ── Buy ───────────────────────────────────────────────────────────────────
 	const buySubscription = async () => {
 		if (loading) return
+
+		const iap = getReactNativeIap()
+		if (!iap) {
+			Alert.alert(
+				t('common', 'error'),
+				t('trial', 'storeUnavailable'),
+			)
+			return
+		}
 
 		if (!storeReady || !products.length) {
 			Alert.alert(
@@ -166,6 +186,7 @@ export default function TrialPaywallScreen() {
 
 		setLoading(true)
 		try {
+			const { requestPurchase } = iap
 			console.log('[IAP] requestPurchase subs sku:', selectedSku)
 
 			if (Platform.OS === 'ios') {
@@ -204,11 +225,9 @@ export default function TrialPaywallScreen() {
 			}
 			// Purchase completes via purchaseUpdatedListener; do not setLoading(false) here
 		} catch (error: any) {
+			const EC = iap.ErrorCode
 			console.log('[IAP] error code:', error.code, error.message)
-			if (
-				error.code !== ErrorCode.UserCancelled &&
-				error.code !== 'E_USER_CANCELLED'
-			) {
+			if (error.code !== EC.UserCancelled && error.code !== 'E_USER_CANCELLED') {
 				Alert.alert(t('common', 'error'), error.message ?? String(error))
 			}
 			setLoading(false)

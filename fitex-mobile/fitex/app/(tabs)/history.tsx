@@ -1,13 +1,16 @@
+import { STATS_HISTORY_COLORS as COLORS, STATS_HISTORY_THEME as T } from '@/constants/stats-history-theme'
 import { useLanguage } from '@/contexts/language-context'
 import { translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
 import { Workout } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
+import * as Haptics from 'expo-haptics'
 import { useFocusEffect, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	ActivityIndicator,
 	Animated,
 	FlatList,
+	Platform,
 	RefreshControl,
 	StyleSheet,
 	Text,
@@ -16,22 +19,6 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDatabase } from '../contexts/database-context'
-
-const COLORS = {
-	green: '#1cd22eff',
-	primary: '#34C759',
-	primaryDark: '#2CAE4E',
-	background: '#000',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#3A3A3C',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	error: '#FF3B30',
-	warning: '#FF9500',
-	success: '#34C759',
-	info: '#5AC8FA',
-} as const
 
 // Количество тренировок для загрузки за раз
 const PAGE_SIZE = 5
@@ -72,12 +59,6 @@ const formatWorkoutDate = (
 	} catch (error) {
 		return { fullDate: dateString, dayOfWeek: '', time: '' }
 	}
-}
-
-// Получение месяца из даты
-const getMonthFromDate = (dateString: string): string => {
-	const date = new Date(dateString)
-	return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
 }
 
 // ── Shimmer animation hook ──
@@ -193,22 +174,21 @@ const InitialLoadingSkeleton = () => (
 				<ShimmerBlock
 					style={[
 						styles.title,
-						{ width: 150, height: 28, backgroundColor: COLORS.cardLight },
+						{ width: 180, height: 30, backgroundColor: COLORS.cardLight },
 					]}
 				/>
 				<ShimmerBlock
 					style={[
-						styles.subtitle,
+						styles.countPill,
 						{
-							width: 80,
-							height: 16,
-							marginTop: 4,
+							width: 120,
+							height: 30,
+							marginTop: 10,
 							backgroundColor: COLORS.cardLight,
 						},
 					]}
 				/>
 			</View>
-			<View style={styles.headerRight} />
 		</View>
 
 		<View style={styles.filtersSection}>
@@ -244,12 +224,7 @@ const InitialLoadingSkeleton = () => (
 export default function FullHistoryScreen() {
 	const router = useRouter()
 	const { t, language } = useLanguage()
-	const {
-		workouts: allWorkouts,
-		isLoading,
-		refreshWorkouts,
-		loadMoreWorkouts,
-	} = useDatabase()
+	const { workouts: allWorkouts, refreshWorkouts } = useDatabase()
 
 	// Состояния для пагинации
 	const [displayedWorkouts, setDisplayedWorkouts] = useState<Workout[]>([])
@@ -302,19 +277,14 @@ export default function FullHistoryScreen() {
 		if (isLoadingMore || !hasMore) return
 
 		setIsLoadingMore(true)
+		const nextPage = currentPage + 1
+		const endIndex = nextPage * PAGE_SIZE
+		const newWorkouts = filteredWorkouts.slice(0, endIndex)
 
-		// Имитация задержки сети для плавности
-		setTimeout(() => {
-			const nextPage = currentPage + 1
-			const startIndex = currentPage * PAGE_SIZE
-			const endIndex = nextPage * PAGE_SIZE
-			const newWorkouts = filteredWorkouts.slice(0, endIndex)
-
-			setDisplayedWorkouts(newWorkouts)
-			setCurrentPage(nextPage)
-			setHasMore(filteredWorkouts.length > endIndex)
-			setIsLoadingMore(false)
-		}, 500) // Небольшая задержка для видимости загрузки
+		setDisplayedWorkouts(newWorkouts)
+		setCurrentPage(nextPage)
+		setHasMore(filteredWorkouts.length > endIndex)
+		setIsLoadingMore(false)
 	}, [currentPage, filteredWorkouts, hasMore, isLoadingMore])
 
 	// Обновление свайпом
@@ -351,59 +321,70 @@ export default function FullHistoryScreen() {
 		const muscleGroupsList =
 			item.muscle_groups?.split(',').filter(g => g.trim()) || []
 
+		const stats: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string }[] = [
+			{ icon: 'barbell-outline', label: `${item.exercises_count} ${t('history', 'exercises')}` },
+			{ icon: 'repeat-outline', label: `${item.sets_count} ${t('history', 'sets')}` },
+			{ icon: 'time-outline', label: `${item.duration} ${t('history', 'min')}` },
+		]
+		if (item.volume > 0) {
+			stats.push({
+				icon: 'trending-up-outline',
+				label: `${item.volume.toLocaleString()} ${t('history', 'kg')}`,
+			})
+		}
+
 		return (
 			<TouchableOpacity
+				activeOpacity={0.88}
+				onPressIn={() => {
+					if (Platform.OS !== 'web') {
+						void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+					}
+				}}
 				onPress={() => item.id && handleWorkoutPress(item.id)}
 				style={styles.workoutCard}
 			>
 				<View style={styles.workoutHeader}>
-					<View>
+					<View style={styles.workoutHeaderText}>
 						<Text style={styles.workoutDate}>{fullDate}</Text>
 						<Text style={styles.workoutSubDate}>
-							{dayOfWeek}, {time || item.time}
+							{dayOfWeek} · {time || item.time}
 						</Text>
 					</View>
-				<View
-					style={[
-						styles.workoutTypeBadge,
-						{ backgroundColor: getTypeColor(item.type) },
-					]}
-				>
-					<Text style={styles.workoutTypeText}>{translateWorkoutType(item.type, language)}</Text>
-				</View>
-			</View>
-
-			{muscleGroupsList.length > 0 && (
-				<View style={styles.muscleGroups}>
-					{muscleGroupsList.map((muscle: string, index: number) => (
-						<View key={index} style={styles.muscleTag}>
-							<Text style={styles.muscleTagText}>{translateGroupName(muscle, language)}</Text>
+					<View style={styles.workoutHeaderRight}>
+						<View
+							style={[
+								styles.workoutTypeBadge,
+								{ backgroundColor: getTypeColor(item.type) },
+							]}
+						>
+							<Text style={styles.workoutTypeText}>
+								{translateWorkoutType(item.type, language)}
+							</Text>
 						</View>
-					))}
+						<Ionicons name='chevron-forward' size={18} color={T.textTertiary} style={styles.chevron} />
+					</View>
+				</View>
+
+				{muscleGroupsList.length > 0 && (
+					<View style={styles.muscleGroups}>
+						{muscleGroupsList.map((muscle: string, index: number) => (
+							<View key={index} style={styles.muscleTag}>
+								<Text style={styles.muscleTagText}>{translateGroupName(muscle, language)}</Text>
+							</View>
+						))}
 					</View>
 				)}
 
-				<View style={styles.workoutStats}>
-					<View style={styles.statItem}>
-						<Ionicons name='barbell' size={16} color='#8E8E93' />
-						<Text style={styles.statText}>{item.exercises_count} {t('history', 'exercises')}</Text>
-					</View>
-					<View style={styles.statItem}>
-						<Ionicons name='repeat' size={16} color='#8E8E93' />
-						<Text style={styles.statText}>{item.sets_count} {t('history', 'sets')}</Text>
-					</View>
-					<View style={styles.statItem}>
-						<Ionicons name='time' size={16} color='#8E8E93' />
-						<Text style={styles.statText}>{item.duration} {t('history', 'min')}</Text>
-					</View>
-					{item.volume > 0 && (
-						<View style={styles.statItem}>
-							<Ionicons name='trending-up' size={16} color='#8E8E93' />
-							<Text style={styles.statText}>
-								{item.volume.toLocaleString()} {t('history', 'kg')}
+				<View style={styles.statGrid}>
+					{stats.map((s, i) => (
+						<View key={`st-${i}`} style={styles.statCell}>
+							<Ionicons name={s.icon} size={16} color={COLORS.primary} />
+							<Text style={styles.statCellText} numberOfLines={1}>
+								{s.label}
 							</Text>
 						</View>
-					)}
+					))}
 				</View>
 			</TouchableOpacity>
 		)
@@ -456,11 +437,10 @@ export default function FullHistoryScreen() {
 			<View style={styles.header}>
 				<View>
 					<Text style={styles.title}>{t('history', 'title')}</Text>
-					<Text style={styles.subtitle}>
+					<Text style={styles.countSubtitle}>
 						{allWorkouts.length} {getWorkoutWord(allWorkouts.length)}
 					</Text>
 				</View>
-				<View style={styles.headerRight} />
 			</View>
 
 			{/* Фильтры */}
@@ -472,6 +452,7 @@ export default function FullHistoryScreen() {
 						data={muscleGroups}
 						renderItem={({ item }) => (
 							<TouchableOpacity
+								activeOpacity={0.85}
 								style={[
 									styles.filterButton,
 									selectedFilter === item && styles.filterButtonActive,
@@ -499,7 +480,9 @@ export default function FullHistoryScreen() {
 			<FlatList
 				data={displayedWorkouts}
 				renderItem={renderWorkoutCard}
-				keyExtractor={item => item.id?.toString() || Math.random().toString()}
+				keyExtractor={(item, index) =>
+					item.id != null ? String(item.id) : `w-${index}`
+				}
 				contentContainerStyle={styles.listContent}
 				showsVerticalScrollIndicator={false}
 				onEndReached={loadNextPage}
@@ -515,13 +498,25 @@ export default function FullHistoryScreen() {
 				}
 				ListEmptyComponent={
 					<View style={styles.emptyState}>
-						<Ionicons name='barbell-outline' size={64} color='#3A3A3C' />
+						<View style={styles.emptyIconWrap}>
+							<Ionicons name='barbell-outline' size={40} color={COLORS.primary} />
+						</View>
 						<Text style={styles.emptyStateTitle}>{t('history', 'noWorkouts')}</Text>
 						<Text style={styles.emptyStateText}>
 							{selectedFilter === 'all'
 								? t('history', 'startFirst')
 								: t('history', 'noWorkoutsFilter')}
 						</Text>
+						{selectedFilter === 'all' ? (
+							<TouchableOpacity
+								style={styles.emptyCta}
+								activeOpacity={0.88}
+								onPress={() => router.push('/workout/create')}
+							>
+								<Text style={styles.emptyCtaText}>{t('progress', 'startFirstWorkoutCta')}</Text>
+								<Ionicons name='arrow-forward' size={18} color='#fff' />
+							</TouchableOpacity>
+						) : null}
 					</View>
 				}
 			/>
@@ -532,141 +527,151 @@ export default function FullHistoryScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#121212',
-		paddingBottom: -40,
+		backgroundColor: T.background,
 	},
 	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 8,
+		paddingHorizontal: 10,
 		paddingTop: 20,
-		paddingBottom: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	headerRight: {
-		width: 40,
+		paddingBottom: 10,
 	},
 	title: {
 		fontSize: 24,
 		fontWeight: 'bold',
-		color: '#FFFFFF',
+		color: T.text,
+		marginBottom: 4,
 	},
-	subtitle: {
+	countSubtitle: {
 		fontSize: 14,
-		color: '#8E8E93',
+		color: COLORS.textSecondary,
 		marginTop: 4,
 	},
 	filtersSection: {
-		paddingVertical: 16,
-		paddingHorizontal: 8,
+		paddingTop: 12,
+		paddingBottom: 12,
+		paddingHorizontal: 10,
 		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
+		borderBottomColor: T.borderSubtle,
 	},
 	filtersTitle: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		marginBottom: 12,
+		fontSize: 20,
+		fontWeight: '700',
+		color: T.text,
+		marginBottom: 10,
 	},
 	filtersContainer: {
-		paddingRight: 20,
+		paddingRight: 16,
 		gap: 8,
-		display: 'flex',
 		flexDirection: 'row',
 	},
 	filterButton: {
-		paddingHorizontal: 8,
+		paddingHorizontal: 14,
 		paddingVertical: 8,
 		borderRadius: 20,
-		backgroundColor: '#1E1E1E',
+		backgroundColor: T.chipInactive,
 		borderWidth: 1,
 		borderColor: COLORS.border,
 	},
 	filterButtonActive: {
-		backgroundColor: '#34C759',
-		borderColor: '#34C759',
+		backgroundColor: COLORS.primary,
+		borderColor: COLORS.primary,
 	},
 	filterText: {
 		fontSize: 13,
 		fontWeight: '600',
-		color: '#8E8E93',
+		color: COLORS.textSecondary,
 	},
 	filterTextActive: {
-		color: '#FFFFFF',
+		color: T.text,
 	},
 	listContent: {
-		paddingHorizontal: 8,
+		paddingHorizontal: 10,
 		paddingTop: 16,
-		paddingBottom: 20,
+		paddingBottom: 32,
 	},
 	workoutCard: {
-		backgroundColor: '#1C1C1E',
+		backgroundColor: COLORS.card,
 		borderRadius: 16,
 		padding: 16,
 		borderWidth: 1,
 		borderColor: COLORS.border,
-		marginBottom: 8,
+		marginBottom: 12,
 	},
 	workoutHeader: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'flex-start',
-		marginBottom: 12,
+		marginBottom: 10,
 	},
+	workoutHeaderText: {
+		flex: 1,
+		paddingRight: 8,
+	},
+	workoutHeaderRight: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+	},
+	chevron: { marginLeft: 2 },
 	workoutDate: {
 		fontSize: 16,
 		fontWeight: 'bold',
-		color: '#FFFFFF',
+		color: T.text,
 	},
 	workoutSubDate: {
 		fontSize: 14,
-		color: '#8E8E93',
+		color: T.textSecondary,
 		marginTop: 2,
 	},
 	workoutTypeBadge: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 12,
+		paddingHorizontal: 10,
+		paddingVertical: 5,
+		borderRadius: 10,
 	},
 	workoutTypeText: {
 		fontSize: 12,
 		fontWeight: '600',
-		color: '#FFFFFF',
+		color: T.text,
 	},
 	muscleGroups: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
-		marginBottom: 12,
+		marginBottom: 14,
 		gap: 8,
 	},
 	muscleTag: {
-		backgroundColor: '#2C2C2E',
+		backgroundColor: COLORS.cardLight,
 		paddingHorizontal: 10,
 		paddingVertical: 4,
 		borderRadius: 12,
 	},
 	muscleTagText: {
 		fontSize: 12,
-		color: '#8E8E93',
+		color: COLORS.textSecondary,
 	},
-	workoutStats: {
+	statGrid: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
-		justifyContent: 'space-between',
-		borderTopWidth: 1,
-		borderTopColor: '#2C2C2E',
-		paddingTop: 12,
-		gap: 12,
+		gap: 8,
+		marginTop: 2,
 	},
-	statItem: {
+	statCell: {
 		flexDirection: 'row',
 		alignItems: 'center',
+		gap: 8,
+		flexGrow: 1,
+		minWidth: '44%',
+		backgroundColor: T.statCellBg,
+		borderRadius: 12,
+		paddingVertical: 10,
+		paddingHorizontal: 10,
+		borderWidth: 1,
+		borderColor: T.statCellBorder,
 	},
-	statText: {
+	statCellText: {
 		fontSize: 12,
-		color: '#8E8E93',
-		marginLeft: 4,
+		fontWeight: '600',
+		color: '#E5E5EA',
+		flex: 1,
 	},
 	loadingFooter: {
 		paddingVertical: 20,
@@ -683,19 +688,46 @@ const styles = StyleSheet.create({
 		flex: 1,
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingTop: 100,
+		paddingTop: 48,
+		paddingHorizontal: 28,
+	},
+	emptyIconWrap: {
+		width: 88,
+		height: 88,
+		borderRadius: 44,
+		backgroundColor: T.pillBg,
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderWidth: 1,
+		borderColor: T.pillBorder,
+		marginBottom: 20,
 	},
 	emptyStateTitle: {
 		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#FFFFFF',
-		marginTop: 16,
+		fontWeight: '700',
+		color: T.text,
 		marginBottom: 8,
+		textAlign: 'center',
 	},
 	emptyStateText: {
-		fontSize: 16,
-		color: '#8E8E93',
+		fontSize: 15,
+		color: T.textSecondary,
 		textAlign: 'center',
-		paddingHorizontal: 40,
+		lineHeight: 22,
+		marginBottom: 24,
+	},
+	emptyCta: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		backgroundColor: COLORS.primary,
+		paddingVertical: 14,
+		paddingHorizontal: 22,
+		borderRadius: 14,
+	},
+	emptyCtaText: {
+		fontSize: 16,
+		fontWeight: '700',
+		color: '#fff',
 	},
 })
