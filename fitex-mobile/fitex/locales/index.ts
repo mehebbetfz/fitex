@@ -514,6 +514,12 @@ export interface Translations {
     add: string
     confirm: string
     unitCm: string
+    otaUpdateTitle: string
+    otaUpdateMessage: string
+    otaUpdateNow: string
+    otaUpdateLater: string
+    otaUpdating: string
+    otaUpdateError: string
   }
   upsell: {
     title: string
@@ -559,6 +565,8 @@ export interface Translations {
     prs: string
     profileLoadError: string
     monthlyRatingHint: string
+    socialLinks: string
+    linkOpenError: string
   }
   languageSelect: {
     title: string
@@ -791,6 +799,16 @@ export interface Translations {
     avatarPhotoPermission: string
     avatarUploadError: string
     avatarChangeHint: string
+    socialLinksEntry: string
+    socialLinksSubtitle: string
+    socialSave: string
+    socialSaved: string
+    socialInstagramPh: string
+    socialTelegramPh: string
+    socialYoutubePh: string
+    socialTiktokPh: string
+    socialStravaPh: string
+    socialWebsitePh: string
   }
   trial: {
     badge: string
@@ -1047,7 +1065,7 @@ export const ru: Translations = {
     restoreSuccess: 'Покупки восстановлены',
     restoreEmpty: 'Активных покупок не найдено',
     alreadyPremium: 'У вас уже есть Premium',
-    feature1: 'Рейтинг, уровни и 100+ достижений',
+    feature1: 'Рейтинг, уровни и 290+ достижений',
     feature2: 'Синхронизация с облаком',
     feature3: 'Расширенная аналитика и графики',
     feature4: 'Таблица лидеров — сравни себя с другими',
@@ -1336,6 +1354,12 @@ export const ru: Translations = {
     add: 'Добавить',
     confirm: 'Подтвердить',
     unitCm: 'см',
+    otaUpdateTitle: 'Доступно обновление',
+    otaUpdateMessage: 'Загружена новая версия приложения. Установите её, чтобы получить исправления и улучшения.',
+    otaUpdateNow: 'Обновить',
+    otaUpdateLater: 'Позже',
+    otaUpdating: 'Загрузка обновления…',
+    otaUpdateError: 'Не удалось загрузить обновление',
   },
   upsell: {
     title: 'Разблокируй Fitex Premium',
@@ -1381,6 +1405,8 @@ export const ru: Translations = {
     prs: 'Рекорды',
     profileLoadError: 'Не удалось загрузить профиль',
     monthlyRatingHint: 'Очки в таблице — за текущий календарный месяц (UTC). В конце месяца топ-3 получает засчитанный подиум.',
+    socialLinks: 'Соцсети',
+    linkOpenError: 'Не удалось открыть ссылку',
   },
   languageSelect: {
     title: 'Выберите язык',
@@ -1615,6 +1641,16 @@ export const ru: Translations = {
       'Чтобы установить фото профиля, разрешите доступ к галерее в настройках устройства.',
     avatarUploadError: 'Не удалось загрузить фото. Попробуйте другое изображение.',
     avatarChangeHint: 'Нажмите на фото, чтобы изменить',
+    socialLinksEntry: 'Соцсети в профиле',
+    socialLinksSubtitle: 'Видны другим в лидерборде',
+    socialSave: 'Сохранить',
+    socialSaved: 'Сохранено',
+    socialInstagramPh: '@ник или ссылка',
+    socialTelegramPh: '@ник или t.me/…',
+    socialYoutubePh: 'Ссылка на канал',
+    socialTiktokPh: '@ник или ссылка',
+    socialStravaPh: 'Ссылка на профиль Strava',
+    socialWebsitePh: 'https://…',
   },
   trial: {
     badge: 'Бесплатный период',
@@ -1872,7 +1908,7 @@ export const en: Translations = {
     restoreSuccess: 'Purchases Restored',
     restoreEmpty: 'No active purchases found',
     alreadyPremium: 'You already have Premium',
-    feature1: 'Ratings, levels & 100+ achievements',
+    feature1: 'Ratings, levels & 290+ achievements',
     feature2: 'Cloud sync across devices',
     feature3: 'Advanced analytics & charts',
     feature4: 'Leaderboard — compete with others',
@@ -2161,6 +2197,12 @@ export const en: Translations = {
     add: 'Add',
     confirm: 'Confirm',
     unitCm: 'cm',
+    otaUpdateTitle: 'Update available',
+    otaUpdateMessage: 'A new version of the app is ready. Install it to get fixes and improvements.',
+    otaUpdateNow: 'Update',
+    otaUpdateLater: 'Later',
+    otaUpdating: 'Downloading update…',
+    otaUpdateError: 'Could not download the update',
   },
   upsell: {
     title: 'Unlock Fitex Premium',
@@ -2206,6 +2248,8 @@ export const en: Translations = {
     prs: 'PRs',
     profileLoadError: 'Could not load profile',
     monthlyRatingHint: 'Leaderboard points are for the current calendar month (UTC). At month end, top-3 finishers earn podium counts.',
+    socialLinks: 'Social',
+    linkOpenError: 'Could not open link',
   },
   languageSelect: {
     title: 'Choose Language',
@@ -2440,6 +2484,16 @@ export const en: Translations = {
       'To set a profile photo, allow photo library access in your device settings.',
     avatarUploadError: 'Could not upload the photo. Try another image.',
     avatarChangeHint: 'Tap the photo to change',
+    socialLinksEntry: 'Social links',
+    socialLinksSubtitle: 'Shown on your public athlete profile',
+    socialSave: 'Save',
+    socialSaved: 'Saved',
+    socialInstagramPh: '@handle or URL',
+    socialTelegramPh: '@handle or t.me/…',
+    socialYoutubePh: 'Channel URL',
+    socialTiktokPh: '@handle or URL',
+    socialStravaPh: 'Strava profile URL',
+    socialWebsitePh: 'https://…',
   },
   trial: {
     badge: 'Free Trial',
@@ -2697,7 +2751,7 @@ export const az: Translations = {
     restoreSuccess: 'Alışlar bərpa edildi',
     restoreEmpty: 'Aktiv alış tapılmadı',
     alreadyPremium: 'Artıq Premiuminiz var',
-    feature1: 'Reytinq, səviyyələr və 100+ nailiyyət',
+    feature1: 'Reytinq, səviyyələr və 290+ nailiyyət',
     feature2: 'Cihazlar arası bulud sinxronizasiyası',
     feature3: 'Ətraflı analitika və qrafiklər',
     feature4: 'Liderlik cədvəli — başqalarıyla rəqabət',
@@ -2986,6 +3040,12 @@ export const az: Translations = {
     add: 'Əlavə et',
     confirm: 'Təsdiqlə',
     unitCm: 'sm',
+    otaUpdateTitle: 'Yeniləmə mövcuddur',
+    otaUpdateMessage: 'Tətbiqin yeni versiyası hazırdır. Düzəlişlər və təkmilləşdirmələr üçün quraşdırın.',
+    otaUpdateNow: 'Yenilə',
+    otaUpdateLater: 'Sonra',
+    otaUpdating: 'Yeniləmə yüklənir…',
+    otaUpdateError: 'Yeniləməni yükləmək alınmadı',
   },
   upsell: {
     title: 'Fitex Premium-u açın',
@@ -3031,6 +3091,8 @@ export const az: Translations = {
     prs: 'PR',
     profileLoadError: 'Profil yüklənmədi',
     monthlyRatingHint: 'Cədvəldəki xallar cari təqvim ayı (UTC) üçündür. Ayın sonunda top-3 podyum sayğacına yazılır.',
+    socialLinks: 'Sosial şəbəkələr',
+    linkOpenError: 'Keçid açılmadı',
   },
   languageSelect: {
     title: 'Dil seçin',
@@ -3265,6 +3327,16 @@ export const az: Translations = {
       'Profil şəkli üçün cihaz ayarlarında qalereyaya icazə verin.',
     avatarUploadError: 'Şəkli yükləmək mümkün olmadı. Başqa şəkil yoxlayın.',
     avatarChangeHint: 'Dəyişmək üçün şəkilə toxunun',
+    socialLinksEntry: 'Sosial keçidlər',
+    socialLinksSubtitle: 'Liderlikdə hamıya görünür',
+    socialSave: 'Saxla',
+    socialSaved: 'Saxlanıldı',
+    socialInstagramPh: '@ləqəb və ya keçid',
+    socialTelegramPh: '@ləqəb və ya t.me/…',
+    socialYoutubePh: 'Kanal keçidi',
+    socialTiktokPh: '@ləqəb və ya keçid',
+    socialStravaPh: 'Strava profil keçidi',
+    socialWebsitePh: 'https://…',
   },
   trial: {
     badge: 'Pulsuz Sınaq',

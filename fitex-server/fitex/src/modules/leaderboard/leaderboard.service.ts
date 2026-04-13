@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose'
 import { PersonalRecord, PersonalRecordDocument } from 'src/models/personal-record.schema'
 import { PodiumMonthAward, PodiumMonthAwardDocument } from 'src/models/podium-month-award.schema'
 import { User, UserDocument } from 'src/models/user.schema'
+import { Workout, WorkoutDocument } from 'src/models/workout.schema'
 import { utcYearMonth } from 'src/modules/leaderboard/leaderboard-scoring'
 
 const TIER_THRESHOLDS = [
@@ -45,6 +46,7 @@ export class LeaderboardService implements OnModuleInit {
 		@InjectModel(User.name) private userModel: Model<UserDocument>,
 		@InjectModel(PodiumMonthAward.name) private podiumMonthModel: Model<PodiumMonthAwardDocument>,
 		@InjectModel(PersonalRecord.name) private recordModel: Model<PersonalRecordDocument>,
+		@InjectModel(Workout.name) private workoutModel: Model<WorkoutDocument>,
 	) {}
 
 	async onModuleInit() {
@@ -187,13 +189,25 @@ export class LeaderboardService implements OnModuleInit {
 		const u = await this.userModel
 			.findById(oid)
 			.select(
-				'firstName lastName avatarUrl isPremium showOnLeaderboard totalScore totalWorkouts totalVolume totalSets streakDays prCount monthlyScore monthlyWorkouts monthlyVolume monthlySets monthlyStreakDays podiumFirst podiumSecond podiumThird',
+				'firstName lastName avatarUrl isPremium showOnLeaderboard totalScore totalWorkouts totalVolume totalSets streakDays prCount monthlyScore monthlyWorkouts monthlyVolume monthlySets monthlyStreakDays podiumFirst podiumSecond podiumThird socialInstagram socialTelegram socialYoutube socialTiktok socialStrava socialWebsite',
 			)
 			.lean()
 
 		if (!u || u.showOnLeaderboard === false) {
 			throw new NotFoundException('User not found')
 		}
+
+		const durAgg = await this.workoutModel.aggregate<{ avg: number }>([
+			{
+				$match: {
+					userId: oid,
+					isDeleted: { $ne: true },
+					duration: { $exists: true, $gt: 0 },
+				},
+			},
+			{ $group: { _id: null, avg: { $avg: '$duration' } } },
+		])
+		const avgDuration = durAgg[0]?.avg != null ? Math.round(durAgg[0].avg * 10) / 10 : 0
 
 		const ms = u.monthlyScore ?? 0
 		const life = u.totalScore ?? 0
@@ -248,7 +262,16 @@ export class LeaderboardService implements OnModuleInit {
 				sets: u.totalSets ?? 0,
 				streakDays: u.streakDays ?? 0,
 				prCount: u.prCount ?? 0,
+				avgDuration,
 				tierName: getTierName(u.totalScore ?? 0),
+			},
+			social: {
+				instagram: u.socialInstagram?.trim() || null,
+				telegram: u.socialTelegram?.trim() || null,
+				youtube: u.socialYoutube?.trim() || null,
+				tiktok: u.socialTiktok?.trim() || null,
+				strava: u.socialStrava?.trim() || null,
+				website: u.socialWebsite?.trim() || null,
 			},
 			podium: {
 				first: u.podiumFirst ?? 0,

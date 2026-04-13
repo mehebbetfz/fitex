@@ -1,6 +1,7 @@
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import SharedPremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
+import { getMilestoneAchievementCopy } from '@/services/achievement-milestones-extra'
 import { Achievement, computeRating, LEVELS, RatingData, Tier, TIERS, TierName } from '@/services/rating'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
@@ -396,7 +397,7 @@ const AchievementBadge = ({
 // ─── Achievements section ─────────────────────────────────────────────────────
 
 const AchievementsSection = ({ data }: { data: RatingData }) => {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const [selected, setSelected] = useState<Achievement | null>(null)
 	const { achievements } = data
 
@@ -410,10 +411,14 @@ const AchievementsSection = ({ data }: { data: RatingData }) => {
 		})
 		.slice(0, 20)
 
-	const getAchievementInfo = (id: string) => ({
-		title: t('rating', `ach_${id}_title` as Parameters<typeof t>[1]),
-		desc:  t('rating', `ach_${id}_desc`  as Parameters<typeof t>[1]),
-	})
+	const getAchievementInfo = (id: string) => {
+		const m = getMilestoneAchievementCopy(id, language ?? 'ru')
+		if (m) return m
+		return {
+			title: t('rating', `ach_${id}_title` as Parameters<typeof t>[1]),
+			desc:  t('rating', `ach_${id}_desc`  as Parameters<typeof t>[1]),
+		}
+	}
 
 	return (
 		<View>

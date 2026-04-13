@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as db from '@/scripts/database'
+import { MILESTONE_EXTRA_DEFS } from '@/services/achievement-milestones-extra'
 
 // ─── Tier definitions ─────────────────────────────────────────────────────────
 
@@ -786,6 +787,7 @@ const ACHIEVEMENT_DEFS: AchievementDef[] = [
 		progress: s => Math.round((pct(s.total_workouts, 50) + pct(s.avg_duration * s.total_workouts, 3000)) / 2),
 		target: () => 100, current: s => Math.round((pct(s.total_workouts, 50) + pct(s.avg_duration * s.total_workouts, 3000)) / 2),
 	},
+	...(MILESTONE_EXTRA_DEFS as unknown as AchievementDef[]),
 ]
 
 export { ACHIEVEMENT_DEFS }
@@ -871,6 +873,76 @@ export const computeRating = async (): Promise<RatingData> => {
 		? Math.min(100, Math.round(
 			((totalScore - currentLevel.minScore) / (nextLevel.minScore - currentLevel.minScore)) * 100,
 		))
+		: 100
+
+	return {
+		totalScore,
+		tier,
+		nextTier,
+		progressPercent,
+		scoreBreakdown,
+		stats,
+		prCount,
+		achievements,
+		categoryTiers,
+		currentLevel,
+		nextLevel,
+		levelProgressPercent,
+	}
+}
+
+/** Рейтинг по агрегатам (сервер / публичный профиль): без AsyncStorage, earned = выполнено условие */
+export const buildRatingSnapshotFromStats = (
+	stats: db.WorkoutStats,
+	prCount: number,
+): RatingData => {
+	const scoreBreakdown = calculateScore(stats, prCount)
+	const totalScore = scoreBreakdown.total
+	const tier = getTierByScore(totalScore)
+	const currentIdx = TIERS.findIndex(t => t.name === tier.name)
+	const nextTier = currentIdx < TIERS.length - 1 ? TIERS[currentIdx + 1] : null
+	const progressPercent = nextTier
+		? Math.min(
+				100,
+				Math.round(
+					((totalScore - tier.minScore) / (nextTier.minScore - tier.minScore)) * 100,
+				),
+			)
+		: 100
+
+	const achievements: Achievement[] = ACHIEVEMENT_DEFS.map(def => {
+		const isEarned = def.check(stats, prCount, totalScore)
+		return {
+			id: def.id,
+			icon: def.icon,
+			iconColor: def.iconColor,
+			earned: isEarned,
+			earnedAt: undefined,
+			progressPercent: Math.round(def.progress(stats, prCount, totalScore)),
+			progressCurrent: def.current(stats, prCount, totalScore),
+			progressTarget: def.target(stats, prCount, totalScore),
+			category: def.category,
+		}
+	})
+
+	const categoryTiers: Record<string, Tier> = {
+		volume: getCategoryTier(stats.total_volume, CATEGORY_THRESHOLDS.volume),
+		workouts: getCategoryTier(stats.total_workouts, CATEGORY_THRESHOLDS.workouts),
+		streak: getCategoryTier(stats.streak_days, CATEGORY_THRESHOLDS.streak),
+		sets: getCategoryTier(stats.total_sets, CATEGORY_THRESHOLDS.sets),
+		avgDuration: getCategoryTier(stats.avg_duration, CATEGORY_THRESHOLDS.avgDuration),
+		records: getCategoryTier(prCount, CATEGORY_THRESHOLDS.records),
+	}
+
+	const currentLevel = getLevelByScore(totalScore)
+	const nextLevel = getNextLevel(currentLevel)
+	const levelProgressPercent = nextLevel
+		? Math.min(
+				100,
+				Math.round(
+					((totalScore - currentLevel.minScore) / (nextLevel.minScore - currentLevel.minScore)) * 100,
+				),
+			)
 		: 100
 
 	return {

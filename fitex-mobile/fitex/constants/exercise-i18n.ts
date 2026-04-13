@@ -75,6 +75,53 @@ const MUSCLE_NAMES: Record<string, Record<Language, string>> = {
   'Трапеции (средняя часть)': { ru: 'Трапеции (средняя часть)', en: 'Mid traps', az: 'Orta trapezius' },
   'Разгибатели спины': { ru: 'Разгибатели спины',  en: 'Spinal erectors', az: 'Onurğa dartıcıları' },
   'Брахиалис':         { ru: 'Брахиалис',          en: 'Brachialis',      az: 'Braxialis' },
+  // Aliases & catalog strings used in primaryMuscles / secondaryMuscles (muscle-groups.ts)
+  'Внешняя часть бедра': { ru: 'Внешняя часть бедра', en: 'Outer thigh', az: 'Budaqın xarici hissəsi' },
+  'Зубчатые мышцы (serratus anterior)': {
+    ru: 'Зубчатые мышцы (serratus anterior)',
+    en: 'Serratus anterior',
+    az: 'Ön dişli əzələ (serratus anterior)',
+  },
+  'Икроножные': { ru: 'Икроножные', en: 'Calves', az: 'Baldır əzələləri' },
+  'Квадрицепс (внешняя часть)': {
+    ru: 'Квадрицепс (внешняя часть)',
+    en: 'Quads (outer / vastus lateralis)',
+    az: 'Kvadriseps (xarici / lat. enli baş)',
+  },
+  'Косые мышцы живота': { ru: 'Косые мышцы живота', en: 'Abdominal obliques', az: 'Qarın yan əzələləri' },
+  'Локтевая мышца (anconeus)': { ru: 'Локтевая мышца (anconeus)', en: 'Anconeus', az: 'Ankoneus əzələsi' },
+  'Малая круглая мышца': { ru: 'Малая круглая мышца', en: 'Teres minor', az: 'Kiçik dairəvi əzələ (teres minor)' },
+  'Мышцы кора (стабилизация)': {
+    ru: 'Мышцы кора (стабилизация)',
+    en: 'Core (stabilization)',
+    az: 'Özək əzələləri (stabilizasiya)',
+  },
+  'Мышцы поясницы': { ru: 'Мышцы поясницы', en: 'Lower back muscles', az: 'Bel əzələləri' },
+  'Мышцы шеи': { ru: 'Мышцы шеи', en: 'Neck muscles', az: 'Boyun əzələləri' },
+  'Напрягатель широкой фасции': {
+    ru: 'Напрягатель широкой фасции',
+    en: 'Tensor fasciae latae (TFL)',
+    az: 'Geniş fasciyanın dartıcısı (TFL)',
+  },
+  'Нижняя часть трапеций': { ru: 'Нижняя часть трапеций', en: 'Lower traps', az: 'Alt trapezius' },
+  'Передняя дельта': { ru: 'Передняя дельта', en: 'Anterior deltoid', az: 'Ön delta' },
+  'Передняя зубчатая': { ru: 'Передняя зубчатая', en: 'Serratus anterior', az: 'Ön dişli əzələ' },
+  'Плечелучевая мышца': { ru: 'Плечелучевая мышца', en: 'Brachioradialis', az: 'Çiyn-radius əzələsi (braxioradialis)' },
+  'Подвздошно-поясничная мышца': {
+    ru: 'Подвздошно-поясничная мышца',
+    en: 'Iliopsoas',
+    az: 'İlio-psoa əzələsi',
+  },
+  'Подостная мышца': { ru: 'Подостная мышца', en: 'Infraspinatus', az: 'İnfraspinat əzələsi' },
+  'Предплечья (разгибатели)': { ru: 'Предплечья (разгибатели)', en: 'Forearm extensors', az: 'Bilək dartıcıları' },
+  'Предплечья (сгибатели)': { ru: 'Предплечья (сгибатели)', en: 'Forearm flexors', az: 'Bilək bükücüləri' },
+  'Приводящие': { ru: 'Приводящие', en: 'Adductors', az: 'Yığıcı əzələlər' },
+  'Приводящие мышцы': { ru: 'Приводящие мышцы', en: 'Adductor muscles', az: 'Yığıcı əzələlər' },
+  'Приводящие мышцы бедра': { ru: 'Приводящие мышцы бедра', en: 'Hip adductors', az: 'Budaq yığıcıları' },
+  'Средняя дельта': { ru: 'Средняя дельта', en: 'Middle deltoid', az: 'Orta delta' },
+  'Средняя трапеция': { ru: 'Средняя трапеция', en: 'Mid traps', az: 'Orta trapezius' },
+  'Трапециевидные мышцы': { ru: 'Трапециевидные мышцы', en: 'Trapezius', az: 'Trapezius əzələsi' },
+  'Ягодичные мышцы': { ru: 'Ягодичные мышцы', en: 'Glutes', az: 'Kalça əzələləri' },
 }
 
 // ─── Equipment names ──────────────────────────────────────────────────────────
@@ -390,6 +437,112 @@ const EXERCISE_DESCRIPTIONS: Record<string, LangMap> = {
     en: "Captain's chair leg raise targeting the lower abs. Forearm support fixes the torso so you isolate the abs without momentum.",
     az: 'Alt qarını hədəf alan kapitan kürsüsündə ayaq qaldırma. Ön qol dayağı gövdəni sabitləşdirir.',
   },
+  // Ноги
+  'Сгибания ног лежа': {
+    en: 'Isolation exercise for the hamstrings. The machine keeps tension constant and lets you train knee flexion safely at different angles.',
+    az: 'Arxa budaq əzələləri üçün izolyasiya məşqi. Maşın sabit gərginlik saxlayır və diz bükülməsini müxtəlif bucaqlarda təhlükəsiz yükləyir.',
+  },
+  'Разгибания ног сидя': {
+    en: 'Isolation for the quadriceps. Loads the front of the thigh without involving the lower back or glutes.',
+    az: 'Kvadriseps üçün izolyasiya. Budaqın önünü bel və kalçanı cəlb etmədən yükləyir.',
+  },
+  'Сведение ног в тренажере сидя': {
+    en: 'Isolation for the hip adductors. Strengthens inner thighs and improves hip stability, often undertrained in big compound lifts.',
+    az: 'Budaq yığıcılar üçün izolyasiya. Budaqın daxili tərəfini möhkəmləndirir və kalça stabilliyini yaxşılaşdırır.',
+  },
+  'Разведение ног в тренажере сидя': {
+    en: 'Isolation for the outer thigh and glutes. Improves hip contour and hip-joint stability.',
+    az: 'Budağın xarici tərəfi və kalça üçün izolyasiya. Kalça konturu və oynağın stabilliyini yaxşılaşdırır.',
+  },
+  'Жим ногами в тренажере': {
+    en: 'Compound leg movement for quads, glutes, and hamstrings. Full back support allows heavy loads with less spinal stress than squats.',
+    az: 'Kvadriseps, kalça və arxa budaq üçün mürəkkəb ayaq hərəkəti. Tam arxa dəstəyi squatdan daha az onurğa yükü ilə böyük çəki imkanı verir.',
+  },
+  'Приседания со штангой на плечах': {
+    en: 'Foundational squat pattern: quads, glutes, hamstrings, and core stabilizers. Key lift for overall leg strength and mass.',
+    az: 'Əsas squat: kvadriseps, kalça, arxa budaq və özək stabilizatorları. Ümumi ayaq gücü və kütləsi üçün əsas məşq.',
+  },
+  'Приседания в Смите (узкая постановка)': {
+    en: 'Smith squat with a narrow stance shifts emphasis to the outer quad while the fixed bar path keeps the movement stable.',
+    az: 'Dar dayaqla Smith squat xarici kvadrisepsə vurğu verir, sabit bar traektoriyası hərəkəti stabil saxlayır.',
+  },
+  'Отведения ноги назад в тренажере': {
+    en: 'Isolation for the glutes. The machine fixes the torso and guides hip extension so you load the glute max with minimal lower-back help.',
+    az: 'Kalça üçün izolyasiya. Maşın gövdəni sabitləşdirir və kalça uzanmasını yönləndirir, bel köməyini minimuma endirir.',
+  },
+  'Гакк-приседания в тренажере': {
+    en: 'Hack squat mimics a barbell squat with less stabilizer demand and a fixed path for deep quad work.',
+    az: 'Hakk squat stabilizator tələbin azaldan, dərin kvadriseps üçün sabit traektoriyalı ştanqa squatına bənzəyir.',
+  },
+  'Разгибания ног в рычажном тренажере': {
+    en: 'Lever leg extension for quads with a natural arc and strong peak contraction at full knee extension.',
+    az: 'Təbii qövs və dizin tam uzanmasında güclü pik yığılması ilə qolu maşınında budaq uzanması.',
+  },
+  'Подъем на носки сидя (рычажный)': {
+    en: 'Isolation for the soleus and calves. Plate-loaded levers give smooth resistance and fine load control.',
+    az: 'Düzənəkvari və baldır əzələləri üçün izolyasiya. Disk yüklü qollar hamar müqavimət verir.',
+  },
+  'Эллиптический тренажер': {
+    en: 'Low-impact cardio for upper and lower body. Good for fat loss, warm-up, or cool-down with gentle stress on knees and ankles.',
+    az: 'Üst və alt bədən üçün aşağı təsirli kardio. Arıqlama, isinmə/soyumə üçün diz və bilək üçün yumşaq yüklə uyğundur.',
+  },
+  'Велотренажер (вертикальный)': {
+    en: 'Upright bike for cardio endurance and heart health. Low joint impact and easy intensity control.',
+    az: 'Şaquli velosiped dayanıqlılıq və ürək sağlamlığı üçün. Oynaqlara az təsir, intensivliyi asan tənzimləmə.',
+  },
+  // Спина
+  'Тяга штанги в наклоне': {
+    en: 'Heavy compound row for lats, traps, and upper back; spinal erectors work hard to brace the torso.',
+    az: 'Enli əzələ, trapezius və üst arxa üçün ağır mürəkkəb çəkiş; gövdəni sabitləmək üçün onurğa dartıcıları işləyir.',
+  },
+  'Становая тяга со штангой': {
+    en: 'Foundational hinge pattern loading the whole posterior chain from calves and hamstrings through glutes, lats, and traps.',
+    az: 'Baldırdan və arxa budaqdan kalça, enli və trapeziusa qədər bütün arxa zənciri yükləyən əsas hinge hərəkəti.',
+  },
+  'Шраги со штангой': {
+    en: 'Isolation for the upper traps: vertical shoulder elevation against load for thickness and strength.',
+    az: 'Üst trapezius üçün izolyasiya: çiyinləri şaquli qaldırma, qalınlıq və güc üçün.',
+  },
+  'Горизонтальная тяга в тренажере (Hammer)': {
+    en: 'Horizontal row for back thickness. Independent arms reduce side-to-side imbalance and improve contraction.',
+    az: 'Arxa qalınlığı üçün üfüqi çəkiş. Müstəqil qollar tərəf asimmetriyasını azaldır, yığılmayı yaxşılaşdırır.',
+  },
+  'Тяга Т-грифа в наклоне': {
+    en: 'Free T-bar row for dense lats, rhomboids, and traps with a natural pulling arc.',
+    az: 'Təbii çəkmə qövsü ilə sıx enli, romboid və trapezius üçün sərbəst T-bar çəkişi.',
+  },
+  'Тяга Т-грифа с упором в грудь': {
+    en: 'Chest-supported T-bar row isolates the back, cuts cheating, and reduces axial loading on the spine.',
+    az: 'Döşə söykənən T-bar çəkişi arxanı izolyasiya edir, aldatmanı kəsir, onurğa oxial yükünü azaldır.',
+  },
+  'Рычажная тяга с упором грудью': {
+    en: 'Lever row with chest pad for mid-back and lats: strict form and a deep squeeze at the finish.',
+    az: 'Orta arxa və enli üçün döş yastıqlı qolu çəkiş: ciddi forma və sonda dərin sıxılma.',
+  },
+  'Вертикальная тяга параллельным хватом': {
+    en: 'Neutral-grip lat pulldown emphasizing lower lats and rhomboids with a comfortable elbow path.',
+    az: 'Neytral tutumlu lat aşağı çəkiş alt enli və romboidlərə vurğu verir, dirsək yolu rahatdır.',
+  },
+  'Тяга верхнего блока к груди (широкий хват)': {
+    en: 'Wide-grip pulldown for back width; lats dominate with less biceps involvement than a narrow grip.',
+    az: 'Arxa eni üçün geniş tutumlu aşağı çəkiş; dar tutuma nisbətən daha az biseps, əsasən enli.',
+  },
+  'Рычажная тяга параллельным хватом': {
+    en: 'Seated neutral-grip lever row: natural elbow line, strong scapular retraction, and mid-back thickness.',
+    az: 'Oturaraq neytral tutumlu qolu çəkiş: təbii dirsək xətti, güclü kürək yığılması, orta arxa qalınlığı.',
+  },
+  'Тяга верхнего блока (дуговой тренажёр)': {
+    en: 'Diverging machine pulldown mimics natural arm paths for a long stretch at the top and a deep lat squeeze at the bottom.',
+    az: 'Ayrılan maşın lat çəkişi təbii qol yollarını təqlid edir: yuxarıda uzanma, aşağıda dərin enli sıxılması.',
+  },
+  'Гиперэкстензия': {
+    en: 'Back extension for spinal erectors, glutes, and hamstrings; builds posture and lumbar stability for heavy lifts.',
+    az: 'Onurğa dartıcıları, kalça və arxa budaq üçün arxa uzanması; ağır məşqlər üçün duruş və bel stabilliyi.',
+  },
+  'Подтягивания широким хватом': {
+    en: 'Bodyweight staple for lat width; wide grip biases the outer back for a strong V-taper.',
+    az: 'Enli arxa üçün bədən çəkisi əsas məşq; geniş tutum xarici arxaya vurğu verir, V formalı siluet yaradır.',
+  },
 }
 
 // ─── Exercise tips (EN / AZ only) ─────────────────────────────────────────────
@@ -542,6 +695,422 @@ const EXERCISE_TIPS: Record<string, { en: string[]; az: string[] }> = {
   'Подъем ног в упоре на брусьях': {
     en: ['Keep lower back pressed against the back pad throughout', "Don't swing legs — smooth and controlled", 'Raise legs slightly above parallel, tuck the pelvis forward for max lower-ab squeeze', 'Exhale on the way up, slow inhale on the way down', 'If straight legs are too hard, start with bent-knee raises'],
     az: ['Bütün məşq boyunca bel bölgəsini arxa yastığa saxlayın', 'Ayaqları sallamayın — hamar və nəzarətli'],
+  },
+  'Сгибания ног лежа': {
+    en: [
+      'Set the pad just above the Achilles so the roller sits on the lower shin',
+      'Keep knees aligned with the machine axis',
+      'Press hips firmly into the bench to avoid lumbar compensation',
+      'Curl up with intent; lower slowly with control',
+      'Stop short of full lockout at the bottom to keep tension on the hamstrings',
+    ],
+    az: [
+      'Yastığı aşil üstündə saxlayın, valik aşağı baldıra düşsün',
+      'Dizlər maşın oxu ilə bir xəttdə olsun',
+      'Bel kompensasiyasının qarşısını almaq üçün kalçanı möhkəm skamyaya basın',
+      'Yuxarı bükülməni güclü edin; aşağı yavaş və nəzarətli',
+      'Aşağıda tam kilidləmədən dayanın — arxa budaqda gərginlik saxlanılsın',
+    ],
+  },
+  'Разгибания ног сидя': {
+    en: [
+      'Adjust the back pad so the knee crease sits flush on the seat edge',
+      'Place the roller on the lower shin, just above the ankle',
+      'Hold side handles so hips cannot lift on the hard reps',
+      'Fully extend at the top with a 1-second pause for peak quad squeeze',
+      'Lower smoothly without letting the stack slam at the bottom',
+    ],
+    az: [
+      'Diz qırışı oturacaq kənarına düz dəyəcək şəkildə arxa yastığı tənzimləyin',
+      'Valiki aşağı baldırda, bilək üstündə yerləşdirin',
+      'Çətin təkrarlarda kalça qalxmasın deyə yan tutacaqları tutun',
+      'Yuxarıda tam uzadın, kvadriseps üçün 1 san. pauza',
+      'Aşağıda yığını vurmadan yavaş endirin',
+    ],
+  },
+  'Сведение ног в тренажере сидя': {
+    en: [
+      'Set a comfortable starting width — feel a mild stretch, not pain',
+      'Keep entire back against the pad for the whole set',
+      'Squeeze inward powerfully; pause briefly at peak contraction',
+      'Return slowly without letting plates crash',
+      'Use side handles to brace the torso',
+    ],
+    az: [
+      'Rahat başlanğıc eni — yüngül uzanma, ağrı yox',
+      'Bütün arxanı bütün set boyunca yastığa saxlayın',
+      'İçəri güclü sıxın; pikdə qısa pauza',
+      'Disklərin toqquşmaması üçün yavaş qaytarın',
+      'Gövdəni sabitləmək üçün yan tutacaqlardan istifadə edin',
+    ],
+  },
+  'Разведение ног в тренажере сидя': {
+    en: [
+      'Sit tall with full back contact; a slight forward lean can bias the glutes more',
+      'Open as wide as control allows; pause at max tension',
+      'Resist the return — do not let the stack fully rest',
+      'Brace with handles to keep the pelvis stable',
+      'Move only at the hips — avoid rocking the torso',
+    ],
+    az: [
+      'Düz oturun, arxa tam təmas; yüngül irəliyə meyl kalçaya daha çox vurğu verə bilər',
+      'Nəzarət imkan verdiyi qədər geniş açın; maksimum gərginlikdə pauza',
+      'Qayıdışı müqavimətlə edin — yığını tam dayandırmayın',
+      'Kalçanı sabit saxlamaq üçün tutacaqlardan istifadə edin',
+      'Yalnız kalça oynağında hərəkət — gövdəni yelləməyin',
+    ],
+  },
+  'Жим ногами в тренажере': {
+    en: [
+      'Feet shoulder-width; higher foot placement biases glutes, lower biases quads',
+      'Never lock knees hard at the top — keep a soft bend',
+      'Keep low back glued to the pad; avoid rolling the hips under at depth',
+      'Lower the sled under control to about 90° at the knees',
+      'Drive through the whole foot with emphasis on the heels',
+    ],
+    az: [
+      'Ayaqlar çiyin genişliyində; ayaq yüksək — kalça, aşağı — kvadriseps',
+      'Yuxarıda dizləri sərt kilidləməyin — yumşaq bükülmə saxlayın',
+      'Beli yastığa yapışdırın; dərinlikdə kalçanı içəri çevirməyin',
+      'Platformanı dizdə ~90°-ə qədər nəzarətli endirin',
+      'Bütün ayaqla, xüsusilə dabanla itin',
+    ],
+  },
+  'Приседания со штангой на плечах': {
+    en: [
+      'Bar rests on upper traps — not on the neck',
+      'Maintain a neutral spine; eyes forward',
+      'Break at hips and knees together as if sitting back',
+      'Track knees over toes; do not let knees cave inward',
+      'Drive feet into the floor evenly; exhale on the ascent',
+    ],
+    az: [
+      'Bar üst trapeziusda — boyunda yox',
+      'Neytral onurğa; baxış irəli',
+      'Kalça və dizləri birlikdə əyərək arxaya oturmaq kimi başlayın',
+      'Dizləri barmaq üstündə aparın; içəri çökməsin',
+      'Ayaqları bərabər yerə basın; qalxarkən nəfəs verin',
+    ],
+  },
+  'Приседания в Смите (узкая постановка)': {
+    en: [
+      'Feet close together and slightly forward of the bar line',
+      'Keep back against the bar and slide straight down',
+      'Depth to parallel thighs or slightly below if mobility allows',
+      'Stay tall in the torso — avoid excessive forward lean',
+      'Do not fully lock knees at the top to keep quad tension',
+    ],
+    az: [
+      'Ayaqlar bir-birinə yaxın və bar xəttindən bir az irəlidə',
+      'Arxanı bara söykəyib düz aşağı sürüşdürün',
+      'Mobillik imkan verərsə budlar yerə paralel və ya bir az aşağı',
+      'Gövdəni dik saxlayın — həddindən artıq irəliyə əyməyin',
+      'Kvadriseps gərginliyini saxlamaq üçün yuxarıda dizləri tam kilidləməyin',
+    ],
+  },
+  'Отведения ноги назад в тренажере': {
+    en: [
+      'Brace chest or elbows on the pads to lock the torso',
+      'Extend the hip with the glute — not by arching the low back',
+      'Pause and squeeze the glute at full extension',
+      'Keep abs engaged throughout',
+      'Return slowly without letting the weight crash',
+    ],
+    az: [
+      'Gövdəni sabitləmək üçün döş və ya dirsəkləri yastıqlara basın',
+      'Beli əymədən kalçanı kalça əzələsi ilə uzadın',
+      'Tam uzanmada pauza və kalçanı sıxın',
+      'Bütün set boyunca qarını gərgin saxlayın',
+      'Çəkin qəfil düşməməsi üçün yavaş qaytarın',
+    ],
+  },
+  'Гакк-приседания в тренажере': {
+    en: [
+      'Back fully against the pad — no gap at the lower back',
+      'Feet shoulder-width; keep heels down on the platform',
+      'Depth to ~90° knee angle or slightly more if comfortable',
+      'Do not fully lock knees at the top',
+      'Keep knees tracking over toes — avoid valgus collapse',
+    ],
+    az: [
+      'Arxa tam yastığa — beldə boşluq olmasın',
+      'Ayaqlar çiyin genişliyində; dabanlar platformada qalsın',
+      'Rahatdırsa diz bucağı ~90° və ya bir az daha',
+      'Yuxarıda dizləri tam kilidləməyin',
+      'Dizləri barmaq üstündə aparın — içəri çökməsin',
+    ],
+  },
+  'Разгибания ног в рычажном тренажере': {
+    en: [
+      'Back tight to the seat; grip side handles for hip stability',
+      'Roller on lower shin above the ankle',
+      'Extend fully at the top with a pause for peak quad contraction',
+      'Lower the levers with control — no dropping',
+      'Toes up or slightly out can bias different quad heads',
+    ],
+    az: [
+      'Arxa oturacağa möhkəm; kalça stabilliyi üçün yan tutacaqlar',
+      'Valik biləyin üstündə aşağı baldırda',
+      'Yuxarıda tam uzadın, kvadriseps üçün pauza',
+      'Qolları nəzarətli endirin — buraxmayın',
+      'Barmaqlar yuxarı və ya bir az kənar fərqli kvadriseps başlarına vurğu verə bilər',
+    ],
+  },
+  'Подъем на носки сидя (рычажный)': {
+    en: [
+      'Let heels sink for a deep calf stretch',
+      'Rise onto the balls of the feet; hold the top 1–2 seconds',
+      'Keep knees pressed into the pads; torso upright',
+      'Smooth reps — no bouncing at the bottom',
+      'Use handles to anchor the upper body',
+    ],
+    az: [
+      'Dabanları dərin uzanma üçün aşağı buraxın',
+      'Ayaq biləyinin üstünə qalxın; yuxarıda 1–2 san. saxlayın',
+      'Dizləri yastıqlara basın; gövdə dik',
+      'Hamar təkrarlar — aşağıda sıçramayın',
+      'Üst bədəni sabitləmək üçün tutacaqlardan istifadə edin',
+    ],
+  },
+  'Эллиптический тренажер': {
+    en: [
+      'Stand tall — do not lean all your weight on the handles',
+      'Keep heels in contact with the pedals when possible',
+      'Use moving handles to involve back and arms lightly',
+      'Smooth rhythm; steady breathing',
+      'Increase resistance or incline for more intensity if available',
+    ],
+    az: [
+      'Dik durun — çəkini tutacaqlara yığmayın',
+      'Mümkünsə dabanlar pedalda qalsın',
+      'Arxa və qolları yüngül cəlb etmək üçün hərəkətli tutacaqlardan istifadə edin',
+      'Hamar ritm; sabit nəfəs',
+      'Varsa, intensivlik üçün müqavimət və ya meyili artırın',
+    ],
+  },
+  'Велотренажер (вертикальный)': {
+    en: [
+      'Seat height: near-full leg extension at the bottom without knee lockout',
+      'Neutral spine; light hands on the bars',
+      'Smooth circular pedaling — push and pull',
+      'Feet level — avoid excessive toe-pointing',
+      'Match resistance to target heart rate and breathing',
+    ],
+    az: [
+      'Oturacaq hündürlüyü: aşağıda diz kilidlənmədən demək olar ki, tam ayaq uzanması',
+      'Neytral onurğa; barlara yüngül əllər',
+      'Hamar dairəvi pedal — itin və çəkin',
+      'Ayaqlar üfüqi — barmaqları həddindən artıq aşağı əyməyin',
+      'Müqaviməti hədəf ürək dövrü və nəfəsə uyğunlaşdırın',
+    ],
+  },
+  'Тяга штанги в наклоне': {
+    en: [
+      'Hinge to ~45° with a neutral lumbar curve',
+      'Pull to the lower abdomen; elbows skim the ribs',
+      'Soft knees for balance and less low-back strain',
+      'No torso jerks — reduce weight if form breaks',
+      'Lower the bar with control and feel the lats stretch',
+    ],
+    az: [
+      'Bel neytral əyri ilə ~45° əyilmə',
+      'Aşağı qarınə çəkin; dirsəklər qabırğalar boyunca',
+      'Balans və az bel yükü üçün dizləri yumşaq saxlayın',
+      'Gövdə ilə tərpənməyin — forma pozularsa çəki azaldın',
+      'Barı nəzarətli endirin, enli uzanmasını hiss edin',
+    ],
+  },
+  'Становая тяга со штангой': {
+    en: [
+      'Bar over mid-foot at the start',
+      'Brace the lats; keep the bar close to the shins',
+      'Push the floor away; stand tall at lockout without hyperextending',
+      'Lower by pushing hips back until the bar clears the knees',
+      'If the back rounds, stop and reduce load',
+    ],
+    az: [
+      'Başlanğıcda bar ayağın ortası üstündə',
+      'Enliləri gərgin saxlayın; barı baldıra yaxın tutun',
+      'Yeri itin; kilidləmədə həddindən artıq geri əymədən dik durun',
+      'Bar dizləri keçənə qədər kalçanı geri itərək endirin',
+      'Arxa yuvarlaqlaşarsa dayanın və çəki azaldın',
+    ],
+  },
+  'Шраги со штангой': {
+    en: [
+      'Grip just outside shoulder width',
+      'Shrug straight up toward the ears — no rolling the shoulders',
+      'Pause 1 second at the top',
+      'Lower under control with a full but controlled stretch',
+      'Keep arms long — the traps move the weight, not elbow bend',
+    ],
+    az: [
+      'Tutumu çiyindən bir az kənar',
+      'Çiyinləri düz yuxarı, qulaqlara — fırlatmayın',
+      'Yuxarıda 1 san. pauza',
+      'Tam amma nəzarətli uzanma ilə yavaş endirin',
+      'Qolları uzun saxlayın — çəkiyi trapezius hərəkət etdirir, dirsək bükülməsi yox',
+    ],
+  },
+  'Горизонтальная тяга в тренажере (Hammer)': {
+    en: [
+      'Seat so handles hit around lower chest to upper abdomen',
+      'Chest on the pad; neutral spine',
+      'Pull elbows back; squeeze shoulder blades at the finish',
+      'Exhale on the pull; inhale on the return',
+      'Do not let the stack fully unload at the stretch',
+    ],
+    az: [
+      'Tutacaqlar alt döşdən üst qarınə düşəcək oturacaq',
+      'Döş yastıqda; neytral onurğa',
+      'Dirsəkləri geri çəkin; sonda kürək sümüklərini sıxın',
+      'Çəkərkən nəfəs verin; qayıdışda için',
+      'Uzanmada yığını tam boşaltmayın',
+    ],
+  },
+  'Тяга Т-грифа в наклоне': {
+    en: [
+      'Stand over the bar; soft knees; flat back hinge',
+      'Pull to the lower belly; elbows back and slightly up',
+      'Pause briefly with scapulae retracted',
+      'Lower with control — plates need not touch the floor each rep',
+      'Brace the core to protect the lumbar spine',
+    ],
+    az: [
+      'Barın üstündə dayanın; yumşaq diz; düz arxa ilə əyilmə',
+      'Aşağı qarınə çəkin; dirsəklər geri və yüngül yuxarı',
+      'Kürək sümükləri yığılmış qısa pauza',
+      'Hər təkrarda disk yerə toxunmasın deyə nəzarətli endirin',
+      'Beli qorumaq üçün özəyi gərgin saxlayın',
+    ],
+  },
+  'Тяга Т-грифа с упором в грудь': {
+    en: [
+      'Pad height: upper chest on the edge of the support',
+      'Maintain chest contact for the whole set',
+      'Pull to the belly; drive elbows back',
+      'Keep neck neutral — do not crane forward',
+      'Full arm extension at the bottom for lat stretch',
+    ],
+    az: [
+      'Yastıq hündürlüyü: dəstəyin kənarında üst döş',
+      'Bütün set boyunca döş təmasını saxlayın',
+      'Qarınə çəkin; dirsəkləri geri aparın',
+      'Boyunu neytral saxlayın — irəli uzatmayın',
+      'Aşağıda enli uzanması üçün qolu tam uzadın',
+    ],
+  },
+  'Рычажная тяга с упором грудью': {
+    en: [
+      'Seat so handles align near mid-abs',
+      'Chest pinned to the pad',
+      'Row with elbows; imagine hooks on the elbows',
+      'Squeeze blades hard at the end range',
+      'Smooth eccentric — feel the lats lengthen',
+    ],
+    az: [
+      'Tutacaqlar orta qarınə uyğun oturacaq',
+      'Döş yastığa sancılı',
+      'Dirsəklərlə çəkin; dirsəklərdə çəngəl təsəvvür edin',
+      'Son diapazonda kürəkləri güclü sıxın',
+      'Hamar eksentrik — enlinin uzandığını hiss edin',
+    ],
+  },
+  'Вертикальная тяга параллельным хватом': {
+    en: [
+      'Thighs secured under the pad; slight lean back is fine',
+      'Pull the handle to upper chest; elbows drive down and in',
+      'Brief pause at the bottom contraction',
+      'Control the ascent — stretch the lats without relaxing fully',
+      'Minimize excessive body English',
+    ],
+    az: [
+      'Budlar yastığın altında; yüngül geri meyl olar',
+      'Tutacağı üst döşə çəkin; dirsəklər aşağı və içəri',
+      'Aşağı yığılmada qısa pauza',
+      'Qalxışı nəzarətli — enliləri tam boşaltmadan uzadın',
+      'Gövdə ilə həddindən artıq yelləməyin',
+    ],
+  },
+  'Тяга верхнего блока к груди (широкий хват)': {
+    en: [
+      'Grip wider than shoulders; pronated',
+      'Pull to upper chest; elbows track slightly back',
+      'Think elbows, not hands, to reduce biceps takeover',
+      'Small controlled lean is OK; avoid huge swings',
+      'Let the bar rise with control for a full lat stretch',
+    ],
+    az: [
+      'Tutum çiyindən geniş; pronasiyalı',
+      'Üst döşə çəkin; dirsəklər yüngül geri',
+      'Bisepsin işi azalsın deyə əlləri deyil, dirsəkləri düşünün',
+      'Kiçik nəzarətli meyl olar; böyük yelləmə yox',
+      'Tam enli uzanması üçün barı nəzarətli qaldırın',
+    ],
+  },
+  'Рычажная тяга параллельным хватом': {
+    en: [
+      'Feet braced; sit tall',
+      'Neutral parallel handles; elbows tight to the torso',
+      'Retract scapulae at the end; pause',
+      'Full extension forward with control on each rep',
+      'Chest proud; do not shrug the shoulders to the ears',
+    ],
+    az: [
+      'Ayaqlar dayaqda; dik oturun',
+      'Neytral paralel tutacaqlar; dirsəklər gövdəyə yaxın',
+      'Sonda kürək sümüklərini yığın; pauza',
+      'Hər təkrarda qolu nəzarətlə tam irəli uzadın',
+      'Döşü yuxarı; çiyinləri qulaqlara qaldırmayın',
+    ],
+  },
+  'Тяга верхнего блока (дуговой тренажёр)': {
+    en: [
+      'Lock thighs under the pads',
+      'Follow the machine arc; elbows out and down',
+      'Open the chest and squeeze blades at the bottom',
+      'Rise slowly to maximize the stretch at the top',
+      'Keep the torso stable — no violent rocking',
+    ],
+    az: [
+      'Budları yastıqların altında kilidləyin',
+      'Maşın qövsünü izləyin; dirsəklər kənara və aşağı',
+      'Aşağıda döşü açın və kürəkləri sıxın',
+      'Yuxarıda uzanmanı maksimum etmək üçün yavaş qalxın',
+      'Gövdəni sabit saxlayın — şiddətli yelləmə yox',
+    ],
+  },
+  'Гиперэкстензия': {
+    en: [
+      'Pad top just below the hip fold',
+      'Lower with a flat back until you feel hamstring stretch',
+      'Rise to a straight line with the torso — avoid hyperextending the lumbar spine',
+      'Hands crossed on chest or behind head without neck pressure',
+      'Controlled tempo — no momentum',
+    ],
+    az: [
+      'Yastığın üstü kalça qırışının altında',
+      'Arxa düz saxlayaraq arxa budaq uzanana qədər endirin',
+      'Gövdə ilə düz xəttə qalxın — beli həddindən artıq uzatmayın',
+      'Əllər döşdə çarpaz və ya boyuna təzyiq olmadan başın arxasında',
+      'Nəzarətli temp — inersiya yox',
+    ],
+  },
+  'Подтягивания широким хватом': {
+    en: [
+      'Grip clearly wider than shoulders',
+      'Lead with the chest to the bar; drive elbows down',
+      'Strict reps — limit kipping unless that is your sport-specific goal',
+      'Touch the upper chest to the bar if mobility allows',
+      'Lower with control; do not fully relax the shoulders at the bottom',
+    ],
+    az: [
+      'Tutum çiyindən aydın şəkildə geniş',
+      'Döşü bara tərəf aparın; dirsəkləri aşağı itin',
+      'Ciddi təkrarlar — məqsəd deyilsə kipping məhdudlaşdırın',
+      'Mobillik imkan verərsə üst döşü bara toxundurun',
+      'Nəzarətli endirin; aşağıda çiyinləri tam boşaltmayın',
+    ],
   },
 }
 

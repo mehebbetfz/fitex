@@ -321,6 +321,12 @@ export class AuthService {
 			fitnessGoal: user.fitnessGoal ?? null,
 			activityLevel: user.activityLevel ?? null,
 			bodyStatsCompleted: !!user.bodyStatsCompleted,
+			socialInstagram: user.socialInstagram ?? null,
+			socialTelegram: user.socialTelegram ?? null,
+			socialYoutube: user.socialYoutube ?? null,
+			socialTiktok: user.socialTiktok ?? null,
+			socialStrava: user.socialStrava ?? null,
+			socialWebsite: user.socialWebsite ?? null,
 		}
 	}
 
@@ -336,9 +342,21 @@ export class AuthService {
 			'fitnessGoal',
 			'activityLevel',
 			'bodyStatsCompleted',
+			'socialInstagram',
+			'socialTelegram',
+			'socialYoutube',
+			'socialTiktok',
+			'socialStrava',
+			'socialWebsite',
 		]
 		for (const k of keys) {
-			if (dto[k] !== undefined) (user as any)[k] = dto[k]
+			if (dto[k] === undefined) continue
+			const v = dto[k]
+			if (typeof v === 'string' && v.trim() === '') {
+				;(user as any)[k] = undefined
+			} else {
+				;(user as any)[k] = v
+			}
 		}
 		await user.save()
 		const u = await this.clearExpiredPremium(userId)

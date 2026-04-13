@@ -878,6 +878,13 @@ export default function ProfileScreen() {
 							onPress={() => router.push('/(routes)/rating')}
 							iconColor='#FFD700'
 						/>
+						<SettingsItem
+							icon='share-social-outline'
+							title={t('profile', 'socialLinksEntry')}
+							subtitle={t('profile', 'socialLinksSubtitle')}
+							onPress={() => router.push('/(auth)/(routes)/edit-social')}
+							iconColor='#5AC8FA'
+						/>
 					{/* marketplace and gym-pass hidden temporarily */}
 					</View>
 				</FadeIn>

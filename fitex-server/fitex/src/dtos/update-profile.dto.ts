@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsBoolean, IsIn, IsNumber, IsOptional, Max, Min } from 'class-validator'
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 
 export class UpdateProfileDto {
 	@IsOptional()
@@ -38,4 +38,34 @@ export class UpdateProfileDto {
 	@IsOptional()
 	@IsBoolean()
 	bodyStatsCompleted?: boolean
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(200)
+	socialInstagram?: string
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(200)
+	socialTelegram?: string
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(200)
+	socialYoutube?: string
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(200)
+	socialTiktok?: string
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(200)
+	socialStrava?: string
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(200)
+	socialWebsite?: string
 }

@@ -130,6 +130,25 @@ export class User {
 	/** Пользователь прошёл экран первичного ввода данных (или нажал «Пропустить») */
 	@Prop({ default: false })
 	bodyStatsCompleted?: boolean
+
+	/** Публичные ссылки (показываются в профиле спортсмена в лидерборде) */
+	@Prop()
+	socialInstagram?: string
+
+	@Prop()
+	socialTelegram?: string
+
+	@Prop()
+	socialYoutube?: string
+
+	@Prop()
+	socialTiktok?: string
+
+	@Prop()
+	socialStrava?: string
+
+	@Prop()
+	socialWebsite?: string
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

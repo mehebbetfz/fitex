@@ -28,6 +28,13 @@ export interface User {
 	activityLevel?: string | null
 	/** true после онбординга или «Пропустить» */
 	bodyStatsCompleted?: boolean
+	/** Публичные ссылки (лидерборд / профиль спортсмена) */
+	socialInstagram?: string | null
+	socialTelegram?: string | null
+	socialYoutube?: string | null
+	socialTiktok?: string | null
+	socialStrava?: string | null
+	socialWebsite?: string | null
 }
 
 interface AuthContextType {

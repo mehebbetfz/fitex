@@ -1,6 +1,7 @@
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
 import { useLanguage } from '@/contexts/language-context'
+import { getMilestoneAchievementCopy } from '@/services/achievement-milestones-extra'
 import { Achievement, computeRating } from '@/services/rating'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
@@ -80,7 +81,7 @@ const AchCard = ({
 	item: Achievement
 	onPress: (a: Achievement) => void
 }) => {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const scale = useRef(new Animated.Value(1)).current
 
 	const handlePress = () => {
@@ -92,8 +93,9 @@ const AchCard = ({
 
 	const titleKey = `ach_${item.id}_title` as Parameters<typeof t>[1]
 	const descKey  = `ach_${item.id}_desc`  as Parameters<typeof t>[1]
-	const title    = t('rating', titleKey)
-	const desc     = t('rating', descKey)
+	const milestone = getMilestoneAchievementCopy(item.id, language ?? 'ru')
+	const title    = milestone?.title ?? t('rating', titleKey)
+	const desc     = milestone?.desc ?? t('rating', descKey)
 
 	return (
 		<TouchableOpacity onPress={handlePress} activeOpacity={0.85}>
@@ -164,13 +166,14 @@ const DetailModal = ({
 	visible: boolean
 	onClose: () => void
 }) => {
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	if (!item) return null
 
 	const titleKey = `ach_${item.id}_title` as Parameters<typeof t>[1]
 	const descKey  = `ach_${item.id}_desc`  as Parameters<typeof t>[1]
-	const title    = t('rating', titleKey)
-	const desc     = t('rating', descKey)
+	const milestone = getMilestoneAchievementCopy(item.id, language ?? 'ru')
+	const title    = milestone?.title ?? t('rating', titleKey)
+	const desc     = milestone?.desc ?? t('rating', descKey)
 
 	return (
 		<Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>

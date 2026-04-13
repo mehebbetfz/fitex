@@ -1,5 +1,6 @@
 // app/_layout.tsx
 import { SyncProvider } from '@/app/contexts/sync-context'
+import OtaUpdateGate from '@/components/ota-update-gate'
 import SyncBanner from '@/components/sync-banner'
 import { LanguageProvider } from '@/contexts/language-context'
 import { Stack } from 'expo-router'
@@ -66,6 +67,7 @@ export default function RootLayout() {
 						 * не блокирует тапы.
 						 */}
 						<SyncBanner />
+						<OtaUpdateGate />
 						<RootLayoutContent />
 					</SafeAreaProvider>
 				</SyncProvider>
