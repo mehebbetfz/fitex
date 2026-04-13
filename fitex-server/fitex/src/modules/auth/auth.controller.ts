@@ -1,4 +1,20 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common'
+import {
+	BadRequestException,
+	Body,
+	Controller,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Patch,
+	Post,
+	Req,
+	UploadedFile,
+	UseGuards,
+	UseInterceptors,
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { memoryStorage } from 'multer'
+import { UpdateProfileDto } from 'src/dtos/update-profile.dto'
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard'
 import { AuthService } from './auth.service'
 
@@ -10,6 +26,31 @@ export class AuthController {
 	@UseGuards(JwtAuthGuard)
 	async me(@Req() req: { user: { userId: string } }) {
 		return this.authService.getSessionUser(req.user.userId)
+	}
+
+	@Patch('profile')
+	@UseGuards(JwtAuthGuard)
+	async patchProfile(
+		@Req() req: { user: { userId: string } },
+		@Body() dto: UpdateProfileDto,
+	) {
+		return this.authService.updateProfile(req.user.userId, dto)
+	}
+
+	@Post('avatar')
+	@UseGuards(JwtAuthGuard)
+	@UseInterceptors(
+		FileInterceptor('file', {
+			storage: memoryStorage(),
+			limits: { fileSize: 5 * 1024 * 1024 },
+		}),
+	)
+	async uploadAvatar(
+		@Req() req: { user: { userId: string } },
+		@UploadedFile() file: Express.Multer.File,
+	) {
+		if (!file) throw new BadRequestException('file is required')
+		return this.authService.uploadAvatar(req.user.userId, file)
 	}
 
 	@Post('google')

@@ -81,6 +81,29 @@ export class User {
 
 	@Prop({ default: true })
 	showOnLeaderboard: boolean
+
+	/** Анкета тела: рост см, вес кг, возраст, пол, цель, активность */
+	@Prop()
+	heightCm?: number
+
+	@Prop()
+	weightKg?: number
+
+	@Prop()
+	age?: number
+
+	@Prop()
+	sex?: string
+
+	@Prop()
+	fitnessGoal?: string
+
+	@Prop()
+	activityLevel?: string
+
+	/** Пользователь прошёл экран первичного ввода данных (или нажал «Пропустить») */
+	@Prop({ default: false })
+	bodyStatsCompleted?: boolean
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

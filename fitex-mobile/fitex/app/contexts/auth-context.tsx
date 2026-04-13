@@ -19,6 +19,15 @@ export interface User {
 	trialStartedAt?: string   // ISO date string, set when user starts trial
 	trialEndsAt?: string      // ISO date string = trialStartedAt + 30 days
 	isNewUser?: boolean       // true on very first login
+	/** Анкета тела (сервер) */
+	heightCm?: number | null
+	weightKg?: number | null
+	age?: number | null
+	sex?: string | null
+	fitnessGoal?: string | null
+	activityLevel?: string | null
+	/** true после онбординга или «Пропустить» */
+	bodyStatsCompleted?: boolean
 }
 
 interface AuthContextType {
@@ -282,7 +291,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 	const updateUser = (updates: Partial<User>) => {
 		console.log('[Auth] Updating user with:', updates)
-		setUser(prev => (prev ? { ...prev, ...updates } : null))
+		setUser(prev => {
+			if (!prev) return null
+			const next = { ...prev, ...updates }
+			void SecureStore.setItemAsync('user', JSON.stringify(next)).catch(() => {})
+			return next
+		})
 	}
 
 	const refreshProfile = async () => {
@@ -338,14 +352,15 @@ export const useAuth = () => {
 	return context
 }
 
-/** True if subscription is active (server is source of truth; uses premiumExpiresAt when set). */
+/**
+ * Активный Premium: дата окончания в будущем **или** флаг isPremium (как на сервере isPremiumEntitlementActive).
+ * Если premiumExpiresAt в прошлом, но isPremium true (ручная правка БД), доступ всё равно есть.
+ */
 export function hasActivePremium(user: User | null): boolean {
 	if (!user) return false
 	if (user.premiumExpiresAt) {
 		const t = new Date(user.premiumExpiresAt).getTime()
-		if (!Number.isNaN(t)) {
-			return t > Date.now()
-		}
+		if (!Number.isNaN(t) && t > Date.now()) return true
 	}
 	return !!user.isPremium
 }

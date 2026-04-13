@@ -50,7 +50,7 @@ const SKUS = {
 const TRIAL_DAYS = 30
 
 export default function TrialPaywallScreen() {
-	const { dismissTrialPaywall, updateUser } = useAuth()
+	const { dismissTrialPaywall, refreshProfile } = useAuth()
 	const { t } = useLanguage()
 
 	const [products, setProducts] = useState<ProductSubscription[]>([])
@@ -67,11 +67,7 @@ export default function TrialPaywallScreen() {
 		async (purchase: Purchase) => {
 			const result = await verifySubscriptionOnServer(purchase)
 			if (result.ok) {
-				await updateUser({
-					isPremium: true,
-					premiumExpiresAt: result.premiumExpiresAt,
-					isNewUser: false,
-				})
+				await refreshProfile()
 				await dismissTrialPaywall()
 				router.replace('/(tabs)')
 			} else {
@@ -81,7 +77,7 @@ export default function TrialPaywallScreen() {
 				setLoading(false)
 			}
 		},
-		[dismissTrialPaywall, updateUser, t],
+		[dismissTrialPaywall, refreshProfile, t],
 	)
 
 	// ── IAP init ─────────────────────────────────────────────────────────────
@@ -107,11 +103,7 @@ export default function TrialPaywallScreen() {
 					if (error.code === ErrorCode.AlreadyOwned) {
 						const r = await syncAlreadyOwnedSubscription()
 						if (r.ok) {
-							await updateUser({
-								isPremium: true,
-								premiumExpiresAt: r.premiumExpiresAt,
-								isNewUser: false,
-							})
+							await refreshProfile()
 							await dismissTrialPaywall()
 							router.replace('/(tabs)')
 						} else {
@@ -158,7 +150,7 @@ export default function TrialPaywallScreen() {
 			purchaseErrorSub.current?.remove()
 			endConnection()
 		}
-	}, [handlePurchase, t, dismissTrialPaywall, updateUser])
+	}, [handlePurchase, t, dismissTrialPaywall, refreshProfile])
 
 	// ── Buy ───────────────────────────────────────────────────────────────────
 	const buySubscription = async () => {
@@ -276,6 +268,17 @@ export default function TrialPaywallScreen() {
 
 	return (
 		<SafeAreaView style={styles.container}>
+			<View style={styles.topCloseBar}>
+				<TouchableOpacity
+					onPress={skipForNow}
+					hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+					activeOpacity={0.7}
+					accessibilityRole='button'
+					accessibilityLabel={t('trial', 'skipLimited')}
+				>
+					<Ionicons name='close' size={28} color={COLORS.textSecondary} />
+				</TouchableOpacity>
+			</View>
 			<ScrollView
 				contentContainerStyle={styles.scroll}
 				showsVerticalScrollIndicator={false}
@@ -476,11 +479,18 @@ const styles = StyleSheet.create({
 	scroll: {
 		paddingBottom: 40,
 	},
+	topCloseBar: {
+		flexDirection: 'row',
+		justifyContent: 'flex-end',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+	},
 
 	// Hero
 	hero: {
 		alignItems: 'center',
-		paddingTop: 48,
+		paddingTop: 8,
 		paddingBottom: 36,
 		paddingHorizontal: 24,
 	},

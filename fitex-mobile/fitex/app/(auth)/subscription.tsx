@@ -75,7 +75,7 @@ const handleBack = () => {
 export default function SubscriptionScreen() {
 	log('Component function called (render)')
 
-	const { updateUser } = useAuth()
+	const { refreshProfile } = useAuth()
 	const { t } = useLanguage()
 	const [products, setProducts] = useState<ProductSubscription[]>([])
 	const [loading, setLoading] = useState(false)
@@ -98,10 +98,7 @@ export default function SubscriptionScreen() {
 			const result = await verifySubscriptionOnServer(purchase)
 			if (result.ok) {
 				log('Verification successful')
-				await updateUser({
-					isPremium: true,
-					premiumExpiresAt: result.premiumExpiresAt,
-				})
+				await refreshProfile()
 				Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
 				router.back()
 			} else {
@@ -113,7 +110,7 @@ export default function SubscriptionScreen() {
 			log('handlePurchase finally: setLoading(false)')
 			setLoading(false)
 		},
-		[updateUser, t],
+		[refreshProfile, t],
 	)
 
 	// ==============================
@@ -152,10 +149,7 @@ export default function SubscriptionScreen() {
 					if (error.code === ErrorCode.AlreadyOwned) {
 						const r = await syncAlreadyOwnedSubscription()
 						if (r.ok) {
-							await updateUser({
-								isPremium: true,
-								premiumExpiresAt: r.premiumExpiresAt,
-							})
+							await refreshProfile()
 							Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
 							router.back()
 						} else {
@@ -210,7 +204,7 @@ export default function SubscriptionScreen() {
 			endConnection()
 			log('endConnection() called')
 		}
-	}, [handlePurchase, t, updateUser])
+	}, [handlePurchase, t, refreshProfile])
 
 	// ==============================
 	// ПОКУПКА
@@ -307,10 +301,7 @@ export default function SubscriptionScreen() {
 				return
 			}
 
-			await updateUser({
-				isPremium: true,
-				premiumExpiresAt: r.premiumExpiresAt,
-			})
+			await refreshProfile()
 			Alert.alert(t('subscription', 'restoreSuccess'), t('subscription', 'alreadyPremium'))
 			setLoading(false)
 			router.back()
@@ -323,16 +314,18 @@ export default function SubscriptionScreen() {
 
 	const renderHeader = () => (
 		<View style={modalStyles.header}>
-			<TouchableOpacity
-				style={modalStyles.backButton}
-				onPress={handleBack}
-				activeOpacity={0.7}
-			>
-				<Ionicons name={'arrow-back'} size={24} color={COLORS.text} />
-			</TouchableOpacity>
+			<View style={modalStyles.headerSide} />
 			<Text style={modalStyles.headerTitle} numberOfLines={1}>
 				{t('subscription', 'title')}
 			</Text>
+			<TouchableOpacity
+				style={modalStyles.headerClose}
+				onPress={handleBack}
+				activeOpacity={0.7}
+				hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+			>
+				<Ionicons name='close' size={26} color={COLORS.text} />
+			</TouchableOpacity>
 		</View>
 	)
 
@@ -461,14 +454,20 @@ const modalStyles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		paddingHorizontal: 16,
+		paddingHorizontal: 12,
 		paddingVertical: 12,
 		backgroundColor: COLORS.card,
 		borderBottomWidth: 1,
 		borderBottomColor: COLORS.border,
 	},
-	backButton: {
-		padding: 8,
+	headerSide: {
+		width: 40,
+	},
+	headerClose: {
+		width: 40,
+		alignItems: 'flex-end',
+		justifyContent: 'center',
+		paddingVertical: 4,
 	},
 	headerTitle: {
 		flex: 1,
@@ -476,7 +475,6 @@ const modalStyles = StyleSheet.create({
 		fontWeight: '600',
 		color: COLORS.text,
 		textAlign: 'center',
-		marginRight: 24,
 	},
 	headerRight: {
 		width: 40,
@@ -870,13 +868,6 @@ const modalStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: COLORS.background },
-	backButton: {
-		position: 'absolute',
-		top: 10,
-		left: 16,
-		zIndex: 10,
-		padding: 8,
-	},
 	loadingContainer: {
 		flex: 1,
 		backgroundColor: COLORS.background,

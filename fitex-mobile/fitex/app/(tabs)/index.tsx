@@ -14,7 +14,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-	ActivityIndicator,
 	Alert,
 	Animated,
 	Dimensions,
@@ -472,6 +471,203 @@ const RecordSkeleton = () => (
 )
 
 // ─────────────────────────────────────────────
+// Полноэкранный скелетон (первичная загрузка, !ready)
+// ─────────────────────────────────────────────
+
+const StatisticsHeaderSkeleton = () => (
+	<View style={styles.header}>
+		<View style={{ flex: 1, gap: 10, paddingRight: 8 }}>
+			<ShimmerBlock
+				style={{
+					height: 26,
+					width: '56%',
+					maxWidth: 210,
+					borderRadius: 8,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+			<ShimmerBlock
+				style={{
+					height: 14,
+					width: '82%',
+					maxWidth: 280,
+					borderRadius: 5,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+		</View>
+		<View style={styles.headerIcons}>
+			<ShimmerBlock
+				style={{
+					width: 38,
+					height: 38,
+					borderRadius: 12,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+			<ShimmerBlock
+				style={{
+					width: 38,
+					height: 38,
+					borderRadius: 12,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+		</View>
+	</View>
+)
+
+const StatsOverviewSkeletonBlock = () => (
+	<View style={styles.section}>
+		<View style={styles.sectionHeader}>
+			<ShimmerBlock
+				style={{
+					height: 22,
+					width: 200,
+					borderRadius: 6,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+		</View>
+		<View style={styles.statsGrid}>
+			{[0, 1, 2, 3].map(i => (
+				<View key={i} style={[styles.statCard, styles.statCardSkeleton]}>
+					<ShimmerBlock style={styles.statSkeletonIcon} />
+					<ShimmerBlock style={styles.statSkeletonLine} />
+					<ShimmerBlock style={[styles.statSkeletonLine, { width: '70%' }]} />
+				</View>
+			))}
+		</View>
+	</View>
+)
+
+const WorkoutInsightsSkeletonBlock = () => (
+	<View style={styles.section}>
+		<View style={styles.sectionHeader}>
+			<ShimmerBlock
+				style={{
+					height: 22,
+					width: 210,
+					borderRadius: 6,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+		</View>
+		{[
+			{ capW: 155, h: 200, mt: 0 },
+			{ capW: 165, h: 200, mt: 12 },
+			{ capW: 175, h: 220, mt: 12 },
+		].map((row, i) => (
+			<View key={i}>
+				<ShimmerBlock
+					style={{
+						height: 13,
+						width: row.capW,
+						borderRadius: 4,
+						backgroundColor: COLORS.cardLight,
+						marginBottom: 8,
+						marginTop: row.mt,
+					}}
+				/>
+				<View style={styles.chartWrapper}>
+					<ShimmerBlock
+						style={{
+							height: row.h,
+							width: screenWidth - 36,
+							alignSelf: 'center',
+							marginVertical: 12,
+							borderRadius: 12,
+							backgroundColor: COLORS.cardLight,
+						}}
+					/>
+				</View>
+			</View>
+		))}
+	</View>
+)
+
+const BodyMeasurementsSectionSkeleton = () => (
+	<View style={styles.section}>
+		<View
+			style={{
+				display: 'flex',
+				flexDirection: 'row',
+				alignItems: 'center',
+			}}
+		>
+			<View style={{ marginBottom: 10, marginRight: 8 }}>
+				<ShimmerBlock
+					style={{
+						width: 26,
+						height: 26,
+						borderRadius: 13,
+						backgroundColor: COLORS.cardLight,
+					}}
+				/>
+			</View>
+			<View style={styles.sectionHeader}>
+				<ShimmerBlock
+					style={{
+						height: 22,
+						width: 190,
+						borderRadius: 6,
+						backgroundColor: COLORS.cardLight,
+					}}
+				/>
+			</View>
+		</View>
+		<View style={styles.measurementsGrid}>
+			{[0, 1, 2, 3, 4, 5].map(i => (
+				<MeasurementSkeleton key={i} />
+			))}
+		</View>
+	</View>
+)
+
+const RecordsSectionSkeleton = () => (
+	<View style={styles.section}>
+		<View style={styles.sectionHeader}>
+			<ShimmerBlock
+				style={{
+					height: 22,
+					width: 180,
+					borderRadius: 6,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+		</View>
+		<View style={styles.recordsGrid}>
+			{[0, 1, 2, 3].map(i => (
+				<RecordSkeleton key={i} />
+			))}
+		</View>
+	</View>
+)
+
+const StatisticsScreenSkeleton = () => (
+	<>
+		<StatisticsHeaderSkeleton />
+		<StatsOverviewSkeletonBlock />
+		<WorkoutInsightsSkeletonBlock />
+		<View style={styles.section}>
+			<View style={styles.sectionHeader}>
+				<ShimmerBlock
+					style={{
+						height: 22,
+						width: 160,
+						borderRadius: 6,
+						backgroundColor: COLORS.cardLight,
+					}}
+				/>
+			</View>
+			<ChartSkeleton />
+		</View>
+		<BodyMeasurementsSectionSkeleton />
+		<RecordsSectionSkeleton />
+	</>
+)
+
+// ─────────────────────────────────────────────
 // Основной компонент
 // ─────────────────────────────────────────────
 export default function StatisticsTab() {
@@ -892,7 +1088,10 @@ export default function StatisticsTab() {
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<ScrollView showsVerticalScrollIndicator={false}>
+			<ScrollView
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: 32 }}
+			>
 				{/* Header */}
 				<View style={styles.header}>
 					<View style={{ flex: 1 }}>
@@ -926,9 +1125,7 @@ export default function StatisticsTab() {
 				</View>
 
 				{!ready ? (
-					<View style={styles.progressLoadingBlock}>
-						<ActivityIndicator size='large' color={COLORS.primary} />
-					</View>
+					<StatisticsScreenSkeleton />
 				) : !hasWorkouts ? (
 					<View style={styles.emptyHero}>
 						<View style={styles.emptyHeroIconWrap}>
@@ -1168,6 +1365,8 @@ export default function StatisticsTab() {
 								<MeasurementSkeleton />
 								<MeasurementSkeleton />
 								<MeasurementSkeleton />
+								<MeasurementSkeleton />
+								<MeasurementSkeleton />
 							</>
 						) : bodyMeasurements.length === 0 ? (
 							<View style={styles.emptyContainer}>
@@ -1233,6 +1432,7 @@ export default function StatisticsTab() {
 					<View style={styles.recordsGrid}>
 						{loading.records ? (
 							<>
+								<RecordSkeleton />
 								<RecordSkeleton />
 								<RecordSkeleton />
 								<RecordSkeleton />
@@ -1632,12 +1832,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: '#121212',
-	},
-	progressLoadingBlock: {
-		minHeight: 280,
-		justifyContent: 'center',
-		alignItems: 'center',
-		paddingVertical: 48,
 	},
 	emptyHero: {
 		alignItems: 'center',

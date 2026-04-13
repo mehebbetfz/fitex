@@ -9,6 +9,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "ota": "node ./scripts/eas-update.js",
     "eas:update": "eas update --channel production --non-interactive --auto",
     "eas:build:ios": "eas build --platform ios --profile production --non-interactive --auto-submit"
   },
@@ -37,6 +38,8 @@
     "expo-font": "~14.0.10",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
+    "expo-image-manipulator": "~14.0.8",
+    "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.11",
     "expo-network": "~8.0.8",

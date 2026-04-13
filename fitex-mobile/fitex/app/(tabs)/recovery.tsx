@@ -7,7 +7,7 @@ import {
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
 import { formatDate } from '@/scripts/database'
-import { useFocusEffect } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Animated,
@@ -19,6 +19,7 @@ import {
 	View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useAuth } from '../contexts/auth-context'
 import { useDatabase } from '../contexts/database-context'
 
 const { width } = Dimensions.get('window')
@@ -634,6 +635,7 @@ export default function RecoveryTab() {
 	const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 	const { t } = useLanguage()
+	const { user } = useAuth()
 
 	const { recoveryData, refreshRecoveryWithRecalc } = useDatabase()
 
@@ -656,6 +658,17 @@ export default function RecoveryTab() {
 			return () => clearTimeout(timer)
 		}
 	}, [hasData, loading])
+
+	const bodyStatsSummary = useMemo(() => {
+		if (!user) return null
+		const parts: string[] = []
+		if (user.heightCm != null && user.heightCm > 0)
+			parts.push(`${user.heightCm} cm`)
+		if (user.weightKg != null && user.weightKg > 0)
+			parts.push(`${user.weightKg} kg`)
+		if (user.age != null && user.age > 0) parts.push(String(user.age))
+		return parts.length > 0 ? parts.join(' · ') : null
+	}, [user])
 
 	const getMuscleGroupStats = useCallback(
 		(
@@ -837,6 +850,28 @@ export default function RecoveryTab() {
 					)}
 				</View>
 
+				{user ? (
+					<TouchableOpacity
+						style={styles.bodyStatsCard}
+						onPress={() =>
+							router.push('/(auth)/(routes)/edit-body-profile')
+						}
+						activeOpacity={0.7}
+					>
+						<View style={{ flex: 1 }}>
+							<Text style={styles.bodyStatsTitle}>
+								{t('recovery', 'bodyStatsCard')}
+							</Text>
+							<Text style={styles.bodyStatsSubtitle}>
+								{bodyStatsSummary ?? t('recovery', 'bodyStatsEmpty')}
+							</Text>
+						</View>
+						<Text style={styles.bodyStatsEdit}>
+							{t('recovery', 'bodyStatsEdit')}
+						</Text>
+					</TouchableOpacity>
+				) : null}
+
 				{/* Quick stats */}
 				<View style={styles.statsRow}>
 					{loading ? (
@@ -1017,6 +1052,26 @@ const styles = StyleSheet.create({
 	},
 	pillDot: { width: 7, height: 7, borderRadius: 3.5 },
 	pillText: { fontSize: 13, fontWeight: '600', color: COLORS.primary },
+
+	bodyStatsCard: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginHorizontal: 8,
+		marginTop: 12,
+		padding: 14,
+		backgroundColor: COLORS.card,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+		gap: 12,
+	},
+	bodyStatsTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+	bodyStatsSubtitle: {
+		fontSize: 13,
+		color: COLORS.textSecondary,
+		marginTop: 4,
+	},
+	bodyStatsEdit: { fontSize: 14, fontWeight: '600', color: COLORS.primary },
 
 	// Stats row
 	statsRow: {

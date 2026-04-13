@@ -50,6 +50,9 @@ GoogleService-Info.plist
 .temp
 .tmp
 
+# Local avatar uploads (POST /auth/avatar без S3)
+uploads/
+
 # Runtime data
 pids
 *.pid

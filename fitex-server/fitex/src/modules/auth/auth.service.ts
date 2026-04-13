@@ -5,8 +5,10 @@ import * as appleSignin from 'apple-signin-auth'
 import * as bcrypt from 'bcrypt'
 import { OAuth2Client } from 'google-auth-library'
 import { Model } from 'mongoose'
+import { UpdateProfileDto } from 'src/dtos/update-profile.dto'
 import { User, UserDocument } from 'src/models/user.schema'
 import { EmailService } from '../email/email.service'
+import { AvatarStorageService } from './avatar-storage.service'
 
 @Injectable()
 export class AuthService {
@@ -16,8 +18,21 @@ export class AuthService {
 		@InjectModel(User.name) private userModel: Model<UserDocument>,
 		private jwtService: JwtService,
 		private emailService: EmailService,
+		private avatarStorage: AvatarStorageService,
 	) {
 		this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+	}
+
+	async uploadAvatar(userId: string, file: Express.Multer.File) {
+		if (!file?.buffer?.length) throw new BadRequestException('file is required')
+		const url = await this.avatarStorage.saveProcessedAvatar(userId, file.buffer, file.mimetype)
+		const user = await this.userModel.findById(userId)
+		if (!user) throw new UnauthorizedException('User not found')
+		user.avatarUrl = url
+		await user.save()
+		const u = await this.clearExpiredPremium(userId)
+		if (!u) throw new UnauthorizedException('User not found')
+		return this.toPublicUser(u)
 	}
 
 	private generateCode(): string {
@@ -299,7 +314,36 @@ export class AuthService {
 			trialEndsAt: user.trialEndsAt ?? null,
 			// С активной подпиской не показываем trial paywall (клиент редиректит по isNewUser).
 			isNewUser: premiumActive ? false : (user.isNewUser ?? true),
+			heightCm: user.heightCm ?? null,
+			weightKg: user.weightKg ?? null,
+			age: user.age ?? null,
+			sex: user.sex ?? null,
+			fitnessGoal: user.fitnessGoal ?? null,
+			activityLevel: user.activityLevel ?? null,
+			bodyStatsCompleted: !!user.bodyStatsCompleted,
 		}
+	}
+
+	async updateProfile(userId: string, dto: UpdateProfileDto) {
+		const user = await this.userModel.findById(userId)
+		if (!user) throw new UnauthorizedException('User not found')
+
+		const keys: (keyof UpdateProfileDto)[] = [
+			'heightCm',
+			'weightKg',
+			'age',
+			'sex',
+			'fitnessGoal',
+			'activityLevel',
+			'bodyStatsCompleted',
+		]
+		for (const k of keys) {
+			if (dto[k] !== undefined) (user as any)[k] = dto[k]
+		}
+		await user.save()
+		const u = await this.clearExpiredPremium(userId)
+		if (!u) throw new UnauthorizedException('User not found')
+		return this.toPublicUser(u)
 	}
 
 	async login(user: UserDocument) {

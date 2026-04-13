@@ -6,6 +6,10 @@ import {
 	exportWorkoutsToCsv,
 } from '@/services/export'
 import {
+	pickSquareAvatarJpeg,
+	uploadProfileAvatar,
+} from '@/services/avatar-upload'
+import {
 	DEFAULT_SETTINGS,
 	formatTime,
 	loadNotificationSettings,
@@ -13,6 +17,7 @@ import {
 	toggleWorkoutReminders,
 } from '@/services/notifications'
 import { Ionicons } from '@expo/vector-icons'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -125,6 +130,39 @@ const FadeIn = ({
 // ─────────────────────────────────────────────
 // Skeleton blocks
 // ─────────────────────────────────────────────
+const HeaderSkeleton = () => (
+	<View style={styles.header}>
+		<View style={{ flex: 1, gap: 10, paddingRight: 12 }}>
+			<ShimmerBlock
+				style={{
+					height: 28,
+					width: '58%',
+					maxWidth: 220,
+					borderRadius: 8,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+			<ShimmerBlock
+				style={{
+					height: 15,
+					width: '82%',
+					maxWidth: 280,
+					borderRadius: 5,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+		</View>
+		<ShimmerBlock
+			style={{
+				height: 34,
+				width: 88,
+				borderRadius: 20,
+				backgroundColor: COLORS.cardLight,
+			}}
+		/>
+	</View>
+)
+
 const UserCardSkeleton = () => (
 	<View style={[styles.userCard, { borderColor: COLORS.border }]}>
 		<ShimmerBlock
@@ -153,7 +191,35 @@ const UserCardSkeleton = () => (
 					backgroundColor: COLORS.cardLight,
 				}}
 			/>
+			<ShimmerBlock
+				style={{
+					height: 12,
+					width: '65%',
+					borderRadius: 4,
+					backgroundColor: COLORS.cardLight,
+					marginTop: 2,
+				}}
+			/>
 		</View>
+	</View>
+)
+
+/** Заголовок секции + N строк в стиле SettingsItem */
+const SettingsSectionSkeleton = ({ rows = 2 }: { rows?: number }) => (
+	<View style={styles.section}>
+		<ShimmerBlock
+			style={{
+				height: 18,
+				width: 140,
+				borderRadius: 5,
+				backgroundColor: COLORS.cardLight,
+				marginBottom: 12,
+				marginLeft: 8,
+			}}
+		/>
+		{Array.from({ length: rows }, (_, i) => (
+			<SettingsItemSkeleton key={i} />
+		))}
 	</View>
 )
 
@@ -185,6 +251,14 @@ const PremiumBlockSkeleton = () => (
 				style={{
 					height: 13,
 					width: '80%',
+					borderRadius: 4,
+					backgroundColor: COLORS.cardLight,
+				}}
+			/>
+			<ShimmerBlock
+				style={{
+					height: 12,
+					width: '62%',
 					borderRadius: 4,
 					backgroundColor: COLORS.cardLight,
 				}}
@@ -373,7 +447,7 @@ const TimePickerModal = ({
 // Main component
 // ─────────────────────────────────────────────
 export default function ProfileScreen() {
-	const { user, signOut, refreshProfile } = useAuth()
+	const { user, signOut, refreshProfile, updateUser } = useAuth()
 	const { t, language, setLanguage } = useLanguage()
 	const {
 		syncWithServer,
@@ -393,6 +467,7 @@ export default function ProfileScreen() {
 
 	// Экспорт
 	const [exporting, setExporting] = useState(false)
+	const [avatarBusy, setAvatarBusy] = useState(false)
 
 	const premium = user ? hasActivePremium(user) : false
 
@@ -521,6 +596,28 @@ export default function ProfileScreen() {
 
 	const handleUpgrade = () => router.push('/(auth)/trial-paywall' as any)
 
+	const handleChangeAvatar = useCallback(async () => {
+		const picked = await pickSquareAvatarJpeg()
+		if (!picked.ok) {
+			if (picked.reason === 'permission') {
+				Alert.alert(
+					t('profile', 'permissionsTitle'),
+					t('profile', 'avatarPhotoPermission'),
+				)
+			}
+			return
+		}
+		setAvatarBusy(true)
+		try {
+			const next = await uploadProfileAvatar(picked.uri)
+			updateUser(next)
+		} catch {
+			Alert.alert(t('common', 'error'), t('profile', 'avatarUploadError'))
+		} finally {
+			setAvatarBusy(false)
+		}
+	}, [t, updateUser])
+
 	const openSubscriptionStore = useCallback(async () => {
 		const url =
 			Platform.OS === 'ios'
@@ -572,22 +669,15 @@ export default function ProfileScreen() {
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={styles.scrollContent}
 			>
-				{/* Header — always visible, avatar pill shimmer while loading */}
-				<View style={styles.header}>
-					<View>
-						<Text style={styles.title}>{t('profile', 'title')}</Text>
-						<Text style={styles.subtitle}>{t('profile', 'subtitle')}</Text>
-					</View>
-					{loading ? (
-						<ShimmerBlock
-							style={{
-								height: 34,
-								width: 80,
-								borderRadius: 20,
-								backgroundColor: COLORS.cardLight,
-							}}
-						/>
-					) : (
+				{/* Header — при загрузке весь блок шиммер (заголовок + статус) */}
+				{loading ? (
+					<HeaderSkeleton />
+				) : (
+					<View style={styles.header}>
+						<View>
+							<Text style={styles.title}>{t('profile', 'title')}</Text>
+							<Text style={styles.subtitle}>{t('profile', 'subtitle')}</Text>
+						</View>
 						<FadeIn show={!loading}>
 							<View
 								style={{
@@ -629,8 +719,8 @@ export default function ProfileScreen() {
 								</Text>
 							</View>
 						</FadeIn>
-					)}
-				</View>
+					</View>
+				)}
 
 				{/* User card */}
 				{loading ? (
@@ -638,9 +728,28 @@ export default function ProfileScreen() {
 				) : (
 					<FadeIn show={!loading}>
 						<View style={styles.userCard}>
-							<View style={styles.avatarContainer}>
-								<Text style={styles.avatarText}>{userInitial}</Text>
-							</View>
+							<TouchableOpacity
+								style={styles.avatarContainer}
+								onPress={handleChangeAvatar}
+								disabled={avatarBusy}
+								activeOpacity={0.82}
+							>
+								{user?.avatarUrl ? (
+									<Image
+										source={{ uri: user.avatarUrl }}
+										style={styles.avatarImage}
+										contentFit='cover'
+										transition={200}
+									/>
+								) : (
+									<Text style={styles.avatarText}>{userInitial}</Text>
+								)}
+								{avatarBusy ? (
+									<View style={styles.avatarBusyOverlay}>
+										<ActivityIndicator color={COLORS.text} size='small' />
+									</View>
+								) : null}
+							</TouchableOpacity>
 							<View style={styles.userInfo}>
 								<Text style={styles.userName}>
 								{user?.firstName
@@ -648,6 +757,7 @@ export default function ProfileScreen() {
 									: t('profile', 'defaultUser')}
 								</Text>
 								<Text style={styles.userEmail}>{user?.email || '—'}</Text>
+								<Text style={styles.avatarHint}>{t('profile', 'avatarChangeHint')}</Text>
 							</View>
 						</View>
 					</FadeIn>
@@ -699,7 +809,10 @@ export default function ProfileScreen() {
 				)}
 
 				{/* Подписка: отмена / управление через магазин (IAP) */}
-				{!loading && premium && (
+				{loading ? (
+					<SettingsSectionSkeleton rows={1} />
+				) : (
+					premium && (
 					<FadeIn show={!loading}>
 						<View style={styles.section}>
 							<Text style={styles.sectionTitle}>{t('profile', 'subscription')}</Text>
@@ -712,24 +825,12 @@ export default function ProfileScreen() {
 							/>
 						</View>
 					</FadeIn>
+					)
 				)}
 
 				{/* Sync section (premium only) */}
 				{loading ? (
-					<>
-						<ShimmerBlock
-							style={{
-								height: 16,
-								width: 60,
-								borderRadius: 4,
-								backgroundColor: COLORS.cardLight,
-								marginLeft: 8,
-								marginBottom: 12,
-								marginTop: 10,
-							}}
-						/>
-						<SettingsItemSkeleton />
-					</>
+					<SettingsSectionSkeleton rows={2} />
 				) : premium ? (
 					<FadeIn show={!loading}>
 						<View style={styles.section}>
@@ -757,7 +858,9 @@ export default function ProfileScreen() {
 				) : null}
 
 			{/* Rating + Marketplace + GymPass section */}
-			{!loading && (
+			{loading ? (
+				<SettingsSectionSkeleton rows={1} />
+			) : (
 				<FadeIn show={!loading}>
 					<View style={styles.section}>
 						<SettingsItem
@@ -773,7 +876,9 @@ export default function ProfileScreen() {
 			)}
 
 			{/* Notifications section */}
-			{!loading && (
+			{loading ? (
+				<SettingsSectionSkeleton rows={2} />
+			) : (
 				<FadeIn show={!loading}>
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>{t('profile', 'notifications')}</Text>
@@ -814,7 +919,9 @@ export default function ProfileScreen() {
 				)}
 
 				{/* Export section */}
-				{!loading && (
+				{loading ? (
+					<SettingsSectionSkeleton rows={2} />
+				) : (
 					<FadeIn show={!loading}>
 						<View style={styles.section}>
 							<Text style={styles.sectionTitle}>{t('profile', 'export')}</Text>
@@ -844,41 +951,44 @@ export default function ProfileScreen() {
 				)}
 
 				{/* Language section */}
-				{!loading && (
+				{loading ? (
+					<SettingsSectionSkeleton rows={3} />
+				) : (
 					<FadeIn show={!loading}>
 						<View style={styles.section}>
 							<Text style={styles.sectionTitle}>{t('profile', 'language')}</Text>
-							{(['ru', 'en', 'az'] as Language[]).map(lang => (
+							{(['ru', 'en', 'az'] as Language[]).map(lang => {
+								const selected = lang === language
+								return (
 								<SettingsItem
 									key={lang}
 									icon='language-outline'
 									title={`${LANGUAGE_FLAGS[lang]} ${LANGUAGE_NAMES[lang]}`}
-									subtitle={lang === language ? '✓' : ''}
 									onPress={() => handleLanguageChange(lang)}
 									showChevron={false}
-									iconColor={lang === language ? COLORS.primary : COLORS.textSecondary}
+									iconColor={selected ? COLORS.primary : COLORS.textSecondary}
+									rightElement={
+										<View
+											style={[
+												styles.langCheckBox,
+												selected && styles.langCheckBoxSelected,
+											]}
+										>
+											{selected ? (
+												<Ionicons name='checkmark' size={16} color={COLORS.text} />
+											) : null}
+										</View>
+									}
 								/>
-							))}
+								)
+							})}
 						</View>
 					</FadeIn>
 				)}
 
 				{/* Sign out */}
 				{loading ? (
-					<>
-						<ShimmerBlock
-							style={{
-								height: 16,
-								width: 50,
-								borderRadius: 4,
-								backgroundColor: COLORS.cardLight,
-								marginLeft: 8,
-								marginBottom: 12,
-								marginTop: 10,
-							}}
-						/>
-						<SettingsItemSkeleton />
-					</>
+					<SettingsSectionSkeleton rows={1} />
 				) : (
 					<FadeIn show={!loading}>
 						<Text style={styles.sectionTitle}>{t('profile', 'signOutSection')}</Text>
@@ -934,8 +1044,25 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginRight: 16,
+		overflow: 'hidden',
+	},
+	avatarImage: {
+		width: '100%',
+		height: '100%',
+		borderRadius: 35,
+	},
+	avatarBusyOverlay: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: 'rgba(0,0,0,0.45)',
+		justifyContent: 'center',
+		alignItems: 'center',
 	},
 	avatarText: { fontSize: 30, fontWeight: 'bold', color: COLORS.text },
+	avatarHint: {
+		fontSize: 12,
+		color: COLORS.textSecondary,
+		marginTop: 6,
+	},
 	userInfo: { flex: 1 },
 	userName: { fontSize: 20, fontWeight: '600', color: COLORS.text },
 	userEmail: { fontSize: 15, color: COLORS.textSecondary, marginTop: 2 },
@@ -1013,6 +1140,20 @@ const styles = StyleSheet.create({
 	settingsContent: { flex: 1 },
 	settingsTitle: { fontSize: 16, fontWeight: '500', color: COLORS.text },
 	settingsSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+	langCheckBox: {
+		width: 26,
+		height: 26,
+		borderRadius: 7,
+		borderWidth: 2,
+		borderColor: COLORS.border,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: 'transparent',
+	},
+	langCheckBoxSelected: {
+		borderColor: COLORS.primary,
+		backgroundColor: COLORS.primary,
+	},
 })
 
 const pickerStyles = StyleSheet.create({

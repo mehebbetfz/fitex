@@ -9,6 +9,7 @@ import { EmailModule } from '../email/email.module'
 import { UserModule } from '../user/user.module'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import { AvatarStorageService } from './avatar-storage.service'
 
 @Module({
 	imports: [
@@ -27,7 +28,7 @@ import { AuthService } from './auth.service'
 		EmailModule,
 	],
 	controllers: [AuthController],
-	providers: [AuthService, JwtStrategy],
+	providers: [AuthService, AvatarStorageService, JwtStrategy],
 	exports: [AuthService],
 })
 export class AuthModule { }

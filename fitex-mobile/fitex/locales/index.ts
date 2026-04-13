@@ -658,6 +658,41 @@ export interface Translations {
     legendRest: string
     fullyRecovered: string
     timeLeft: string
+    bodyStatsCard: string
+    bodyStatsEdit: string
+    bodyStatsEmpty: string
+  }
+  bodyProfile: {
+    onboardingTitle: string
+    onboardingSubtitle: string
+    editTitle: string
+    height: string
+    weight: string
+    age: string
+    sex: string
+    goal: string
+    activity: string
+    save: string
+    skip: string
+    cm: string
+    kg: string
+    years: string
+    sexMale: string
+    sexFemale: string
+    sexOther: string
+    sexUnspecified: string
+    goalLose: string
+    goalGain: string
+    goalMaintain: string
+    goalHealth: string
+    goalUnspecified: string
+    actSedentary: string
+    actLight: string
+    actModerate: string
+    actActive: string
+    actVery: string
+    actUnspecified: string
+    fillRequired: string
   }
   history: {
     title: string
@@ -732,6 +767,10 @@ export interface Translations {
     openStoreButton: string
     refreshSubscriptionStatus: string
     subscriptionStatusRefreshed: string
+    /** Аватар */
+    avatarPhotoPermission: string
+    avatarUploadError: string
+    avatarChangeHint: string
   }
   trial: {
     badge: string
@@ -1422,6 +1461,41 @@ export const ru: Translations = {
     legendRest: 'Отдых',
     fullyRecovered: 'Восстановлен',
     timeLeft: 'Осталось',
+    bodyStatsCard: 'Мои параметры',
+    bodyStatsEdit: 'Изменить',
+    bodyStatsEmpty: 'Укажите рост, вес и возраст',
+  },
+  bodyProfile: {
+    onboardingTitle: 'Ваши данные',
+    onboardingSubtitle: 'Нужны для расчётов нагрузки и прогресса',
+    editTitle: 'Параметры тела',
+    height: 'Рост',
+    weight: 'Вес',
+    age: 'Возраст',
+    sex: 'Пол',
+    goal: 'Цель',
+    activity: 'Активность',
+    save: 'Сохранить',
+    skip: 'Пропустить',
+    cm: 'см',
+    kg: 'кг',
+    years: 'лет',
+    sexMale: 'Мужской',
+    sexFemale: 'Женский',
+    sexOther: 'Другое',
+    sexUnspecified: 'Не указывать',
+    goalLose: 'Похудеть',
+    goalGain: 'Набрать массу',
+    goalMaintain: 'Поддерживать форму',
+    goalHealth: 'Здоровье',
+    goalUnspecified: 'Не указывать',
+    actSedentary: 'Малоактивный',
+    actLight: 'Лёгкая',
+    actModerate: 'Умеренная',
+    actActive: 'Высокая',
+    actVery: 'Очень высокая',
+    actUnspecified: 'Не указывать',
+    fillRequired: 'Укажите рост, вес и возраст',
   },
   history: {
     title: 'Вся история',
@@ -1497,6 +1571,10 @@ export const ru: Translations = {
     openStoreButton: 'Открыть магазин',
     refreshSubscriptionStatus: 'Обновить статус',
     subscriptionStatusRefreshed: 'Статус обновлён',
+    avatarPhotoPermission:
+      'Чтобы установить фото профиля, разрешите доступ к галерее в настройках устройства.',
+    avatarUploadError: 'Не удалось загрузить фото. Попробуйте другое изображение.',
+    avatarChangeHint: 'Нажмите на фото, чтобы изменить',
   },
   trial: {
     badge: 'Бесплатный период',
@@ -2188,6 +2266,41 @@ export const en: Translations = {
     legendRest: 'Rest',
     fullyRecovered: 'Recovered',
     timeLeft: 'Left',
+    bodyStatsCard: 'My stats',
+    bodyStatsEdit: 'Edit',
+    bodyStatsEmpty: 'Add height, weight and age',
+  },
+  bodyProfile: {
+    onboardingTitle: 'Your details',
+    onboardingSubtitle: 'Used for load and progress estimates',
+    editTitle: 'Body stats',
+    height: 'Height',
+    weight: 'Weight',
+    age: 'Age',
+    sex: 'Sex',
+    goal: 'Goal',
+    activity: 'Activity',
+    save: 'Save',
+    skip: 'Skip',
+    cm: 'cm',
+    kg: 'kg',
+    years: 'years',
+    sexMale: 'Male',
+    sexFemale: 'Female',
+    sexOther: 'Other',
+    sexUnspecified: 'Prefer not to say',
+    goalLose: 'Lose weight',
+    goalGain: 'Build muscle',
+    goalMaintain: 'Stay in shape',
+    goalHealth: 'Health',
+    goalUnspecified: 'Prefer not to say',
+    actSedentary: 'Sedentary',
+    actLight: 'Light',
+    actModerate: 'Moderate',
+    actActive: 'Active',
+    actVery: 'Very active',
+    actUnspecified: 'Prefer not to say',
+    fillRequired: 'Enter height, weight and age',
   },
   history: {
     title: 'Full History',
@@ -2263,6 +2376,10 @@ export const en: Translations = {
     openStoreButton: 'Open store',
     refreshSubscriptionStatus: 'Refresh status',
     subscriptionStatusRefreshed: 'Status updated',
+    avatarPhotoPermission:
+      'To set a profile photo, allow photo library access in your device settings.',
+    avatarUploadError: 'Could not upload the photo. Try another image.',
+    avatarChangeHint: 'Tap the photo to change',
   },
   trial: {
     badge: 'Free Trial',
@@ -2954,6 +3071,41 @@ export const az: Translations = {
     legendRest: 'İstirahət',
     fullyRecovered: 'Bərpa edilib',
     timeLeft: 'Qaldı',
+    bodyStatsCard: 'Parametrlərim',
+    bodyStatsEdit: 'Dəyiş',
+    bodyStatsEmpty: 'Boy, çəki və yaş qeyd edin',
+  },
+  bodyProfile: {
+    onboardingTitle: 'Məlumatlarınız',
+    onboardingSubtitle: 'Yük və tərəqqi üçün lazımdır',
+    editTitle: 'Bədən parametrləri',
+    height: 'Boy',
+    weight: 'Çəki',
+    age: 'Yaş',
+    sex: 'Cins',
+    goal: 'Məqsəd',
+    activity: 'Aktivlik',
+    save: 'Saxla',
+    skip: 'Keç',
+    cm: 'sm',
+    kg: 'kq',
+    years: 'yaş',
+    sexMale: 'Kişi',
+    sexFemale: 'Qadın',
+    sexOther: 'Digər',
+    sexUnspecified: 'Göstərmə',
+    goalLose: 'Arıqlamaq',
+    goalGain: 'Kütlə yığmaq',
+    goalMaintain: 'Formanı saxlamaq',
+    goalHealth: 'Sağlamlıq',
+    goalUnspecified: 'Göstərmə',
+    actSedentary: 'Az hərəkətli',
+    actLight: 'Yüngül',
+    actModerate: 'Orta',
+    actActive: 'Yüksək',
+    actVery: 'Çox yüksək',
+    actUnspecified: 'Göstərmə',
+    fillRequired: 'Boy, çəki və yaş daxil edin',
   },
   history: {
     title: 'Tam tarixçə',
@@ -3029,6 +3181,10 @@ export const az: Translations = {
     openStoreButton: 'Mağazan aç',
     refreshSubscriptionStatus: 'Statusu yenilə',
     subscriptionStatusRefreshed: 'Status yeniləndi',
+    avatarPhotoPermission:
+      'Profil şəkli üçün cihaz ayarlarında qalereyaya icazə verin.',
+    avatarUploadError: 'Şəkli yükləmək mümkün olmadı. Başqa şəkil yoxlayın.',
+    avatarChangeHint: 'Dəyişmək üçün şəkilə toxunun',
   },
   trial: {
     badge: 'Pulsuz Sınaq',
