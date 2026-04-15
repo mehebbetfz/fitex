@@ -54,6 +54,19 @@ const TIER_ICONS: Record<TierName, { name: string; color: string }> = {
 	elite: { name: 'trophy', color: '#FF9500' },
 }
 
+function tierIconEntry(name: string): (typeof TIER_ICONS)[TierName] {
+	if (name in TIER_ICONS) return TIER_ICONS[name as TierName]
+	return TIER_ICONS.beginner
+}
+
+/** Только http(s) — иначе нативный <Image> может падать в релизе. */
+function safeRemoteAvatarUri(raw: string | null | undefined): string | null {
+	if (!raw || typeof raw !== 'string') return null
+	const u = raw.trim()
+	if (u.length < 8) return null
+	return /^https?:\/\//i.test(u) ? u : null
+}
+
 const CAT_ICONS: Record<string, { icon: string; color: string }> = {
 	volume: { icon: 'barbell-outline', color: '#FF9F0A' },
 	workouts: { icon: 'fitness-outline', color: '#34C759' },
@@ -137,13 +150,14 @@ function toOpenUrl(kind: keyof AthleteProfile['social'], raw: string): string | 
 
 const ProgressBar = ({ percent, color, height = 8 }: { percent: number; color: string; height?: number }) => {
 	const anim = useRef(new Animated.Value(0)).current
+	const safePct = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0
 	useEffect(() => {
 		Animated.timing(anim, {
-			toValue: Math.min(100, Math.max(0, percent)) / 100,
+			toValue: safePct / 100,
 			duration: 700,
 			useNativeDriver: false,
 		}).start()
-	}, [percent, anim])
+	}, [safePct, anim])
 	const width = anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] })
 	return (
 		<View style={{ height, backgroundColor: C.cardLight, borderRadius: height / 2, overflow: 'hidden' }}>
@@ -153,8 +167,8 @@ const ProgressBar = ({ percent, color, height = 8 }: { percent: number; color: s
 }
 
 const TierLevelDots = ({ tierName, currentLevel }: { tierName: TierName; currentLevel: number }) => {
-	const tier = TIERS.find(t => t.name === tierName)!
-	const tierLevels = LEVELS.filter(l => l.tierName === tierName)
+	const tier = TIERS.find(t => t.name === tierName) ?? TIERS[0]
+	const tierLevels = LEVELS.filter(l => l.tierName === tier.name)
 	return (
 		<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 10 }}>
 			{tierLevels.map(lv => {
@@ -177,8 +191,21 @@ const TierLevelDots = ({ tierName, currentLevel }: { tierName: TierName; current
 	)
 }
 
+function normalizeUserIdParam(raw: string | string[] | undefined): string {
+	let s = ''
+	if (raw == null) return ''
+	if (Array.isArray(raw)) s = raw[0] ?? ''
+	else s = typeof raw === 'string' ? raw : ''
+	try {
+		return decodeURIComponent(s)
+	} catch {
+		return s
+	}
+}
+
 export default function AthleteProfileScreen() {
-	const { userId } = useLocalSearchParams<{ userId: string }>()
+	const params = useLocalSearchParams<{ userId: string | string[] }>()
+	const userId = normalizeUserIdParam(params.userId)
 	const { t } = useLanguage()
 	const [data, setData] = useState<AthleteProfile | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -194,13 +221,17 @@ export default function AthleteProfileScreen() {
 				platinum: t('rating', 'tierPlatinum'),
 				elite: t('rating', 'tierElite'),
 			}
-			return map[name]
+			return map[name] ?? map.beginner
 		},
 		[t],
 	)
 
 	const load = useCallback(async () => {
-		if (!userId) return
+		if (!userId) {
+			setLoading(false)
+			setError(true)
+			return
+		}
 		setLoading(true)
 		setError(false)
 		try {
@@ -220,14 +251,20 @@ export default function AthleteProfileScreen() {
 
 	const rating = useMemo((): RatingData | null => {
 		if (!data) return null
-		const stats: db.WorkoutStats = {
-			total_workouts: data.lifetime.workouts,
-			total_sets: data.lifetime.sets,
-			total_volume: data.lifetime.volume,
-			streak_days: data.lifetime.streakDays,
-			avg_duration: data.lifetime.avgDuration ?? 0,
+		try {
+			const stats: db.WorkoutStats = {
+				total_workouts: Math.max(0, Math.floor(Number(data.lifetime.workouts) || 0)),
+				total_sets: Math.max(0, Math.floor(Number(data.lifetime.sets) || 0)),
+				total_volume: Math.max(0, Number(data.lifetime.volume) || 0),
+				streak_days: Math.max(0, Math.floor(Number(data.lifetime.streakDays) || 0)),
+				avg_duration: Math.max(0, Number(data.lifetime.avgDuration) || 0),
+			}
+			const prCount = Math.max(0, Math.floor(Number(data.lifetime.prCount) || 0))
+			return buildRatingSnapshotFromStats(stats, prCount)
+		} catch (e) {
+			console.warn('[AthleteProfile] buildRatingSnapshotFromStats failed', e)
+			return null
 		}
-		return buildRatingSnapshotFromStats(stats, data.lifetime.prCount)
 	}, [data])
 
 	const social = useMemo(
@@ -245,6 +282,11 @@ export default function AthleteProfileScreen() {
 
 	const name =
 		data ? [data.firstName, data.lastName].filter(Boolean).join(' ') || '—' : ''
+
+	const avatarHttps = useMemo(
+		() => (data ? safeRemoteAvatarUri(data.avatarUrl) : null),
+		[data],
+	)
 
 	const openLink = async (kind: keyof AthleteProfile['social'], raw: string) => {
 		const url = toOpenUrl(kind, raw)
@@ -308,8 +350,8 @@ export default function AthleteProfileScreen() {
 							]}
 						>
 							<View style={s.avatarWrap}>
-								{data.avatarUrl ? (
-									<Image source={{ uri: data.avatarUrl }} style={s.avatar} />
+								{avatarHttps ? (
+									<Image source={{ uri: avatarHttps }} style={s.avatar} />
 								) : (
 									<View style={[s.avatar, s.avatarPh]}>
 										<Text style={s.avatarIn}>{name.slice(0, 2).toUpperCase() || '?'}</Text>
@@ -361,9 +403,9 @@ export default function AthleteProfileScreen() {
 								]}
 							>
 								<Ionicons
-									name={TIER_ICONS[rating.tier.name].name as any}
+									name={tierIconEntry(rating.tier.name).name as any}
 									size={30}
-									color={TIER_ICONS[rating.tier.name].color}
+									color={tierIconEntry(rating.tier.name).color}
 								/>
 							</View>
 							<View style={{ flex: 1, marginLeft: 12 }}>
@@ -449,8 +491,8 @@ export default function AthleteProfileScreen() {
 								{ key: 'records', label: t('rating', 'catRecords'), val: String(data.lifetime.prCount) },
 							] as const
 						).map(cat => {
-							const tier = rating.categoryTiers[cat.key]
-							const ic = CAT_ICONS[cat.key]
+							const tier = rating.categoryTiers[cat.key] ?? rating.tier
+							const ic = CAT_ICONS[cat.key] ?? CAT_ICONS.volume
 							return (
 								<View
 									key={cat.key}
@@ -462,7 +504,7 @@ export default function AthleteProfileScreen() {
 									<Text style={s.catLabel}>{cat.label}</Text>
 									<Text style={s.catValue}>{cat.val}</Text>
 									<View style={[s.catTierBadge, { backgroundColor: `${tier.color}22` }]}>
-										<Ionicons name={TIER_ICONS[tier.name].name as any} size={10} color={tier.color} />
+										<Ionicons name={tierIconEntry(tier.name).name as any} size={10} color={tier.color} />
 										<Text style={[s.catTierText, { color: tier.color }]}> {tierLabel(tier.name)}</Text>
 									</View>
 								</View>

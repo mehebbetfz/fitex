@@ -1,7 +1,21 @@
-import { Type } from 'class-transformer'
-import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
+import { Transform, Type } from 'class-transformer'
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
 
 export class UpdateProfileDto {
+	/** Отображаемое имя (лидерборд, профиль) */
+	@IsOptional()
+	@Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+	@IsString()
+	@MinLength(1)
+	@MaxLength(60)
+	firstName?: string
+
+	@IsOptional()
+	@Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+	@IsString()
+	@MaxLength(60)
+	lastName?: string
+
 	@IsOptional()
 	@Type(() => Number)
 	@IsNumber()

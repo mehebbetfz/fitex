@@ -3,6 +3,7 @@ import { SyncProvider } from '@/app/contexts/sync-context'
 import OtaUpdateGate from '@/components/ota-update-gate'
 import SyncBanner from '@/components/sync-banner'
 import { LanguageProvider } from '@/contexts/language-context'
+import { applyPendingEASUpdateBeforeUI } from '@/services/startup-updates'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
@@ -19,6 +20,7 @@ function RootLayoutContent() {
 	useEffect(() => {
 		async function prepare() {
 			try {
+				await applyPendingEASUpdateBeforeUI()
 				await new Promise(resolve => setTimeout(resolve, 1500))
 			} catch (e) {
 				console.warn('Ошибка подготовки приложения', e)

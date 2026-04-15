@@ -743,6 +743,7 @@ export interface Translations {
     subtitle: string
     ratingEntry: string
     ratingEntrySubtitle: string
+    ratingSocialSection: string
     marketplaceEntry: string
     marketplaceSubtitle: string
     gymPassEntry: string
@@ -784,6 +785,18 @@ export interface Translations {
     hours: string
     minutes: string
     defaultUser: string
+    /** Имя и фамилия в приложении и лидерборде */
+    displayNameSection: string
+    displayNameEntry: string
+    displayNameSubtitle: string
+    editNameTitle: string
+    editNameHint: string
+    displayNameFirstLabel: string
+    displayNameLastLabel: string
+    displayNameFirstPh: string
+    displayNameLastPh: string
+    nameFirstRequired: string
+    nameSaveError: string
     /** Подпись к относительному времени до premiumExpiresAt (Intl). */
     nextBillingLabel: string
     subscription: string
@@ -1584,6 +1597,7 @@ export const ru: Translations = {
     subtitle: 'Управляйте аккаунтом',
     ratingEntry: 'Мой рейтинг',
     ratingEntrySubtitle: 'Уровень, достижения и очки',
+    ratingSocialSection: 'Рейтинг и соцсети',
     marketplaceEntry: 'Маркетплейс',
     marketplaceSubtitle: 'Тренеры и планы тренировок',
     gymPassEntry: 'Fitex Pass',
@@ -1625,6 +1639,18 @@ export const ru: Translations = {
     hours: 'Часы',
     minutes: 'Минуты',
     defaultUser: 'Пользователь',
+    displayNameSection: 'Имя',
+    displayNameEntry: 'Имя и фамилия',
+    displayNameSubtitle: 'Как вас видят в приложении и в лидерборде',
+    editNameTitle: 'Имя и фамилия',
+    editNameHint:
+      'Укажите имя и при желании фамилию. Они отображаются в профиле, в лидерборде и у других спортсменов.',
+    displayNameFirstLabel: 'Имя',
+    displayNameLastLabel: 'Фамилия',
+    displayNameFirstPh: 'Например, Алексей',
+    displayNameLastPh: 'Необязательно',
+    nameFirstRequired: 'Введите имя (не менее одного символа).',
+    nameSaveError: 'Не удалось сохранить имя. Попробуйте ещё раз.',
     nextBillingLabel: 'Следующее списание',
     subscription: 'Подписка',
     cancelSubscription: 'Управление и отмена',
@@ -2427,6 +2453,7 @@ export const en: Translations = {
     subtitle: 'Manage your account',
     ratingEntry: 'My Rating',
     ratingEntrySubtitle: 'Level, achievements & score',
+    ratingSocialSection: 'Rating & social',
     marketplaceEntry: 'Marketplace',
     marketplaceSubtitle: 'Trainers and workout plans',
     gymPassEntry: 'Fitex Pass',
@@ -2468,6 +2495,18 @@ export const en: Translations = {
     hours: 'Hours',
     minutes: 'Minutes',
     defaultUser: 'User',
+    displayNameSection: 'Name',
+    displayNameEntry: 'First & last name',
+    displayNameSubtitle: 'How you appear in the app and on the leaderboard',
+    editNameTitle: 'First & last name',
+    editNameHint:
+      'Set your first name and optionally your last name. They appear in your profile, leaderboard, and to other athletes.',
+    displayNameFirstLabel: 'First name',
+    displayNameLastLabel: 'Last name',
+    displayNameFirstPh: 'e.g. Alex',
+    displayNameLastPh: 'Optional',
+    nameFirstRequired: 'Enter a first name (at least one character).',
+    nameSaveError: 'Could not save your name. Please try again.',
     nextBillingLabel: 'Next billing',
     subscription: 'Subscription',
     cancelSubscription: 'Manage or cancel',
@@ -3270,6 +3309,7 @@ export const az: Translations = {
     subtitle: 'Hesabınızı idarə edin',
     ratingEntry: 'Mənim reytinqim',
     ratingEntrySubtitle: 'Səviyyə, nailiyyətlər və bal',
+    ratingSocialSection: 'Reytinq və sosial şəbəkələr',
     marketplaceEntry: 'Bazar',
     marketplaceSubtitle: 'Məşqçilər və məşq planları',
     gymPassEntry: 'Fitex Pass',
@@ -3311,6 +3351,18 @@ export const az: Translations = {
     hours: 'Saatlar',
     minutes: 'Dəqiqələr',
     defaultUser: 'İstifadəçi',
+    displayNameSection: 'Ad',
+    displayNameEntry: 'Ad və soyad',
+    displayNameSubtitle: 'Tətbiqdə və liderlikdə necə görünürsünüz',
+    editNameTitle: 'Ad və soyad',
+    editNameHint:
+      'Adınızı və istəyə görə soyadınızı daxil edin. Bunlar profildə, liderlikdə və digər idmançılara görünür.',
+    displayNameFirstLabel: 'Ad',
+    displayNameLastLabel: 'Soyad',
+    displayNameFirstPh: 'Məsələn, Əli',
+    displayNameLastPh: 'İstəyə görə',
+    nameFirstRequired: 'Ən azı bir simvol olan ad daxil edin.',
+    nameSaveError: 'Adı saxlamaq mümkün olmadı. Yenidən cəhd edin.',
     nextBillingLabel: 'Növbəti ödəniş',
     subscription: 'Abunəlik',
     cancelSubscription: 'İdarə və ləğv',

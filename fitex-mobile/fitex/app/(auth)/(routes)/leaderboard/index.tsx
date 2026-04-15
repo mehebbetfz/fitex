@@ -563,7 +563,9 @@ export default function LeaderboardScreen() {
 	const top3 = [entries[1] ?? null, entries[0] ?? null, entries[2] ?? null]
 
 	const openAthlete = useCallback((userId: string) => {
-		router.push(`/(auth)/(routes)/leaderboard/profile/${userId}`)
+		if (!userId) return
+		// Абсолютный путь: относительный `./profile/...` с `leaderboard/index` в ряде версий Expo Router не открывает вложенный экран.
+		router.push(`/(auth)/(routes)/leaderboard/profile/${encodeURIComponent(userId)}` as const)
 	}, [])
 
 	return (

@@ -6,10 +6,6 @@ import {
 	exportWorkoutsToCsv,
 } from '@/services/export'
 import {
-	pickSquareAvatarJpeg,
-	uploadProfileAvatar,
-} from '@/services/avatar-upload'
-import {
 	DEFAULT_SETTINGS,
 	formatTime,
 	loadNotificationSettings,
@@ -18,17 +14,12 @@ import {
 } from '@/services/notifications'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
 	Animated,
-	AppState,
-	AppStateStatus,
-	Image,
-	Linking,
 	Modal,
-	Platform,
 	ScrollView,
 	StyleSheet,
 	Switch,
@@ -50,14 +41,6 @@ const COLORS = {
 	accent: '#FF9500',
 	error: '#FF3B30',
 } as const
-
-/** Безопасный URL для <Image source={{ uri }}> — иначе нативный рендер может падать. */
-function isRemoteAvatarUrl(raw: string | null | undefined): raw is string {
-	if (!raw || typeof raw !== 'string') return false
-	const u = raw.trim()
-	if (u.length < 8) return false
-	return /^https?:\/\//i.test(u)
-}
 
 /** До окончания текущего периода подписки (сервер: premiumExpiresAt). */
 function formatNextBillingRelative(
@@ -212,25 +195,6 @@ const UserCardSkeleton = () => (
 	</View>
 )
 
-/** Заголовок секции + N строк в стиле SettingsItem */
-const SettingsSectionSkeleton = ({ rows = 2 }: { rows?: number }) => (
-	<View style={styles.section}>
-		<ShimmerBlock
-			style={{
-				height: 18,
-				width: 140,
-				borderRadius: 5,
-				backgroundColor: COLORS.cardLight,
-				marginBottom: 12,
-				marginLeft: 8,
-			}}
-		/>
-		{Array.from({ length: rows }, (_, i) => (
-			<SettingsItemSkeleton key={i} />
-		))}
-	</View>
-)
-
 const PremiumBlockSkeleton = () => (
 	<View style={[styles.premiumStatusBlock, { borderColor: COLORS.border }]}>
 		<View
@@ -320,6 +284,25 @@ const SettingsItemSkeleton = () => (
 				backgroundColor: COLORS.cardLight,
 			}}
 		/>
+	</View>
+)
+
+/** Заголовок секции + N строк в стиле SettingsItem */
+const SettingsSectionSkeleton = ({ rows = 2 }: { rows?: number }) => (
+	<View style={styles.section}>
+		<ShimmerBlock
+			style={{
+				height: 18,
+				width: 140,
+				borderRadius: 5,
+				backgroundColor: COLORS.cardLight,
+				marginBottom: 12,
+				marginLeft: 8,
+			}}
+		/>
+		{Array.from({ length: rows }, (_, i) => (
+			<SettingsItemSkeleton key={i} />
+		))}
 	</View>
 )
 
@@ -455,7 +438,7 @@ const TimePickerModal = ({
 // Main component
 // ─────────────────────────────────────────────
 export default function ProfileScreen() {
-	const { user, signOut, refreshProfile, updateUser } = useAuth()
+	const { user, signOut } = useAuth()
 	const { t, language, setLanguage } = useLanguage()
 	const {
 		syncWithServer,
@@ -475,21 +458,8 @@ export default function ProfileScreen() {
 
 	// Экспорт
 	const [exporting, setExporting] = useState(false)
-	const [avatarBusy, setAvatarBusy] = useState(false)
 
 	const premium = user ? hasActivePremium(user) : false
-
-	const appStateRef = useRef<AppStateStatus>(AppState.currentState)
-	useEffect(() => {
-		if (!premium) return
-		const sub = AppState.addEventListener('change', next => {
-			if (appStateRef.current.match(/inactive|background/) && next === 'active') {
-				void refreshProfile()
-			}
-			appStateRef.current = next
-		})
-		return () => sub.remove()
-	}, [premium, refreshProfile])
 
 	const nextBillingRelative = useMemo(() => {
 		if (!premium || !user?.premiumExpiresAt) return null
@@ -603,67 +573,9 @@ export default function ProfileScreen() {
 	}
 
 	const handleUpgrade = () => router.push('/(auth)/trial-paywall' as any)
-
-	const handleChangeAvatar = useCallback(async () => {
-		const picked = await pickSquareAvatarJpeg()
-		if (!picked.ok) {
-			if (picked.reason === 'permission') {
-				Alert.alert(
-					t('profile', 'permissionsTitle'),
-					t('profile', 'avatarPhotoPermission'),
-				)
-			}
-			return
-		}
-		setAvatarBusy(true)
-		try {
-			const next = await uploadProfileAvatar(picked.uri)
-			updateUser(next)
-		} catch {
-			Alert.alert(t('common', 'error'), t('profile', 'avatarUploadError'))
-		} finally {
-			setAvatarBusy(false)
-		}
-	}, [t, updateUser])
-
-	const openSubscriptionStore = useCallback(async () => {
-		const url =
-			Platform.OS === 'ios'
-				? 'https://apps.apple.com/account/subscriptions'
-				: 'https://play.google.com/store/account/subscriptions?package=com.farzaliyev.fitex'
-		try {
-			await Linking.openURL(url)
-		} catch {
-			Alert.alert(t('common', 'error'), t('profile', 'openStoreError'))
-		}
-	}, [t])
-
-	const handleCancelSubscriptionPress = useCallback(() => {
-		Alert.alert(
-			t('profile', 'cancelSubscriptionTitle'),
-			t('profile', 'cancelSubscriptionMessage'),
-			[
-				{ text: t('common', 'cancel'), style: 'cancel' },
-				{
-					text: t('profile', 'refreshSubscriptionStatus'),
-					onPress: () => {
-						void refreshProfile().then(() => {
-							Alert.alert(t('common', 'ok'), t('profile', 'subscriptionStatusRefreshed'))
-						})
-					},
-				},
-				{
-					text: t('profile', 'openStoreButton'),
-					onPress: () => {
-						void openSubscriptionStore()
-					},
-				},
-			],
-		)
-	}, [t, refreshProfile, openSubscriptionStore])
-
-	const userInitial = user?.firstName?.[0] || user?.email?.[0] || '?'
-	const avatarUri = user?.avatarUrl
+	const displayNameLine = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim()
+	const userInitial =
+		user?.firstName?.[0] || user?.lastName?.[0] || user?.email?.[0] || '?'
 
 	return (
 		<SafeAreaView style={styles.container} edges={['top']}>
@@ -678,7 +590,7 @@ export default function ProfileScreen() {
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={styles.scrollContent}
 			>
-				{/* Header — при загрузке весь блок шиммер (заголовок + статус) */}
+				{/* Header — при загрузке весь блок шиммер */}
 				{loading ? (
 					<HeaderSkeleton />
 				) : (
@@ -737,36 +649,31 @@ export default function ProfileScreen() {
 				) : (
 					<FadeIn show={!loading}>
 						<View style={styles.userCard}>
-							<TouchableOpacity
-								style={styles.avatarContainer}
-								onPress={handleChangeAvatar}
-								disabled={avatarBusy}
-								activeOpacity={0.82}
-							>
-								{isRemoteAvatarUrl(avatarUri) ? (
-									<Image
-										source={{ uri: avatarUri.trim() }}
-										style={styles.avatarImage}
-										resizeMode='cover'
-									/>
-								) : (
-									<Text style={styles.avatarText}>{userInitial}</Text>
-								)}
-								{avatarBusy ? (
-									<View style={styles.avatarBusyOverlay}>
-										<ActivityIndicator color={COLORS.text} size='small' />
-									</View>
-								) : null}
-							</TouchableOpacity>
+							<View style={styles.avatarContainer}>
+								<Text style={styles.avatarText}>{userInitial}</Text>
+							</View>
 							<View style={styles.userInfo}>
 								<Text style={styles.userName}>
-								{user?.firstName
-									? `${user.firstName} ${user.lastName || ''}`
-									: t('profile', 'defaultUser')}
+									{displayNameLine || t('profile', 'defaultUser')}
 								</Text>
 								<Text style={styles.userEmail}>{user?.email || '—'}</Text>
-								<Text style={styles.avatarHint}>{t('profile', 'avatarChangeHint')}</Text>
 							</View>
+						</View>
+					</FadeIn>
+				)}
+
+				{/* Имя и фамилия (сервер → лидерборд и весь клиент) */}
+				{!loading && (
+					<FadeIn show={!loading}>
+						<View style={styles.section}>
+							<Text style={styles.sectionTitle}>{t('profile', 'displayNameSection')}</Text>
+							<SettingsItem
+								icon='create-outline'
+								title={t('profile', 'displayNameEntry')}
+								subtitle={t('profile', 'displayNameSubtitle')}
+								onPress={() => router.push('/(auth)/(routes)/edit-name')}
+								iconColor={COLORS.primary}
+							/>
 						</View>
 					</FadeIn>
 				)}
@@ -793,11 +700,11 @@ export default function ProfileScreen() {
 									? t('profile', 'premiumActive')
 									: t('profile', 'freePlan')}
 							</Text>
-							{nextBillingRelative && (
+							{nextBillingRelative ? (
 								<Text style={styles.premiumRenewal}>
 									{t('profile', 'nextBillingLabel')}: {nextBillingRelative}
 								</Text>
-							)}
+							) : null}
 							{!premium && (
 								<TouchableOpacity
 									style={styles.upgradeButton}
@@ -814,26 +721,6 @@ export default function ProfileScreen() {
 						</View>
 						</View>
 					</FadeIn>
-				)}
-
-				{/* Подписка: отмена / управление через магазин (IAP) */}
-				{loading ? (
-					<SettingsSectionSkeleton rows={1} />
-				) : (
-					premium && (
-					<FadeIn show={!loading}>
-						<View style={styles.section}>
-							<Text style={styles.sectionTitle}>{t('profile', 'subscription')}</Text>
-							<SettingsItem
-								icon='card-outline'
-								title={t('profile', 'cancelSubscription')}
-								subtitle={t('profile', 'cancelSubscriptionHint')}
-								onPress={handleCancelSubscriptionPress}
-								iconColor={COLORS.primary}
-							/>
-						</View>
-					</FadeIn>
-					)
 				)}
 
 				{/* Sync section (premium only) */}
@@ -865,17 +752,18 @@ export default function ProfileScreen() {
 					</FadeIn>
 				) : null}
 
-			{/* Rating + Marketplace + GymPass section */}
+			{/* Rating + social (marketplace / gym-pass hidden) */}
 			{loading ? (
-				<SettingsSectionSkeleton rows={1} />
+				<SettingsSectionSkeleton rows={2} />
 			) : (
 				<FadeIn show={!loading}>
 					<View style={styles.section}>
+						<Text style={styles.sectionTitle}>{t('profile', 'ratingSocialSection')}</Text>
 						<SettingsItem
 							icon='trophy-outline'
 							title={t('profile', 'ratingEntry')}
 							subtitle={t('profile', 'ratingEntrySubtitle')}
-							onPress={() => router.push('/(routes)/rating')}
+							onPress={() => router.push('/(auth)/(routes)/rating')}
 							iconColor='#FFD700'
 						/>
 						<SettingsItem
@@ -885,7 +773,6 @@ export default function ProfileScreen() {
 							onPress={() => router.push('/(auth)/(routes)/edit-social')}
 							iconColor='#5AC8FA'
 						/>
-					{/* marketplace and gym-pass hidden temporarily */}
 					</View>
 				</FadeIn>
 			)}
@@ -931,7 +818,7 @@ export default function ProfileScreen() {
 							)}
 						</View>
 					</FadeIn>
-				)}
+			)}
 
 				{/* Export section */}
 				{loading ? (
@@ -963,7 +850,7 @@ export default function ProfileScreen() {
 							/>
 						</View>
 					</FadeIn>
-				)}
+			)}
 
 				{/* Language section */}
 				{loading ? (
@@ -975,31 +862,31 @@ export default function ProfileScreen() {
 							{(['ru', 'en', 'az'] as Language[]).map(lang => {
 								const selected = lang === language
 								return (
-								<SettingsItem
-									key={lang}
-									icon='language-outline'
-									title={`${LANGUAGE_FLAGS[lang]} ${LANGUAGE_NAMES[lang]}`}
-									onPress={() => handleLanguageChange(lang)}
-									showChevron={false}
-									iconColor={selected ? COLORS.primary : COLORS.textSecondary}
-									rightElement={
-										<View
-											style={[
-												styles.langCheckBox,
-												selected && styles.langCheckBoxSelected,
-											]}
-										>
-											{selected ? (
-												<Ionicons name='checkmark' size={16} color={COLORS.text} />
-											) : null}
-										</View>
-									}
-								/>
+									<SettingsItem
+										key={lang}
+										icon='language-outline'
+										title={`${LANGUAGE_FLAGS[lang]} ${LANGUAGE_NAMES[lang]}`}
+										onPress={() => handleLanguageChange(lang)}
+										showChevron={false}
+										iconColor={selected ? COLORS.primary : COLORS.textSecondary}
+										rightElement={
+											<View
+												style={[
+													styles.langCheckBox,
+													selected && styles.langCheckBoxSelected,
+												]}
+											>
+												{selected ? (
+													<Ionicons name='checkmark' size={16} color={COLORS.text} />
+												) : null}
+											</View>
+										}
+									/>
 								)
 							})}
 						</View>
 					</FadeIn>
-				)}
+			)}
 
 				{/* Sign out */}
 				{loading ? (
@@ -1059,25 +946,8 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginRight: 16,
-		overflow: 'hidden',
-	},
-	avatarImage: {
-		width: '100%',
-		height: '100%',
-		borderRadius: 35,
-	},
-	avatarBusyOverlay: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: 'rgba(0,0,0,0.45)',
-		justifyContent: 'center',
-		alignItems: 'center',
 	},
 	avatarText: { fontSize: 30, fontWeight: 'bold', color: COLORS.text },
-	avatarHint: {
-		fontSize: 12,
-		color: COLORS.textSecondary,
-		marginTop: 6,
-	},
 	userInfo: { flex: 1 },
 	userName: { fontSize: 20, fontWeight: '600', color: COLORS.text },
 	userEmail: { fontSize: 15, color: COLORS.textSecondary, marginTop: 2 },

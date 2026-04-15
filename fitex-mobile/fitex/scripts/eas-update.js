@@ -11,7 +11,7 @@
  * Сообщение: аргументы командной строки, иначе последний коммит (git), иначе "OTA update".
  */
 
-const { execSync, spawnSync } = require('child_process')
+const { execSync } = require('child_process')
 const path = require('path')
 
 const root = path.join(__dirname, '..')
@@ -31,22 +31,15 @@ const channel = process.env.EAS_UPDATE_CHANNEL || 'production'
 const cliArg = process.argv.slice(2).join(' ').trim()
 const message = cliArg || gitSubject() || 'OTA update'
 
-const result = spawnSync(
-	'npx',
-	[
-		'eas-cli',
-		'update',
-		'--channel',
-		channel,
-		'--message',
-		message,
-		'--non-interactive',
-	],
-	{
+// Windows: spawnSync('npx.cmd', [...], { shell: false }) даёт EINVAL; spawn + shell: true снова ломал --message с пробелами.
+// Одна shell-команда + JSON.stringify для значений — стабильно для cmd/PowerShell и длинных git subject.
+const q = (s) => JSON.stringify(String(s))
+try {
+	execSync(`npx eas-cli update --channel ${q(channel)} --message ${q(message)} --non-interactive`, {
 		cwd: root,
 		stdio: 'inherit',
-		shell: true,
-	},
-)
-
-process.exit(result.status === null ? 1 : result.status)
+	})
+	process.exit(0)
+} catch (e) {
+	process.exit(typeof e.status === 'number' ? e.status : 1)
+}

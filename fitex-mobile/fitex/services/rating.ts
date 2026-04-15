@@ -868,12 +868,15 @@ export const computeRating = async (): Promise<RatingData> => {
 	}
 
 	const currentLevel = getLevelByScore(totalScore)
-	const nextLevel    = getNextLevel(currentLevel)
-	const levelProgressPercent = nextLevel
-		? Math.min(100, Math.round(
-			((totalScore - currentLevel.minScore) / (nextLevel.minScore - currentLevel.minScore)) * 100,
-		))
-		: 100
+	const nextLevel = getNextLevel(currentLevel)
+	const levelDenSync = nextLevel ? nextLevel.minScore - currentLevel.minScore : 0
+	const levelProgressPercent =
+		nextLevel && levelDenSync > 0
+			? Math.min(
+					100,
+					Math.round(((totalScore - currentLevel.minScore) / levelDenSync) * 100),
+				)
+			: 100
 
 	return {
 		totalScore,
@@ -936,14 +939,14 @@ export const buildRatingSnapshotFromStats = (
 
 	const currentLevel = getLevelByScore(totalScore)
 	const nextLevel = getNextLevel(currentLevel)
-	const levelProgressPercent = nextLevel
-		? Math.min(
-				100,
-				Math.round(
-					((totalScore - currentLevel.minScore) / (nextLevel.minScore - currentLevel.minScore)) * 100,
-				),
-			)
-		: 100
+	const levelDen = nextLevel ? nextLevel.minScore - currentLevel.minScore : 0
+	const levelProgressPercent =
+		nextLevel && levelDen > 0
+			? Math.min(
+					100,
+					Math.round(((totalScore - currentLevel.minScore) / levelDen) * 100),
+				)
+			: 100
 
 	return {
 		totalScore,

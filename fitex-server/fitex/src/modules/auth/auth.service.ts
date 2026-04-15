@@ -334,6 +334,16 @@ export class AuthService {
 		const user = await this.userModel.findById(userId)
 		if (!user) throw new UnauthorizedException('User not found')
 
+		if (dto.firstName !== undefined) {
+			const t = String(dto.firstName).trim()
+			if (!t) throw new BadRequestException('firstName cannot be empty')
+			user.firstName = t
+		}
+		if (dto.lastName !== undefined) {
+			const t = String(dto.lastName).trim()
+			user.lastName = t || undefined
+		}
+
 		const keys: (keyof UpdateProfileDto)[] = [
 			'heightCm',
 			'weightKg',
