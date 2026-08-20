@@ -164,15 +164,8 @@ export default function TabsLayout() {
 				options={{
 					title: t('tabs', 'nutrition'),
 					tabBarIcon: ({ color, size }) => (
-						<Ionicons name='nutrition-outline' size={size} color={color} />
+						<Ionicons name='restaurant-outline' size={size} color={color} />
 					),
-				}}
-			/>
-
-			<Tabs.Screen
-				name='nutrition'
-				options={{
-					href: null,
 				}}
 			/>
 

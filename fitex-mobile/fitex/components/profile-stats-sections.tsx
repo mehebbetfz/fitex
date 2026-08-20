@@ -214,7 +214,7 @@ export default function ProfileStatsSections() {
 									}}
 								>
 									<View style={styles.rowIcon}>
-										<Ionicons name='resize-outline' size={18} color={COLORS.primary} />
+										<Ionicons name='body-outline' size={18} color={COLORS.primary} />
 									</View>
 									<View style={styles.rowMeta}>
 										<Text style={styles.rowTitle}>{displayName(row.name)}</Text>
