@@ -287,6 +287,78 @@ async function ensureSyncColumns(db: ReturnType<typeof openDatabase>): Promise<v
 	}
 }
 
+/** Дробные повторы (8.5 и т.д.): старые схемы имели reps INTEGER — SQLite обрезал до целого. */
+async function migrateExerciseSetsRepsToRealIfNeeded(
+	db: ReturnType<typeof openDatabase>,
+): Promise<void> {
+	const info = (await db.getAllAsync(`PRAGMA table_info(exercise_sets)`)) as {
+		name: string
+		type: string
+	}[]
+	if (info.length === 0) return
+	const repsCol = info.find(c => c.name === 'reps')
+	if (!repsCol) return
+	if (!(repsCol.type || '').toUpperCase().includes('INT')) return
+
+	console.log('[DB] Migration: exercise_sets.reps INTEGER → REAL')
+	await db.execAsync('BEGIN IMMEDIATE')
+	try {
+		await db.execAsync(`CREATE TABLE exercise_sets_reps_mig (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			exercise_id INTEGER NOT NULL,
+			set_number INTEGER NOT NULL,
+			weight REAL NOT NULL,
+			reps REAL NOT NULL,
+			completed BOOLEAN DEFAULT 1,
+			FOREIGN KEY (exercise_id) REFERENCES exercises (id) ON DELETE CASCADE
+		)`)
+		await db.execAsync(`INSERT INTO exercise_sets_reps_mig (id, exercise_id, set_number, weight, reps, completed)
+			SELECT id, exercise_id, set_number, weight, CAST(reps AS REAL), completed FROM exercise_sets`)
+		await db.execAsync(`DROP TABLE exercise_sets`)
+		await db.execAsync(`ALTER TABLE exercise_sets_reps_mig RENAME TO exercise_sets`)
+		await db.execAsync('COMMIT')
+	} catch (e) {
+		await db.execAsync('ROLLBACK').catch(() => {})
+		throw e
+	}
+}
+
+async function migrateActiveSetsRepsToRealIfNeeded(
+	db: ReturnType<typeof openDatabase>,
+): Promise<void> {
+	const info = (await db.getAllAsync(`PRAGMA table_info(active_sets)`)) as {
+		name: string
+		type: string
+	}[]
+	if (info.length === 0) return
+	const repsCol = info.find(c => c.name === 'reps')
+	if (!repsCol) return
+	if (!(repsCol.type || '').toUpperCase().includes('INT')) return
+
+	console.log('[DB] Migration: active_sets.reps INTEGER → REAL')
+	await db.execAsync('BEGIN IMMEDIATE')
+	try {
+		await db.execAsync(`CREATE TABLE active_sets_reps_mig (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			exercise_id INTEGER NOT NULL,
+			set_number INTEGER NOT NULL,
+			weight REAL NOT NULL,
+			reps REAL NOT NULL,
+			completed BOOLEAN DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (exercise_id) REFERENCES active_exercises (id) ON DELETE CASCADE
+		)`)
+		await db.execAsync(`INSERT INTO active_sets_reps_mig (id, exercise_id, set_number, weight, reps, completed, created_at)
+			SELECT id, exercise_id, set_number, weight, CAST(reps AS REAL), completed, created_at FROM active_sets`)
+		await db.execAsync(`DROP TABLE active_sets`)
+		await db.execAsync(`ALTER TABLE active_sets_reps_mig RENAME TO active_sets`)
+		await db.execAsync('COMMIT')
+	} catch (e) {
+		await db.execAsync('ROLLBACK').catch(() => {})
+		throw e
+	}
+}
+
 // Инициализация базы данных
 export const initDatabase = async () => {
 	const db = openDatabase()
@@ -326,10 +398,12 @@ export const initDatabase = async () => {
 			exercise_id INTEGER NOT NULL,
 			set_number INTEGER NOT NULL,
 			weight REAL NOT NULL,
-			reps INTEGER NOT NULL,
+			reps REAL NOT NULL,
 			completed BOOLEAN DEFAULT 1,
 			FOREIGN KEY (exercise_id) REFERENCES exercises (id) ON DELETE CASCADE
 		)`)
+
+		await migrateExerciseSetsRepsToRealIfNeeded(db)
 
 		await db.execAsync(`CREATE TABLE IF NOT EXISTS body_measurements (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1605,12 +1679,14 @@ export const initActiveWorkoutTables = async () => {
         exercise_id INTEGER NOT NULL,
         set_number INTEGER NOT NULL,
         weight REAL NOT NULL,
-        reps INTEGER NOT NULL,
+        reps REAL NOT NULL,
         completed BOOLEAN DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (exercise_id) REFERENCES active_exercises (id) ON DELETE CASCADE
       );
     `)
+
+		await migrateActiveSetsRepsToRealIfNeeded(db)
 
 		console.log('Active workout tables initialized')
 	} catch (error) {

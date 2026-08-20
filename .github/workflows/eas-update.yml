@@ -62,6 +62,7 @@ jobs:
         run: |
           eas update \
             --channel production \
+            --environment production \
             --message "${{ steps.msg.outputs.message }}" \
             --non-interactive
         env:

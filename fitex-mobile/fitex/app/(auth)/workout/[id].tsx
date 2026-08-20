@@ -2,7 +2,7 @@ import { useDatabase } from '@/app/contexts/database-context'
 import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Alert,
 	FlatList,
@@ -29,6 +29,14 @@ const COLORS = {
 	success: '#34C759',
 	modalOverlay: 'rgba(0, 0, 0, 0.8)',
 } as const
+
+function parseWeightRepsInput(raw: string): number {
+	const t = raw.replace(',', '.').trim()
+	if (t === '' || t === '.') return 0
+	const n = parseFloat(t)
+	if (!Number.isFinite(n)) return 0
+	return Math.min(Math.max(n, 0), 999)
+}
 
 // Типы
 interface ExerciseSet {
@@ -142,19 +150,29 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 	({ set, exerciseId, onComplete, onUpdate, onRemove }) => {
 		const setId = set.id || parseInt(set.setId || '0')
 
-		const handleWeightChange = useCallback(
-			(value: string) => {
-				onUpdate(exerciseId, setId, 'weight', value)
-			},
-			[exerciseId, setId, onUpdate],
+		const [weightText, setWeightText] = useState(
+			() => (set.weight === 0 ? '' : String(set.weight)),
 		)
+		const [repsText, setRepsText] = useState(() => (set.reps === 0 ? '' : String(set.reps)))
+		const weightFocused = useRef(false)
+		const repsFocused = useRef(false)
 
-		const handleRepsChange = useCallback(
-			(value: string) => {
-				onUpdate(exerciseId, setId, 'reps', value)
-			},
-			[exerciseId, setId, onUpdate],
-		)
+		useEffect(() => {
+			if (!weightFocused.current) {
+				setWeightText(set.weight === 0 ? '' : String(set.weight))
+			}
+		}, [set.weight, set.id])
+
+		useEffect(() => {
+			if (!repsFocused.current) {
+				setRepsText(set.reps === 0 ? '' : String(set.reps))
+			}
+		}, [set.reps, set.id])
+
+		const flushBoth = useCallback(async () => {
+			await onUpdate(exerciseId, setId, 'weight', weightText)
+			await onUpdate(exerciseId, setId, 'reps', repsText)
+		}, [exerciseId, setId, onUpdate, weightText, repsText])
 
 		return (
 			<View style={styles.setRow}>
@@ -162,27 +180,46 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 
 				<TextInput
 					style={[styles.input, set.completed && styles.inputCompleted]}
-					value={set.weight.toString()}
-					onChangeText={handleWeightChange}
-					keyboardType='numeric'
+					value={weightText}
+					onChangeText={setWeightText}
+					onFocus={() => {
+						weightFocused.current = true
+					}}
+					onBlur={() => {
+						weightFocused.current = false
+						void onUpdate(exerciseId, setId, 'weight', weightText)
+					}}
+					keyboardType='decimal-pad'
 					editable={!set.completed}
 					placeholderTextColor={COLORS.textSecondary}
-					maxLength={5}
+					maxLength={10}
 				/>
 
 				<TextInput
 					style={[styles.input, set.completed && styles.inputCompleted]}
-					value={set.reps.toString()}
-					onChangeText={handleRepsChange}
-					keyboardType='numeric'
+					value={repsText}
+					onChangeText={setRepsText}
+					onFocus={() => {
+						repsFocused.current = true
+					}}
+					onBlur={() => {
+						repsFocused.current = false
+						void onUpdate(exerciseId, setId, 'reps', repsText)
+					}}
+					keyboardType='decimal-pad'
 					editable={!set.completed}
 					placeholderTextColor={COLORS.textSecondary}
-					maxLength={3}
+					maxLength={10}
 				/>
 
 				<TouchableOpacity
 					style={[styles.checkbox, set.completed && styles.checkboxCompleted]}
-					onPress={() => onComplete(exerciseId, setId)}
+					onPress={() => {
+						void (async () => {
+							await flushBoth()
+							await onComplete(exerciseId, setId)
+						})()
+					}}
 					activeOpacity={0.7}
 				>
 					{set.completed && (
@@ -451,12 +488,7 @@ export default function WorkoutScreen() {
 			value: string,
 		) => {
 			try {
-				// Валидация ввода
-				const numValue = parseFloat(value) || 0
-				const validatedValue = Math.min(
-					Math.max(numValue, 0),
-					field === 'weight' ? 999 : 999,
-				)
+				const validatedValue = parseWeightRepsInput(value)
 
 				await updateSet(setId, { [field]: validatedValue })
 				await loadWorkoutData() // Перезагружаем данные

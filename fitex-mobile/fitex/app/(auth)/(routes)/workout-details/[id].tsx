@@ -129,6 +129,8 @@ export default function WorkoutDetailScreen() {
 		(sum, ex) => sum + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0),
 		0,
 	)
+	const volumeDisplayKg =
+		totalVolume > 0 ? totalVolume : Number(workout.volume) || 0
 
 	return (
 		<SafeAreaView style={s.container}>
@@ -167,7 +169,7 @@ export default function WorkoutDetailScreen() {
 						icon='time'
 					/>
 					<StatBox
-						value={totalVolume > 0 ? `${Math.round(totalVolume / 1000 * 10) / 10}k` : `${workout.volume}`}
+						value={volumeDisplayKg.toFixed(2)}
 						label={t('workout', 'kg')}
 						icon='trending-up'
 					/>
@@ -220,7 +222,8 @@ export default function WorkoutDetailScreen() {
 								</View>
 								<View style={s.exStats}>
 									<Text style={s.exVolume}>
-										{ex.sets.reduce((sum, st) => sum + st.weight * st.reps, 0)} {t('workout', 'kg')}
+										{ex.sets.reduce((sum, st) => sum + st.weight * st.reps, 0).toFixed(2)}{' '}
+										{t('workout', 'kg')}
 									</Text>
 									<Text style={s.exSets}>
 										{ex.sets.length} {t('workout', 'sets')}
@@ -260,7 +263,7 @@ export default function WorkoutDetailScreen() {
 										</Text>
 										<Text style={[s.tableCell, s.colReps]}>{set.reps}</Text>
 										<Text style={[s.tableCell, s.colVol, { color: C.primary }]}>
-											{vol}
+											{vol.toFixed(2)}
 										</Text>
 									</View>
 								)
@@ -276,7 +279,7 @@ export default function WorkoutDetailScreen() {
 									{selectedEx.sets.reduce((sum, st) => sum + st.reps, 0)}
 								</Text>
 								<Text style={[s.tableTotalText, s.colVol, { color: C.primary }]}>
-									{selectedEx.sets.reduce((sum, st) => sum + st.weight * st.reps, 0)}
+									{selectedEx.sets.reduce((sum, st) => sum + st.weight * st.reps, 0).toFixed(2)}
 								</Text>
 							</View>
 						</View>

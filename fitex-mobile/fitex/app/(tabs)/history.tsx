@@ -106,8 +106,8 @@ const WorkoutCardSkeleton = () => (
 						styles.workoutSubDate,
 						{
 							width: 100,
-							height: 16,
-							marginTop: 4,
+							height: 14,
+							marginTop: 2,
 							backgroundColor: COLORS.cardLight,
 						},
 					]}
@@ -116,7 +116,7 @@ const WorkoutCardSkeleton = () => (
 			<ShimmerBlock
 				style={[
 					styles.workoutTypeBadge,
-					{ width: 80, height: 30, backgroundColor: COLORS.cardLight },
+					{ width: 72, height: 26, backgroundColor: COLORS.cardLight },
 				]}
 			/>
 		</View>
@@ -128,8 +128,8 @@ const WorkoutCardSkeleton = () => (
 					style={[
 						styles.muscleTag,
 						{
-							width: i === 1 ? 60 : i === 2 ? 50 : 70,
-							height: 24,
+							width: i === 1 ? 56 : i === 2 ? 46 : 64,
+							height: 22,
 							backgroundColor: COLORS.cardLight,
 						},
 					]}
@@ -137,19 +137,26 @@ const WorkoutCardSkeleton = () => (
 			))}
 		</View>
 
-		<View style={styles.workoutStats}>
+		<View style={styles.statGrid}>
 			{[1, 2, 3, 4].map(i => (
-				<ShimmerBlock
-					key={i}
-					style={[
-						styles.statItem,
-						{
-							width: i === 1 ? 70 : i === 2 ? 80 : i === 3 ? 65 : 90,
-							height: 20,
+				<View key={i} style={styles.statCell}>
+					<ShimmerBlock
+						style={{
+							width: 14,
+							height: 14,
+							borderRadius: 4,
 							backgroundColor: COLORS.cardLight,
-						},
-					]}
-				/>
+						}}
+					/>
+					<ShimmerBlock
+						style={{
+							flex: 1,
+							height: 14,
+							borderRadius: 4,
+							backgroundColor: COLORS.cardLight,
+						}}
+					/>
+				</View>
 			))}
 		</View>
 	</View>
@@ -168,7 +175,7 @@ const LoadingFooter = () => {
 
 // ── Скелетон для первой загрузки ──
 const InitialLoadingSkeleton = () => (
-	<SafeAreaView style={styles.container}>
+	<SafeAreaView style={styles.container} edges={['top']}>
 		<View style={styles.header}>
 			<View>
 				<ShimmerBlock
@@ -212,6 +219,7 @@ const InitialLoadingSkeleton = () => (
 		</View>
 
 		<FlatList
+			style={styles.listFlex}
 			data={[1, 2, 3]}
 			renderItem={() => <WorkoutCardSkeleton />}
 			keyExtractor={item => item.toString()}
@@ -329,7 +337,7 @@ export default function FullHistoryScreen() {
 		if (item.volume > 0) {
 			stats.push({
 				icon: 'trending-up-outline',
-				label: `${item.volume.toLocaleString()} ${t('history', 'kg')}`,
+				label: `${Number(item.volume).toFixed(2)} ${t('history', 'kg')}`,
 			})
 		}
 
@@ -362,7 +370,7 @@ export default function FullHistoryScreen() {
 								{translateWorkoutType(item.type, language)}
 							</Text>
 						</View>
-						<Ionicons name='chevron-forward' size={18} color={T.textTertiary} style={styles.chevron} />
+						<Ionicons name='chevron-forward' size={16} color={T.textTertiary} style={styles.chevron} />
 					</View>
 				</View>
 
@@ -379,7 +387,7 @@ export default function FullHistoryScreen() {
 				<View style={styles.statGrid}>
 					{stats.map((s, i) => (
 						<View key={`st-${i}`} style={styles.statCell}>
-							<Ionicons name={s.icon} size={16} color={COLORS.primary} />
+							<Ionicons name={s.icon} size={14} color={COLORS.primary} />
 							<Text style={styles.statCellText} numberOfLines={1}>
 								{s.label}
 							</Text>
@@ -433,7 +441,7 @@ export default function FullHistoryScreen() {
 	}
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<SafeAreaView style={styles.container} edges={['top']}>
 			<View style={styles.header}>
 				<View>
 					<Text style={styles.title}>{t('history', 'title')}</Text>
@@ -478,6 +486,7 @@ export default function FullHistoryScreen() {
 
 			{/* Список тренировок с пагинацией */}
 			<FlatList
+				style={styles.listFlex}
 				data={displayedWorkouts}
 				renderItem={renderWorkoutCard}
 				keyExtractor={(item, index) =>
@@ -529,34 +538,37 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: T.background,
 	},
+	listFlex: {
+		flex: 1,
+	},
 	header: {
 		paddingHorizontal: 10,
-		paddingTop: 20,
-		paddingBottom: 10,
+		paddingTop: 16,
+		paddingBottom: 8,
 	},
 	title: {
-		fontSize: 24,
+		fontSize: 22,
 		fontWeight: 'bold',
 		color: T.text,
-		marginBottom: 4,
+		marginBottom: 2,
 	},
 	countSubtitle: {
-		fontSize: 14,
+		fontSize: 13,
 		color: COLORS.textSecondary,
-		marginTop: 4,
+		marginTop: 2,
 	},
 	filtersSection: {
-		paddingTop: 12,
-		paddingBottom: 12,
+		paddingTop: 8,
+		paddingBottom: 8,
 		paddingHorizontal: 10,
 		borderBottomWidth: 1,
 		borderBottomColor: T.borderSubtle,
 	},
 	filtersTitle: {
-		fontSize: 20,
+		fontSize: 17,
 		fontWeight: '700',
 		color: T.text,
-		marginBottom: 10,
+		marginBottom: 8,
 	},
 	filtersContainer: {
 		paddingRight: 16,
@@ -564,9 +576,9 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 	},
 	filterButton: {
-		paddingHorizontal: 14,
-		paddingVertical: 8,
-		borderRadius: 20,
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 18,
 		backgroundColor: T.chipInactive,
 		borderWidth: 1,
 		borderColor: COLORS.border,
@@ -585,22 +597,22 @@ const styles = StyleSheet.create({
 	},
 	listContent: {
 		paddingHorizontal: 10,
-		paddingTop: 16,
-		paddingBottom: 32,
+		paddingTop: 10,
+		paddingBottom: 10,
 	},
 	workoutCard: {
 		backgroundColor: COLORS.card,
-		borderRadius: 16,
-		padding: 16,
+		borderRadius: 12,
+		padding: 11,
 		borderWidth: 1,
 		borderColor: COLORS.border,
-		marginBottom: 12,
+		marginBottom: 8,
 	},
 	workoutHeader: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'flex-start',
-		marginBottom: 10,
+		marginBottom: 6,
 	},
 	workoutHeaderText: {
 		flex: 1,
@@ -613,68 +625,68 @@ const styles = StyleSheet.create({
 	},
 	chevron: { marginLeft: 2 },
 	workoutDate: {
-		fontSize: 16,
+		fontSize: 15,
 		fontWeight: 'bold',
 		color: T.text,
 	},
 	workoutSubDate: {
-		fontSize: 14,
+		fontSize: 12,
 		color: T.textSecondary,
-		marginTop: 2,
+		marginTop: 1,
 	},
 	workoutTypeBadge: {
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderRadius: 10,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 8,
 	},
 	workoutTypeText: {
-		fontSize: 12,
+		fontSize: 11,
 		fontWeight: '600',
 		color: T.text,
 	},
 	muscleGroups: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
-		marginBottom: 14,
-		gap: 8,
+		marginBottom: 8,
+		gap: 6,
 	},
 	muscleTag: {
 		backgroundColor: COLORS.cardLight,
-		paddingHorizontal: 10,
-		paddingVertical: 4,
-		borderRadius: 12,
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 10,
 	},
 	muscleTagText: {
-		fontSize: 12,
+		fontSize: 11,
 		color: COLORS.textSecondary,
 	},
 	statGrid: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
-		gap: 8,
-		marginTop: 2,
+		gap: 6,
+		marginTop: 0,
 	},
 	statCell: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 8,
+		gap: 6,
 		flexGrow: 1,
-		minWidth: '44%',
+		minWidth: '47%',
 		backgroundColor: T.statCellBg,
-		borderRadius: 12,
-		paddingVertical: 10,
-		paddingHorizontal: 10,
+		borderRadius: 10,
+		paddingVertical: 7,
+		paddingHorizontal: 8,
 		borderWidth: 1,
 		borderColor: T.statCellBorder,
 	},
 	statCellText: {
-		fontSize: 12,
+		fontSize: 11,
 		fontWeight: '600',
 		color: '#E5E5EA',
 		flex: 1,
 	},
 	loadingFooter: {
-		paddingVertical: 20,
+		paddingVertical: 12,
 		alignItems: 'center',
 		justifyContent: 'center',
 		flexDirection: 'row',

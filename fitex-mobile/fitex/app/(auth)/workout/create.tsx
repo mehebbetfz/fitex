@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Haptics from 'expo-haptics'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Alert,
 	AppState,
@@ -52,6 +52,15 @@ const COLORS = {
 } as const
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
+
+/** Вес/повторы: запятая как десятичный разделитель, один parse, ограничение 0…999 */
+function parseWeightRepsInput(raw: string): number {
+	const t = raw.replace(',', '.').trim()
+	if (t === '' || t === '.') return 0
+	const n = parseFloat(t)
+	if (!Number.isFinite(n)) return 0
+	return Math.min(Math.max(n, 0), 999)
+}
 
 interface ExerciseSet {
 	id?: number
@@ -305,6 +314,31 @@ interface SetRowProps {
 const SetRow: React.FC<SetRowProps> = React.memo(
 	({ set, exerciseId, onComplete, onUpdate, onRemove }) => {
 		const { t } = useLanguage()
+		const [weightText, setWeightText] = useState(
+			() => (set.weight === 0 ? '' : String(set.weight)),
+		)
+		const [repsText, setRepsText] = useState(() => (set.reps === 0 ? '' : String(set.reps)))
+		const weightFocused = useRef(false)
+		const repsFocused = useRef(false)
+
+		useEffect(() => {
+			if (!weightFocused.current) {
+				setWeightText(set.weight === 0 ? '' : String(set.weight))
+			}
+		}, [set.weight, set.id])
+
+		useEffect(() => {
+			if (!repsFocused.current) {
+				setRepsText(set.reps === 0 ? '' : String(set.reps))
+			}
+		}, [set.reps, set.id])
+
+		const flushToParent = () => {
+			if (!set.id) return
+			onUpdate(exerciseId, set.id, 'weight', weightText)
+			onUpdate(exerciseId, set.id, 'reps', repsText)
+		}
+
 		return (
 			<View style={styles.setRow}>
 				<View style={styles.setNumberContainer}>
@@ -318,13 +352,19 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 							set.completed && styles.inputCompleted,
 							styles.weightInput,
 						]}
-						value={set.weight === 0 ? '' : set.weight.toString()}
-						onChangeText={value => {
-							if (set.id) onUpdate(exerciseId, set.id, 'weight', value)
+						value={weightText}
+						onChangeText={setWeightText}
+						onFocus={() => {
+							weightFocused.current = true
 						}}
-						keyboardType='numeric'
+						onBlur={() => {
+							weightFocused.current = false
+							if (set.id) onUpdate(exerciseId, set.id, 'weight', weightText)
+						}}
+						keyboardType='decimal-pad'
 						placeholder='0'
 						placeholderTextColor={COLORS.textSecondary}
+						maxLength={10}
 					/>
 					<Text style={styles.inputLabel}>{t('workout', 'kg')}</Text>
 				</View>
@@ -336,13 +376,19 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 							set.completed && styles.inputCompleted,
 							styles.repsInput,
 						]}
-						value={set.reps === 0 ? '' : set.reps.toString()}
-						onChangeText={value => {
-							if (set.id) onUpdate(exerciseId, set.id, 'reps', value)
+						value={repsText}
+						onChangeText={setRepsText}
+						onFocus={() => {
+							repsFocused.current = true
 						}}
-						keyboardType='numeric'
+						onBlur={() => {
+							repsFocused.current = false
+							if (set.id) onUpdate(exerciseId, set.id, 'reps', repsText)
+						}}
+						keyboardType='decimal-pad'
 						placeholder='0'
 						placeholderTextColor={COLORS.textSecondary}
+						maxLength={10}
 					/>
 				</View>
 
@@ -350,7 +396,10 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 					style={[styles.checkbox, set.completed && styles.checkboxCompleted]}
 					onPress={() => {
 						Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-						if (set.id) onComplete(exerciseId, set.id)
+						if (set.id) {
+							flushToParent()
+							onComplete(exerciseId, set.id)
+						}
 					}}
 					activeOpacity={0.6}
 				>
@@ -862,8 +911,7 @@ export default function CreateWorkoutScreen() {
 		field: 'weight' | 'reps',
 		value: string,
 	) => {
-		const numValue = value === '' ? 0 : parseFloat(value) || 0
-		const validatedValue = Math.min(Math.max(numValue, 0), 999)
+		const validatedValue = parseWeightRepsInput(value)
 		setExercises(prev =>
 			prev.map(exercise =>
 				exercise.id === exerciseId
@@ -999,7 +1047,7 @@ export default function CreateWorkoutScreen() {
 
 		Alert.alert(
 			t('workout', 'finishTitle'),
-			`${exercises.length} ${t('workout', 'exercises')}, ${totalSets} ${t('workout', 'sets')}\n${t('workout', 'volume')}: ${totalVolume} ${t('workout', 'kg')}\n${t('workout', 'time')}: ${formatTime(workoutDuration)}`,
+			`${exercises.length} ${t('workout', 'exercises')}, ${totalSets} ${t('workout', 'sets')}\n${t('workout', 'volume')}: ${totalVolume.toFixed(2)} ${t('workout', 'kg')}\n${t('workout', 'time')}: ${formatTime(workoutDuration)}`,
 			[
 				{ text: t('common', 'cancel'), style: 'cancel' },
 				{
@@ -1154,7 +1202,7 @@ export default function CreateWorkoutScreen() {
 							</View>
 						)}
 						<View style={styles.statItem}>
-							<Text style={styles.statNumber}>{totalVolume}</Text>
+							<Text style={styles.statNumber}>{totalVolume.toFixed(2)}</Text>
 							<Text style={styles.statLabel}>{t('workout', 'volume')}</Text>
 						</View>
 					</View>

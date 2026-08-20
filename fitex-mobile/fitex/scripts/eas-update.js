@@ -35,7 +35,7 @@ const message = cliArg || gitSubject() || 'OTA update'
 // Одна shell-команда + JSON.stringify для значений — стабильно для cmd/PowerShell и длинных git subject.
 const q = (s) => JSON.stringify(String(s))
 try {
-	execSync(`npx eas-cli update --channel ${q(channel)} --message ${q(message)} --non-interactive`, {
+	execSync(`npx eas-cli update --channel ${q(channel)} --environment production --message ${q(message)} --non-interactive`, {
 		cwd: root,
 		stdio: 'inherit',
 	})
