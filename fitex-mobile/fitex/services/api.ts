@@ -17,7 +17,7 @@ api.interceptors.request.use(async (config) => {
 	return config
 })
 
-/** 401 на этих путях — ожидаемая ошибка (неверный пароль и т.д.), не сбрасываем сохранённую сессию. */
+/** 401 на этих путях — не сбрасываем сохранённую сессию. */
 function isAuthFlowUnauthorized(url: string | undefined): boolean {
 	if (!url) return false
 	const u = url.includes('://') ? new URL(url).pathname : url
@@ -30,7 +30,9 @@ function isAuthFlowUnauthorized(url: string | undefined): boolean {
 		u.includes('/auth/apple') ||
 		u.includes('/auth/demo') ||
 		u.includes('/auth/request-password-reset') ||
-		u.includes('/auth/reset-password')
+		u.includes('/auth/reset-password') ||
+		// Профиль при старте: битый API / новая пустая БД не должны выкидывать из аккаунта
+		u.includes('/auth/me')
 	)
 }
 
@@ -38,8 +40,12 @@ api.interceptors.response.use(
 	(response) => response,
 	async (error) => {
 		if (error.response?.status === 401) {
-			const reqUrl = error.config?.url as string | undefined
-			if (!isAuthFlowUnauthorized(reqUrl)) {
+			const reqUrl = (error.config?.url || error.config?.baseURL) as string | undefined
+			const full =
+				typeof error.config?.baseURL === 'string' && typeof error.config?.url === 'string'
+					? `${error.config.baseURL}${error.config.url}`
+					: reqUrl
+			if (!isAuthFlowUnauthorized(full) && !isAuthFlowUnauthorized(reqUrl)) {
 				await SecureStore.deleteItemAsync('access_token')
 				await SecureStore.deleteItemAsync('user')
 				delete api.defaults.headers.common['Authorization']

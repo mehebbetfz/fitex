@@ -403,7 +403,11 @@ export const initDatabase = async () => {
 			FOREIGN KEY (exercise_id) REFERENCES exercises (id) ON DELETE CASCADE
 		)`)
 
-		await migrateExerciseSetsRepsToRealIfNeeded(db)
+		try {
+			await migrateExerciseSetsRepsToRealIfNeeded(db)
+		} catch (e) {
+			console.warn('[DB] reps REAL migration skipped (exercise_sets):', e)
+		}
 
 		await db.execAsync(`CREATE TABLE IF NOT EXISTS body_measurements (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1686,7 +1690,11 @@ export const initActiveWorkoutTables = async () => {
       );
     `)
 
-		await migrateActiveSetsRepsToRealIfNeeded(db)
+		try {
+			await migrateActiveSetsRepsToRealIfNeeded(db)
+		} catch (e) {
+			console.warn('[DB] reps REAL migration skipped (active_sets):', e)
+		}
 
 		console.log('Active workout tables initialized')
 	} catch (error) {
