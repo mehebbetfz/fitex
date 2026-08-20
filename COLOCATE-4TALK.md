@@ -9,7 +9,8 @@
    │
    ├─ api.4talk.club     → Caddy → toki api:3000
    ├─ livekit.4talk.club → Caddy → livekit:7880
-   └─ api.fitex.app      → Caddy → fitex-api:3000  (host :3001)
+   ├─ :3000 (временно)  → fitex-api   ← пока нет DNS api.fitex.app
+   └─ api.fitex.app      → Caddy → fitex-api:3000  (когда DNS готов)
 ```
 
 Оба приложения на одном IP. Разделение — по DNS-именам.
