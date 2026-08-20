@@ -26,8 +26,13 @@ export default function LanguageSelectScreen() {
 	const handleContinue = async () => {
 		if (!selected || loading) return
 		setLoading(true)
-		await setLanguage(selected)
-		router.replace('/')
+		try {
+			await setLanguage(selected)
+			// Explicit login gate — avoids racing into tabs before auth/language settle
+			router.replace('/')
+		} catch {
+			setLoading(false)
+		}
 	}
 
 	return (

@@ -10,7 +10,6 @@ import {
 	updateFoodEntry,
 } from '@/services/nutrition'
 import { Ionicons } from '@expo/vector-icons'
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import { useFocusEffect } from 'expo-router'
 import { useCallback, useMemo, useState } from 'react'
@@ -27,46 +26,6 @@ import {
 	View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import Svg, { Circle } from 'react-native-svg'
-
-function CalorieRing({
-	progress,
-	size = 200,
-	stroke = 14,
-}: {
-	progress: number
-	size?: number
-	stroke?: number
-}) {
-	const r = (size - stroke) / 2
-	const c = 2 * Math.PI * r
-	const p = Math.min(1, Math.max(0, progress))
-	const offset = c * (1 - p)
-	return (
-		<Svg width={size} height={size}>
-			<Circle
-				cx={size / 2}
-				cy={size / 2}
-				r={r}
-				stroke='rgba(255,255,255,0.08)'
-				strokeWidth={stroke}
-				fill='none'
-			/>
-			<Circle
-				cx={size / 2}
-				cy={size / 2}
-				r={r}
-				stroke={T.primary}
-				strokeWidth={stroke}
-				fill='none'
-				strokeDasharray={`${c} ${c}`}
-				strokeDashoffset={offset}
-				strokeLinecap='round'
-				transform={`rotate(-90 ${size / 2} ${size / 2})`}
-			/>
-		</Svg>
-	)
-}
 
 function MacroBar({
 	label,
@@ -132,18 +91,21 @@ export default function NutritionTab() {
 	const [editF, setEditF] = useState('')
 	const [saving, setSaving] = useState(false)
 
-	const load = useCallback(async (silent = false) => {
-		if (!silent) setLoading(true)
-		try {
-			const data = await fetchNutritionDay()
-			setDay(data)
-		} catch (e) {
-			const msg = e instanceof Error ? e.message : String(e)
-			if (!silent) Alert.alert(t('nutrition', 'loadError'), msg)
-		} finally {
-			setLoading(false)
-		}
-	}, [t])
+	const load = useCallback(
+		async (silent = false) => {
+			if (!silent) setLoading(true)
+			try {
+				const data = await fetchNutritionDay()
+				setDay(data)
+			} catch (e) {
+				const msg = e instanceof Error ? e.message : String(e)
+				if (!silent) Alert.alert(t('nutrition', 'loadError'), msg)
+			} finally {
+				setLoading(false)
+			}
+		},
+		[t],
+	)
 
 	useFocusEffect(
 		useCallback(() => {
@@ -158,7 +120,7 @@ export default function NutritionTab() {
 
 	const progress = useMemo(() => {
 		if (!day || day.targets.calories <= 0) return 0
-		return day.totals.calories / day.targets.calories
+		return Math.min(1, day.totals.calories / day.targets.calories)
 	}, [day])
 
 	const pickAndAnalyze = async (from: 'camera' | 'library') => {
@@ -186,12 +148,19 @@ export default function NutritionTab() {
 
 		setAnalyzing(true)
 		try {
-			const processed = await manipulateAsync(
-				result.assets[0].uri,
-				[{ resize: { width: 1280 } }],
-				{ compress: 0.8, format: SaveFormat.JPEG },
-			)
-			await analyzeMealPhoto(processed.uri)
+			let uri = result.assets[0].uri
+			try {
+				const manip = await import('expo-image-manipulator')
+				const processed = await manip.manipulateAsync(
+					uri,
+					[{ resize: { width: 1280 } }],
+					{ compress: 0.8, format: manip.SaveFormat.JPEG },
+				)
+				uri = processed.uri
+			} catch {
+				/* keep original */
+			}
+			await analyzeMealPhoto(uri)
 			await load(true)
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e)
@@ -290,23 +259,28 @@ export default function NutritionTab() {
 					</View>
 				) : (
 					<>
-						<View style={styles.ringWrap}>
-							<CalorieRing progress={progress} />
-							<View style={styles.ringCenter}>
-								<Text style={styles.remainNum}>
-									{remaining >= 0 ? remaining : Math.abs(remaining)}
-								</Text>
-								<Text style={styles.remainLabel}>
-									{remaining >= 0
-										? t('nutrition', 'left')
-										: t('nutrition', 'over')}
-								</Text>
-								<Text style={styles.goalHint}>
-									{Math.round(day?.totals.calories ?? 0)} /{' '}
-									{Math.round(day?.targets.calories ?? 0)}{' '}
-									{t('nutrition', 'kcal')}
-								</Text>
+						<View style={styles.calorieBlock}>
+							<Text style={styles.remainNum}>
+								{remaining >= 0 ? remaining : Math.abs(remaining)}
+							</Text>
+							<Text style={styles.remainLabel}>
+								{remaining >= 0
+									? t('nutrition', 'left')
+									: t('nutrition', 'over')}
+							</Text>
+							<View style={styles.calorieTrack}>
+								<View
+									style={[
+										styles.calorieFill,
+										{ width: `${progress * 100}%` },
+									]}
+								/>
 							</View>
+							<Text style={styles.goalHint}>
+								{Math.round(day?.totals.calories ?? 0)} /{' '}
+								{Math.round(day?.targets.calories ?? 0)}{' '}
+								{t('nutrition', 'kcal')}
+							</Text>
 						</View>
 
 						{!day?.targets.complete ? (
@@ -347,8 +321,12 @@ export default function NutritionTab() {
 								<View style={styles.vitRow}>
 									{vitaminRows.map(([key, val]) => (
 										<View key={key} style={styles.vitChip}>
-											<Text style={styles.vitKey}>{key.replace(/_/g, ' ')}</Text>
-											<Text style={styles.vitVal}>{Math.round(val * 10) / 10}</Text>
+											<Text style={styles.vitKey}>
+												{key.replace(/_/g, ' ')}
+											</Text>
+											<Text style={styles.vitVal}>
+												{Math.round(val * 10) / 10}
+											</Text>
 										</View>
 									))}
 								</View>
@@ -404,7 +382,8 @@ export default function NutritionTab() {
 										</Text>
 										<Text style={styles.mealMacros}>
 											{Math.round(entry.proteinG)}P ·{' '}
-											{Math.round(entry.carbsG)}C · {Math.round(entry.fatG)}F
+											{Math.round(entry.carbsG)}C ·{' '}
+											{Math.round(entry.fatG)}F
 										</Text>
 									</View>
 									<Text style={styles.mealCal}>
@@ -529,21 +508,13 @@ const styles = StyleSheet.create({
 		textTransform: 'capitalize',
 	},
 	centerBlock: { paddingVertical: 80, alignItems: 'center' },
-	ringWrap: {
-		alignSelf: 'center',
+	calorieBlock: {
+		alignItems: 'center',
 		marginTop: 28,
 		marginBottom: 12,
-		width: 200,
-		height: 200,
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	ringCenter: {
-		position: 'absolute',
-		alignItems: 'center',
 	},
 	remainNum: {
-		fontSize: 44,
+		fontSize: 52,
 		fontWeight: '700',
 		color: '#FFF',
 		letterSpacing: -1,
@@ -553,8 +524,21 @@ const styles = StyleSheet.create({
 		color: T.textSecondary,
 		marginTop: 2,
 	},
+	calorieTrack: {
+		marginTop: 18,
+		width: '100%',
+		height: 8,
+		borderRadius: 4,
+		backgroundColor: 'rgba(255,255,255,0.08)',
+		overflow: 'hidden',
+	},
+	calorieFill: {
+		height: '100%',
+		borderRadius: 4,
+		backgroundColor: T.primary,
+	},
 	goalHint: {
-		marginTop: 8,
+		marginTop: 10,
 		fontSize: 12,
 		color: T.textTertiary,
 	},

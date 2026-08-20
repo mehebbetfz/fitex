@@ -119,6 +119,7 @@ export default function TabsLayout() {
 	return (
 		<>
 			<Tabs
+				initialRouteName='recovery'
 				screenOptions={{
 					headerShown: false,
 					tabBarActiveTintColor: '#34C759',

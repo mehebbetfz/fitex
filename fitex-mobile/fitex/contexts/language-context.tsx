@@ -48,10 +48,17 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 			section: S,
 			key: keyof Translations[S],
 		): string => {
-			const lang = language ?? 'ru'
-			const section_translations = translations[lang][section]
-			const value = section_translations[key]
-			return typeof value === 'string' ? value : String(key)
+			try {
+				const lang = language ?? 'ru'
+				const pack = translations[lang] ?? translations.ru
+				const section_translations = pack?.[section] as
+					| Record<string, string>
+					| undefined
+				const value = section_translations?.[key as string]
+				return typeof value === 'string' ? value : String(key)
+			} catch {
+				return String(key)
+			}
 		},
 		[language],
 	)
