@@ -93,6 +93,11 @@ jobs:
               sleep 5
             done
 
+            echo "Seeding App Review accounts..."
+            docker compose -f docker-compose.colocate.yml exec -T api \
+              node scripts/seed-test-accounts.js \
+              || echo "WARN: reviewer seeding failed — run it manually"
+
             docker compose -f docker-compose.colocate.yml ps
             docker image prune -f
 
