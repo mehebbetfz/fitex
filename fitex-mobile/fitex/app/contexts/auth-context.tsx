@@ -93,7 +93,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				console.log('[Auth] Loaded user string length:', userStr?.length || 0)
 
 				if (token && userStr) {
-					const parsedUser = JSON.parse(userStr) as User
+					let parsedUser: User
+					try {
+						parsedUser = JSON.parse(userStr) as User
+					} catch {
+						await SecureStore.deleteItemAsync('user').catch(() => {})
+						console.warn('[Auth] Corrupt user cache cleared')
+						return
+					}
 					api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 					setUser(parsedUser)
 					try {
@@ -106,10 +113,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 						console.warn('[Auth] /auth/me failed, keeping cached session', e)
 					}
 				} else if (userStr) {
-					// Токен мог стереться старым 401-интерцептором — не выкидываем офлайн-сессию
-					const parsedUser = JSON.parse(userStr) as User
-					setUser(parsedUser)
-					console.warn('[Auth] Restored user without token (offline session)')
+					try {
+						const parsedUser = JSON.parse(userStr) as User
+						setUser(parsedUser)
+						console.warn('[Auth] Restored user without token (offline session)')
+					} catch {
+						await SecureStore.deleteItemAsync('user').catch(() => {})
+					}
 				} else if (token) {
 					api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 				} else {
@@ -184,7 +194,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	}
 
 	const [, , promptGoogleAsync] = Google.useIdTokenAuthRequest({
-		clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID!,
+		// Пустой clientId на проде валит AuthProvider при маунте → крэш после splash
+		clientId:
+			process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
+			'000000000000-placeholder.apps.googleusercontent.com',
 		iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
 		androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
 		redirectUri: makeRedirectUri({ scheme: 'fitex' }),
