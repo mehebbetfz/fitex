@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "ota": "node ./scripts/eas-update.js",
-    "eas:update": "eas update --channel production --non-interactive --auto",
+    "eas:update": "eas update --channel production --environment production --non-interactive --auto",
     "eas:build:ios": "eas build --platform ios --profile production --non-interactive --auto-submit"
   },
   "dependencies": {
