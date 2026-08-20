@@ -95,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				if (token && userStr) {
 					const parsedUser = JSON.parse(userStr) as User
 					api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+					setUser(parsedUser)
 					try {
 						const { data } = await api.get('/auth/me')
 						const merged: User = { ...parsedUser, ...(data as User) }
@@ -102,9 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 						await SecureStore.setItemAsync('user', JSON.stringify(merged))
 						console.log('[Auth] Profile merged from server, isPremium:', merged.isPremium)
 					} catch (e) {
-						console.warn('[Auth] /auth/me failed, using cached user', e)
-						setUser(parsedUser)
+						console.warn('[Auth] /auth/me failed, keeping cached session', e)
 					}
+				} else if (userStr) {
+					// Токен мог стереться старым 401-интерцептором — не выкидываем офлайн-сессию
+					const parsedUser = JSON.parse(userStr) as User
+					setUser(parsedUser)
+					console.warn('[Auth] Restored user without token (offline session)')
 				} else if (token) {
 					api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 				} else {
