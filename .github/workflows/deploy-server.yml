@@ -63,21 +63,22 @@ jobs:
               exit 1
             fi
 
-            # Rebuild and restart container
-            docker compose build --no-cache
-            docker compose up -d --force-recreate
+            # Same VPS as 4talk: shared proxy network + localhost:3001 (see COLOCATE-4TALK.md)
+            docker network create proxy 2>/dev/null || true
 
-            # Wait for health check (up to 60s)
+            docker compose -f docker-compose.colocate.yml build --no-cache
+            docker compose -f docker-compose.colocate.yml up -d --force-recreate
+
             echo "Waiting for API..."
             for i in $(seq 1 12); do
-              if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+              if curl -sf http://127.0.0.1:3001/health > /dev/null 2>&1; then
                 echo "API is healthy"
                 break
               fi
               sleep 5
             done
 
-            docker compose ps
+            docker compose -f docker-compose.colocate.yml ps
             docker image prune -f
 
       - name: Notify success

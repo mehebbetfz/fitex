@@ -1,0 +1,55 @@
+# Fitex рядом с 4talk (Toki) на одном Hetzner.
+# Caddy из toki-app занимает 80/443 — сюда nginx НЕ ставим.
+# Порт 3000 на хосте тоже занят сетью Toki (внутри Docker) — наружу публикуем только 127.0.0.1:3001.
+#
+# Первый раз на сервере:
+#   docker network create proxy 2>/dev/null || true
+#   cp .env.example .env && nano .env   # PUBLIC_BASE_URL=https://api.fitex.app
+#   docker compose -f docker-compose.colocate.yml up -d --build
+#
+# В ~/toki-app/deploy/Caddyfile добавь блок api.fitex.app (см. COLOCATE-4TALK.md),
+# в docker-compose.prod.yml у caddy — сеть proxy + extra_hosts, затем:
+#   cd ~/toki-app/deploy && docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fitex-api:latest
+    container_name: fitex-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      APPLE_ROOT_CA_DIR: /app/certs
+      PORT: "3000"
+    volumes:
+      - ./certs:/app/certs:ro
+      - fitex_uploads:/app/uploads
+    ports:
+      # только localhost — наружу идёт Caddy 4talk
+      - "127.0.0.1:3001:3000"
+    networks:
+      - fitex-net
+      - proxy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  fitex_uploads:
+
+networks:
+  fitex-net:
+    driver: bridge
+  proxy:
+    external: true
+    name: proxy

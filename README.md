@@ -71,7 +71,8 @@ npx expo start
 
 ## Deployment
 
-See [setup-hetzner.sh](fitex-server/fitex/setup-hetzner.sh) for initial server setup.
+- **Same VPS as 4talk (recommended):** [COLOCATE-4TALK.md](COLOCATE-4TALK.md) — Caddy from Toki, Fitex on `:3001`, domain `api.fitex.app`.
+- **Dedicated VPS only:** [setup-hetzner.sh](fitex-server/fitex/setup-hetzner.sh) (nginx). Do **not** run this on the 4talk server.
 
 ## License
 
