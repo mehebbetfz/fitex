@@ -821,6 +821,8 @@ export interface Translations {
 		delete: string
 		deleteTitle: string
 		incompleteProfile: string
+		updateRequiredTitle: string
+		updateRequiredBody: string
 	}
 	profile: {
     title: string
@@ -1776,6 +1778,9 @@ export const ru: Translations = {
 		deleteTitle: 'Удалить запись?',
 		incompleteProfile:
 			'Заполните рост, вес, возраст и пол в профиле для точных целей',
+		updateRequiredTitle: 'Нужно обновить приложение',
+		updateRequiredBody:
+			'Фото еды работает только в новой версии Fitex. Обновите приложение в App Store или Google Play.',
 	},
 	profile: {
     title: 'Профиль',
@@ -2732,6 +2737,9 @@ export const en: Translations = {
 		deleteTitle: 'Delete this meal?',
 		incompleteProfile:
 			'Add height, weight, age and sex in your profile for accurate targets',
+		updateRequiredTitle: 'App update required',
+		updateRequiredBody:
+			'Meal photos need the latest Fitex version. Please update the app in the App Store or Google Play.',
 	},
 	profile: {
     title: 'Profile',
@@ -3688,6 +3696,9 @@ export const az: Translations = {
 		deleteTitle: 'Yazını silək?',
 		incompleteProfile:
 			'Dəqiq hədəflər üçün profildə boy, çəki, yaş və cinsi doldurun',
+		updateRequiredTitle: 'Tətbiqi yeniləmək lazımdır',
+		updateRequiredBody:
+			'Yemək fotoları yalnız yeni Fitex versiyasında işləyir. App Store və ya Google Play-də tətbiqi yeniləyin.',
 	},
 	profile: {
     title: 'Profil',

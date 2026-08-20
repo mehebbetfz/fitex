@@ -119,7 +119,6 @@ export default function TabsLayout() {
 	return (
 		<>
 			<Tabs
-				initialRouteName='recovery'
 				screenOptions={{
 					headerShown: false,
 					tabBarActiveTintColor: '#34C759',
@@ -162,6 +161,13 @@ export default function TabsLayout() {
 			>
 			<Tabs.Screen
 				name='index'
+				options={{
+					href: null,
+				}}
+			/>
+
+			<Tabs.Screen
+				name='nutrition'
 				options={{
 					title: t('tabs', 'nutrition'),
 					tabBarIcon: ({ color, size }) => (
