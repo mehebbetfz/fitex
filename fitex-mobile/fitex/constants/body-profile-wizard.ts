@@ -1,7 +1,7 @@
 export const BODY_PROFILE_STEPS = [
+	'age',
 	'weight',
 	'height',
-	'age',
 	'sex',
 	'goal',
 	'activity',

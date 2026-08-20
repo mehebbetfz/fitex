@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/auth-context'
+import { formatApiError } from '@/services/api'
 import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
@@ -66,7 +67,7 @@ export default function EmailLoginScreen() {
 				setPendingVerificationEmail(email.trim().toLowerCase())
 				router.push('/(auth)/verify-email' as any)
 			} else {
-				Alert.alert(t('common', 'error'), msg || t('common', 'error'))
+				Alert.alert(t('common', 'error'), formatApiError(e))
 			}
 		} finally {
 			setLoading(false)

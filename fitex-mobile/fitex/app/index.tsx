@@ -11,23 +11,24 @@ export default function Index() {
 		return null
 	}
 
-	if (user && !language) {
+	// Язык — до логина и дальше по всему флоу
+	if (!language) {
 		return <Redirect href='/(auth)/language-select' />
 	}
 
+	if (!user) {
+		return <Redirect href='/(auth)/login' />
+	}
+
 	// Только явное false — иначе старый кэш без поля вечно кидает на онбординг
-	if (user && user.bodyStatsCompleted === false) {
+	if (user.bodyStatsCompleted === false) {
 		return <Redirect href='/(auth)/onboarding-body' />
 	}
 
 	// Trial paywall только для новых пользователей без активного Premium
-	if (user && !hasActivePremium(user) && user.isNewUser === true) {
+	if (!hasActivePremium(user) && user.isNewUser === true) {
 		return <Redirect href='/(auth)/trial-paywall' />
 	}
 
-	if (user) {
-		return <Redirect href='/(tabs)' />
-	}
-
-	return <Redirect href='/(auth)/login' />
+	return <Redirect href='/(tabs)' />
 }

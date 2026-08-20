@@ -70,8 +70,8 @@
 			[
 				"expo-image-picker",
 				{
-					"photosPermission": "The app accesses your photos to set your profile picture.",
-					"cameraPermission": "The app uses the camera to take a profile picture."
+					"photosPermission": "Fitex uses your photos to set a profile picture and log meals.",
+					"cameraPermission": "Fitex uses the camera for your profile picture and meal photos."
 				}
 			],
 			"expo-secure-store",

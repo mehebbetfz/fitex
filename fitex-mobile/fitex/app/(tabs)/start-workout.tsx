@@ -108,11 +108,6 @@ export default function ProfileTab() {
 			onPress: () => router.push('/(tabs)/profile/edit'),
 		},
 		{
-			icon: 'stats-chart',
-			label: 'Статистика',
-			onPress: () => router.push('/(tabs)/statistics'),
-		},
-		{
 			icon: 'download',
 			label: 'Экспорт данных',
 			onPress: () => Alert.alert('Экспорт', 'Экспорт данных в разработке'),

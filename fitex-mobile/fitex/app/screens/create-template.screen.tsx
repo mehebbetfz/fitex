@@ -1,6 +1,6 @@
+import { ExerciseSelectionModal } from '@/app/modals/exercise-selection.modal'
 import { useLanguage } from '@/contexts/language-context'
 import { translateExerciseName, translateGroupName } from '@/constants/exercise-i18n'
-import { muscle_groups } from '@/constants/muscle-groups'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
@@ -27,27 +27,6 @@ const COLORS = {
 	error: '#FF3B30',
 }
 
-// Все группы мышц для фильтрации
-const MUSCLE_GROUPS = [
-	{ id: 'chest', name: 'Грудь', icon: 'body' },
-	{ id: 'back', name: 'Спина', icon: 'body' },
-	{ id: 'shoulders', name: 'Плечи', icon: 'body' },
-	{ id: 'biceps', name: 'Бицепс', icon: 'body' },
-	{ id: 'triceps', name: 'Трицепс', icon: 'body' },
-	{ id: 'legs', name: 'Ноги', icon: 'body' },
-	{ id: 'abs', name: 'Пресс', icon: 'body' },
-]
-
-// Все упражнения для выбора
-const ALL_EXERCISES = muscle_groups.flatMap(group =>
-	group.subgroups.flatMap(sub =>
-		sub.exercises.map(ex => ({
-			name: ex.name,
-			muscle_group: sub.name,
-		})),
-	),
-)
-
 interface ExerciseItem {
 	id: string
 	name: string
@@ -68,15 +47,6 @@ export default function AddTemplateScreen() {
 	const [selectedMuscleGroups, setSelectedMuscleGroups] = useState<string[]>([])
 	const [exercises, setExercises] = useState<ExerciseItem[]>([])
 	const [showExercisePicker, setShowExercisePicker] = useState(false)
-	const [searchQuery, setSearchQuery] = useState('')
-
-	const filteredExercises = searchQuery
-		? ALL_EXERCISES.filter(
-				e =>
-					e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					e.muscle_group.toLowerCase().includes(searchQuery.toLowerCase()),
-			)
-		: ALL_EXERCISES
 
 	const handleAddExercise = (exName: string, muscleGroup: string) => {
 		const newExercise: ExerciseItem = {
@@ -87,11 +57,10 @@ export default function AddTemplateScreen() {
 			reps: 10,
 			weight: 0,
 		}
-		setExercises([...exercises, newExercise])
+		setExercises(prev => [...prev, newExercise])
 
-		// Добавляем группу мышц если её ещё нет
-		if (!selectedMuscleGroups.includes(muscleGroup)) {
-			setSelectedMuscleGroups([...selectedMuscleGroups, muscleGroup])
+		if (muscleGroup && !selectedMuscleGroups.includes(muscleGroup)) {
+			setSelectedMuscleGroups(prev => [...prev, muscleGroup])
 		}
 	}
 
@@ -138,13 +107,10 @@ export default function AddTemplateScreen() {
 			}))
 
 			await createWorkoutTemplate(templateData, templateExercises)
-
-			Alert.alert(t('common', 'ok'), t('templates', 'saveTemplate'), [
-				{ text: 'OK', onPress: () => router.back() },
-			])
+			router.back()
 		} catch (error) {
 			console.error('Error saving template:', error)
-			Alert.alert(t('common', 'error'), t('templates', 'confirmDelete'))
+			Alert.alert(t('common', 'error'), t('common', 'error'))
 		}
 	}
 
@@ -332,55 +298,14 @@ export default function AddTemplateScreen() {
 				</TouchableOpacity>
 			</ScrollView>
 
-			{/* Модал выбора упражнений */}
-			{showExercisePicker && (
-				<View style={s.pickerOverlay}>
-					<View style={s.pickerContent}>
-						<View style={s.pickerHeader}>
-							<Text style={s.pickerTitle}>{t('exercises', 'title')}</Text>
-							<TouchableOpacity onPress={() => setShowExercisePicker(false)}>
-								<Ionicons name='close' size={24} color='#8E8E93' />
-							</TouchableOpacity>
-						</View>
-
-						<View style={s.searchContainer}>
-							<Ionicons name='search' size={18} color='#8E8E93' />
-							<TextInput
-								style={s.searchInput}
-								placeholder={t('exercises', 'searchPlaceholder')}
-								placeholderTextColor='#8E8E93'
-								value={searchQuery}
-								onChangeText={setSearchQuery}
-							/>
-							{searchQuery.length > 0 && (
-								<TouchableOpacity onPress={() => setSearchQuery('')}>
-									<Ionicons name='close-circle' size={18} color='#8E8E93' />
-								</TouchableOpacity>
-							)}
-						</View>
-
-						<ScrollView style={s.exercisesList}>
-							{filteredExercises.map((ex, i) => (
-								<TouchableOpacity
-									key={i}
-									style={s.exercisePickerItem}
-									onPress={() => {
-										handleAddExercise(ex.name, ex.muscle_group)
-										setShowExercisePicker(false)
-										setSearchQuery('')
-									}}
-								>
-									<View style={s.exercisePickerDot} />
-									<View>
-										<Text style={s.exercisePickerName}>{translateExerciseName(ex.name, language ?? 'ru')}</Text>
-										<Text style={s.exercisePickerGroup}>{translateGroupName(ex.muscle_group, language ?? 'ru')}</Text>
-									</View>
-								</TouchableOpacity>
-							))}
-						</ScrollView>
-					</View>
-				</View>
-			)}
+			{/* Модал выбора упражнений — тот же UI, что при старте тренировки */}
+			<ExerciseSelectionModal
+				visible={showExercisePicker}
+				onClose={() => setShowExercisePicker(false)}
+				onSelectExercise={({ name: exName, muscleGroup }) => {
+					handleAddExercise(exName, muscleGroup)
+				}}
+			/>
 		</SafeAreaView>
 	)
 }

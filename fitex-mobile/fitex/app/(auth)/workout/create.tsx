@@ -1,11 +1,7 @@
-import { useDatabase } from '@/app/contexts/database-context'
+﻿import { useDatabase } from '@/app/contexts/database-context'
 import { ExerciseDetailModal } from '@/app/modals/exercise-detail-modal'
 import ExerciseHistoryModal from '@/app/modals/exercise-history-modal'
 import { ExerciseSelectionModal } from '@/app/modals/exercise-selection.modal'
-import {
-	ExerciseFormItem,
-	TemplateFormData,
-} from '@/app/screens/create-template.screen'
 import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
@@ -633,7 +629,7 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 
 export default function CreateWorkoutScreen() {
 	const router = useRouter()
-	const { completeWorkout } = useDatabase()
+	const { completeWorkout, getWorkoutTemplate, createWorkoutTemplate } = useDatabase()
 	const { t } = useLanguage()
 
 	const [exercises, setExercises] = useState<Exercise[]>([])
@@ -649,77 +645,98 @@ export default function CreateWorkoutScreen() {
 	const [isSaving, setIsSaving] = useState(false)
 	const [showExerciseSelection, setShowExerciseSelection] = useState(false)
 	const [showTemplateSelection, setShowTemplateSelection] = useState(false)
-	const [showCreateTemplate, setShowCreateTemplate] = useState(false)
-	const [templateInitialData, setTemplateInitialData] =
-		useState<TemplateFormData | null>(null)
 	const [workoutDuration, setWorkoutDuration] = useState(0)
 	const params = useLocalSearchParams()
+	const templateHydrated = useRef(false)
 
 	const templateId = params.templateId as string | undefined
 	const templateName = params.templateName as string | undefined
 	const templateExercises = params.templateExercises as string | undefined
 
-	const handleSaveAsTemplate = () => {
+	const handleSaveAsTemplate = async () => {
 		if (exercises.length === 0) {
 			Alert.alert(t('common', 'error'), t('workout', 'saveTemplateError'))
 			return
 		}
-
-		const templateExercises: ExerciseFormItem[] = exercises.map((ex, index) => {
-			const avgWeight =
-				ex.sets.length > 0
-					? ex.sets.reduce((sum, set) => sum + set.weight, 0) / ex.sets.length
-					: 0
-
-			return {
-				localId: `template-${Date.now()}-${index}`,
-				name: ex.name,
-				muscle_group: ex.muscleGroup,
-				order_index: index,
-				default_sets: ex.sets.length || 3,
-				default_reps: ex.sets[0]?.reps || 10,
-				default_weight: Math.round(avgWeight * 10) / 10,
-			}
-		})
-
-		setTemplateInitialData({
-			name: workoutName,
-			description: notes,
-			estimatedDuration: formatTime(workoutDuration),
-			exercises: templateExercises,
-		})
-
-		setShowCreateTemplate(true)
+		const name = workoutName.trim() || t('workout', 'myWorkout')
+		const muscleGroups = [
+			...new Set(exercises.map(ex => ex.muscleGroup).filter(Boolean)),
+		].join(',')
+		try {
+			await createWorkoutTemplate(
+				{
+					name,
+					description: notes.trim(),
+					estimated_duration: Math.max(1, Math.round(workoutDuration / 60) || 60),
+					muscle_groups: muscleGroups,
+					exercises_count: exercises.length,
+				},
+				exercises.map((ex, index) => {
+					const avgWeight =
+						ex.sets.length > 0
+							? ex.sets.reduce((sum, set) => sum + set.weight, 0) / ex.sets.length
+							: 0
+					return {
+						name: ex.name,
+						muscle_group: ex.muscleGroup,
+						order_index: index,
+						default_sets: ex.sets.length || 3,
+						default_reps: ex.sets[0]?.reps || 10,
+						default_weight: Math.round(avgWeight * 10) / 10,
+					}
+				}),
+			)
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+			Alert.alert(t('templates', 'savedTitle'), t('templates', 'savedMsg'))
+		} catch (e) {
+			console.error(e)
+			Alert.alert(t('common', 'error'), t('workout', 'saveTemplateError'))
+		}
 	}
 
 	useEffect(() => {
+		if (templateHydrated.current) return
+
+		const hydrate = (parsedExercises: any[], name?: string) => {
+			templateHydrated.current = true
+			setWorkoutName(name || templateName || t('workout', 'myWorkout'))
+			const newExercises = parsedExercises.map((ex: any, i: number) => ({
+				id: Date.now() + i,
+				name: ex.name,
+				muscleGroup: ex.muscle_group,
+				sets: Array.from({ length: ex.default_sets || 3 }, (_, j) => ({
+					id: Date.now() + i * 1000 + j,
+					setNumber: j + 1,
+					weight: (ex.default_weight != null && ex.default_weight > 0) ? Number(ex.default_weight) : 0,
+					reps: ex.default_reps || 10,
+					completed: false,
+				})),
+				collapsed: false,
+				order_index: ex.order_index || i,
+			}))
+			setExercises(newExercises)
+			startWorkoutTimer()
+		}
+
 		if (templateExercises) {
 			try {
-				const parsedExercises = JSON.parse(templateExercises)
-				setWorkoutName(templateName || t('workout', 'myWorkout'))
-
-				const newExercises = parsedExercises.map((ex: any, i: number) => ({
-					id: Date.now() + i,
-					name: ex.name,
-					muscleGroup: ex.muscle_group,
-					sets: Array.from({ length: ex.default_sets || 3 }, (_, j) => ({
-						id: Date.now() + i * 1000 + j,
-						setNumber: j + 1,
-						weight: ex.default_weight > 0 ? ex.default_weight : 0,
-						reps: ex.default_reps || 10,
-						completed: false,
-					})),
-					collapsed: false,
-					order_index: ex.order_index || i,
-				}))
-
-				setExercises(newExercises)
-				startWorkoutTimer()
+				hydrate(JSON.parse(templateExercises), templateName)
 			} catch (error) {
 				console.error('Error parsing template exercises:', error)
 			}
+			return
 		}
-	}, [templateExercises, templateName])
+
+		if (templateId) {
+			const id = parseInt(templateId, 10)
+			if (!Number.isFinite(id)) return
+			void getWorkoutTemplate(id).then(data => {
+				if (data?.exercises?.length) {
+					hydrate(data.exercises, data.template.name || templateName)
+				}
+			})
+		}
+	}, [templateExercises, templateId, templateName, t, getWorkoutTemplate])
 
 	const handleAppStateChange = useCallback(
 		async (nextAppState: string) => {
@@ -1276,6 +1293,20 @@ export default function CreateWorkoutScreen() {
 									{t('workout', 'addExercise')}
 								</Text>
 							</TouchableOpacity>
+
+							<TouchableOpacity
+								style={styles.saveTemplateCard}
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+									void handleSaveAsTemplate()
+								}}
+								activeOpacity={0.7}
+							>
+								<Ionicons name='copy-outline' size={20} color={COLORS.primary} />
+								<Text style={styles.saveTemplateText}>
+									{t('workout', 'saveAsTemplate')}
+								</Text>
+							</TouchableOpacity>
 						</>
 					)}
 				</View>
@@ -1622,6 +1653,24 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		color: COLORS.primary,
 		fontWeight: '600',
+	},
+	saveTemplateCard: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 8,
+		backgroundColor: 'rgba(52,199,89,0.08)',
+		padding: 14,
+		marginHorizontal: 8,
+		marginBottom: 12,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: 'rgba(52,199,89,0.2)',
+	},
+	saveTemplateText: {
+		fontSize: 15,
+		color: COLORS.primary,
+		fontWeight: '700',
 	},
 	notesSection: {
 		backgroundColor: COLORS.card,

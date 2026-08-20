@@ -182,8 +182,13 @@ export default function TemplateSelectionModal({
 		router.push({ pathname: '/templates' })
 	}
 
-	const recentTemplates = templates.slice(0, 3)
-	const hasMoreTemplates = templates.length > 3
+	const handleCreateTemplate = () => {
+		onClose()
+		router.push('/(routes)/add-template')
+	}
+
+	const recentTemplates = templates.slice(0, 8)
+	const hasMoreTemplates = templates.length > 8
 
 	if (!modalVisible) return null
 
@@ -229,9 +234,9 @@ export default function TemplateSelectionModal({
 							<Ionicons name='add' size={28} color={COLORS.primary} />
 						</View>
 						<View style={styles.emptyWorkoutText}>
-						<Text style={styles.emptyWorkoutTitle}>{t('workout', 'noExercises')}</Text>
-						<Text style={styles.emptyWorkoutSub}>
-								{t('workout', 'noExercisesSubtitle')}
+							<Text style={styles.emptyWorkoutTitle}>{t('templates', 'emptyWorkout')}</Text>
+							<Text style={styles.emptyWorkoutSub}>
+								{t('templates', 'emptyWorkoutSub')}
 							</Text>
 						</View>
 						<Ionicons
@@ -270,12 +275,11 @@ export default function TemplateSelectionModal({
 								/>
 								<Text style={styles.emptyStateTitle}>{t('templates', 'noTemplates')}</Text>
 								<Text style={styles.emptyStateSub}>
-									Создай шаблон после тренировки, чтобы быстро повторять её в
-									будущем
+									{t('templates', 'emptyHint')}
 								</Text>
 								<TouchableOpacity
 									style={styles.createFirstButton}
-									onPress={handleRedirectToTemplates}
+									onPress={handleCreateTemplate}
 								>
 									<Text style={styles.createFirstButtonText}>
 										{t('templates', 'createTemplate')}
@@ -373,15 +377,17 @@ export default function TemplateSelectionModal({
 						</FadeIn>
 					)}
 
-					{/* Кнопка "Все шаблоны" внизу списка */}
-					{!templatesLoading && hasMoreTemplates && (
+					{/* Manage / all templates */}
+					{!templatesLoading && templates.length > 0 && (
 						<FadeIn show={!templatesLoading}>
 							<TouchableOpacity
 								style={styles.viewAllButton}
 								onPress={handleRedirectToTemplates}
 							>
 								<Text style={styles.viewAllButtonText}>
-									{t('templates', 'showAll')} ({templates.length})
+									{hasMoreTemplates
+										? `${t('templates', 'showAll')} (${templates.length})`
+										: t('templates', 'manageTemplates')}
 								</Text>
 								<Ionicons
 									name='arrow-forward'

@@ -27,7 +27,7 @@ export default function LanguageSelectScreen() {
 		if (!selected || loading) return
 		setLoading(true)
 		await setLanguage(selected)
-		router.replace('/(tabs)')
+		router.replace('/')
 	}
 
 	return (

@@ -162,22 +162,29 @@ export default function TabsLayout() {
 			<Tabs.Screen
 				name='index'
 				options={{
-					title: t('tabs', 'progress'),
-						tabBarIcon: ({ color, size }) => (
-							<Ionicons name='pie-chart-outline' size={size} color={color} />
-						),
-					}}
-				/>
+					title: t('tabs', 'nutrition'),
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name='nutrition-outline' size={size} color={color} />
+					),
+				}}
+			/>
+
+			<Tabs.Screen
+				name='nutrition'
+				options={{
+					href: null,
+				}}
+			/>
 
 			<Tabs.Screen
 				name='recovery'
 				options={{
 					title: t('tabs', 'body'),
-						tabBarIcon: ({ color, size }) => (
-							<Ionicons name='body-outline' size={size} color={color} />
-						),
-					}}
-				/>
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name='body-outline' size={size} color={color} />
+					),
+				}}
+			/>
 
 				<Tabs.Screen
 					name='start-workout'

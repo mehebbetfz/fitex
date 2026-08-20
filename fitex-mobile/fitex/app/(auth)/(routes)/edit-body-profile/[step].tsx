@@ -26,7 +26,7 @@ export default function EditBodyProfileStepScreen() {
 	const { state, setState, loading, submitSave } = useEditBodyProfile()
 
 	if (!raw || !isBodyProfileStep(raw)) {
-		return <Redirect href='/(auth)/(routes)/edit-body-profile/weight' />
+		return <Redirect href='/(auth)/(routes)/edit-body-profile/age' />
 	}
 
 	const step: BodyProfileStep = raw

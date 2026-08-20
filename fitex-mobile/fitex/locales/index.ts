@@ -1,4 +1,4 @@
-export type Language = 'ru' | 'en' | 'az'
+﻿export type Language = 'ru' | 'en' | 'az'
 
 export interface Translations {
   splash: {
@@ -129,6 +129,13 @@ export interface Translations {
     weight: string
     deleteTitle: string
     deleteMsg: string
+    tapToStart: string
+    emptyHint: string
+    emptyWorkout: string
+    emptyWorkoutSub: string
+    manageTemplates: string
+    savedTitle: string
+    savedMsg: string
   }
   measurements: {
     title: string
@@ -621,12 +628,13 @@ export interface Translations {
     resetSubmit: string
     backToLogin: string
   }
-  tabs: {
-    progress: string
-    body: string
-    history: string
-    profile: string
-  }
+	tabs: {
+		progress: string
+		body: string
+		history: string
+		profile: string
+		nutrition: string
+	}
   progress: {
     title: string
     subtitle: string
@@ -665,6 +673,18 @@ export interface Translations {
     durationTrend: string
     volumeByMuscle: string
     volumeOther: string
+    period7d: string
+    period30d: string
+    period90d: string
+    periodAll: string
+    workoutsCount: string
+    periodVolume: string
+    streak: string
+    vsPrevPeriod: string
+    tonShort: string
+    kgShort: string
+    daysShort: string
+    minShort: string
   }
   recovery: {
     title: string
@@ -683,6 +703,9 @@ export interface Translations {
     legendRest: string
     fullyRecovered: string
     timeLeft: string
+    hoursShort: string
+    minutesShort: string
+    daysShort: string
     bodyStatsCard: string
     bodyStatsEdit: string
     bodyStatsEmpty: string
@@ -737,13 +760,76 @@ export interface Translations {
     workout1: string
     workout2: string
     workout5: string
+    activityTitle: string
+    less: string
+    more: string
+    daySets: string
   }
-  profile: {
+  settings: {
+    title: string
+    subtitle: string
+    notifications: string
+    workoutReminder: string
+    workoutReminderSubtitle: string
+    notifDisabled: string
+    notifTimeLabel: string
+    recoveryReady: string
+    recoveryReadySubtitle: string
+    recoveryNotifTitle: string
+    recoveryNotifBody: string
+    cloud: string
+    syncData: string
+    syncSubtitle: string
+    export: string
+    exportAll: string
+    exportAllSubtitle: string
+    exportWorkouts: string
+    language: string
+    permissionsTitle: string
+    notifPermission: string
+    notifError: string
+    exportError: string
+    workoutReminderTitle: string
+		workoutReminderBody: string
+	}
+	nutrition: {
+		today: string
+		left: string
+		over: string
+		kcal: string
+		g: string
+		protein: string
+		carbs: string
+		fat: string
+		vitamins: string
+		meals: string
+		emptyTitle: string
+		emptyBody: string
+		addMeal: string
+		addMealHint: string
+		camera: string
+		gallery: string
+		analyzing: string
+		analyzeError: string
+		loadError: string
+		permissionTitle: string
+		permissionBody: string
+		editMeal: string
+		name: string
+		save: string
+		saveError: string
+		delete: string
+		deleteTitle: string
+		incompleteProfile: string
+	}
+	profile: {
     title: string
     subtitle: string
     ratingEntry: string
     ratingEntrySubtitle: string
     ratingSocialSection: string
+    templatesEntry: string
+    templatesEntrySubtitle: string
     marketplaceEntry: string
     marketplaceSubtitle: string
     gymPassEntry: string
@@ -822,6 +908,18 @@ export interface Translations {
     socialTiktokPh: string
     socialStravaPh: string
     socialWebsitePh: string
+    settingsEntry: string
+    settingsSubtitle: string
+    bodyRecoveryEntry: string
+    bodyRecoverySubtitle: string
+    adminEntry: string
+    adminSubtitle: string
+  }
+  admin: {
+    title: string
+    search: string
+    searchPlaceholder: string
+    empty: string
   }
   trial: {
     badge: string
@@ -994,6 +1092,13 @@ export const ru: Translations = {
     weight: 'Вес (кг)',
     deleteTitle: 'Удалить шаблон?',
     deleteMsg: 'Это действие нельзя отменить',
+    tapToStart: 'Нажми — начать тренировку',
+    emptyHint: 'Создай шаблон один раз — потом стартуй в один тап',
+    emptyWorkout: 'Пустая тренировка',
+    emptyWorkoutSub: 'Начать без шаблона и добавить упражнения вручную',
+    manageTemplates: 'Управление шаблонами',
+    savedTitle: 'Шаблон сохранён',
+    savedMsg: 'Его можно запустить из центральной кнопки',
   },
   measurements: {
     title: 'Замеры тела',
@@ -1474,12 +1579,13 @@ export const ru: Translations = {
     resetSubmit: 'Сбросить пароль',
     backToLogin: 'Вернуться ко входу',
   },
-  tabs: {
-    progress: 'Прогресс',
-    body: 'Тело',
-    history: 'История',
-    profile: 'Профиль',
-  },
+	tabs: {
+		progress: 'Прогресс',
+		body: 'Тело',
+		history: 'История',
+		profile: 'Профиль',
+		nutrition: 'Еда',
+	},
   progress: {
     title: 'Статистика прогресса',
     subtitle: 'Вся информация о ваших результатах',
@@ -1512,13 +1618,25 @@ export const ru: Translations = {
     noWorkouts: 'Нет тренировок',
     startFirstWorkoutCta: 'Начать тренировку',
     progressEmptyHint:
-      'Аналитика, замеры и рекорды появятся здесь после первой завершённой тренировки.',
+      'Завершите первую тренировку, чтобы увидеть KPI и графики. Замеры и рекорды доступны ниже.',
     statsOverview: 'Сводка',
     workoutInsights: 'Тренировки',
-    volumeLast7Days: 'Объём за 7 дней (т)',
+    volumeLast7Days: 'Объём по дням (т)',
     durationTrend: 'Длительность, мин',
     volumeByMuscle: 'Объём по группам мышц',
     volumeOther: 'Прочее',
+    period7d: '7 дн',
+    period30d: '30 дн',
+    period90d: '90 дн',
+    periodAll: 'Всё',
+    workoutsCount: 'Тренировки',
+    periodVolume: 'Объём',
+    streak: 'Серия',
+    vsPrevPeriod: 'к пред. периоду',
+    tonShort: 'т',
+    kgShort: 'кг',
+    daysShort: 'дн',
+    minShort: 'мин',
   },
   recovery: {
     title: 'Восстановление',
@@ -1537,20 +1655,23 @@ export const ru: Translations = {
     legendRest: 'Отдых',
     fullyRecovered: 'Восстановлен',
     timeLeft: 'Осталось',
+    hoursShort: 'ч',
+    minutesShort: 'мин',
+    daysShort: 'д',
     bodyStatsCard: 'Мои параметры',
     bodyStatsEdit: 'Изменить',
     bodyStatsEmpty: 'Укажите рост, вес и возраст',
   },
   bodyProfile: {
     onboardingTitle: 'Ваши данные',
-    onboardingSubtitle: 'Нужны для расчётов нагрузки и прогресса',
+    onboardingSubtitle: 'Возраст, вес, рост, пол, цель и частота тренировок',
     editTitle: 'Параметры тела',
     height: 'Рост',
     weight: 'Вес',
     age: 'Возраст',
     sex: 'Пол',
-    goal: 'Цель',
-    activity: 'Активность',
+    goal: 'Цель тренировок',
+    activity: 'Тренировок в неделю',
     save: 'Сохранить',
     skip: 'Пропустить',
     cm: 'см',
@@ -1565,11 +1686,11 @@ export const ru: Translations = {
     goalMaintain: 'Поддерживать форму',
     goalHealth: 'Здоровье',
     goalUnspecified: 'Не указывать',
-    actSedentary: 'Малоактивный',
-    actLight: 'Лёгкая',
-    actModerate: 'Умеренная',
-    actActive: 'Высокая',
-    actVery: 'Очень высокая',
+    actSedentary: '1 раз или реже',
+    actLight: '2 раза',
+    actModerate: '3 раза',
+    actActive: '4–5 раз',
+    actVery: '6–7 раз',
     actUnspecified: 'Не указывать',
     fillRequired: 'Укажите рост, вес и возраст',
     next: 'Далее',
@@ -1591,13 +1712,79 @@ export const ru: Translations = {
     workout1: 'тренировка',
     workout2: 'тренировки',
     workout5: 'тренировок',
+    activityTitle: 'Активность',
+    less: 'Меньше',
+    more: 'Больше',
+    daySets: '{count} подх.',
   },
-  profile: {
+  settings: {
+    title: 'Настройки',
+    subtitle: 'Уведомления, язык и данные',
+    notifications: 'Уведомления',
+    workoutReminder: 'Напоминания о тренировках',
+    workoutReminderSubtitle: 'Пн–Пт в выбранное время',
+    notifDisabled: 'Выключено',
+    notifTimeLabel: 'Время напоминания',
+    recoveryReady: 'Восстановление мышц',
+    recoveryReadySubtitle: 'Уведомление, когда группа мышц снова готова',
+    recoveryNotifTitle: 'Мышцы восстановлены',
+    recoveryNotifBody: '{group} снова готовы к тренировке',
+    cloud: 'Облако',
+    syncData: 'Синхронизировать данные',
+    syncSubtitle: 'Загрузить и отправить данные на сервер',
+    export: 'Экспорт данных',
+    exportAll: 'Экспортировать всё',
+    exportAllSubtitle: 'Тренировки, замеры, рекорды в CSV',
+    exportWorkouts: 'Только тренировки',
+    language: 'Язык',
+    permissionsTitle: 'Нужен доступ',
+    notifPermission:
+      'Разрешите уведомления в настройках устройства, чтобы получать напоминания.',
+    notifError: 'Не удалось изменить настройки уведомлений',
+    exportError: 'Не удалось экспортировать данные',
+    workoutReminderTitle: 'Время тренировки!',
+		workoutReminderBody:
+			'Не забудь про сегодняшнюю тренировку — ты уже так близко к цели!',
+	},
+	nutrition: {
+		today: 'Сегодня',
+		left: 'осталось',
+		over: 'сверх цели',
+		kcal: 'ккал',
+		g: 'г',
+		protein: 'Белки',
+		carbs: 'Углеводы',
+		fat: 'Жиры',
+		vitamins: 'Витамины',
+		meals: 'Приёмы пищи',
+		emptyTitle: 'Пока пусто',
+		emptyBody: 'Сфотографируй еду — мы оценим калории и БЖУ',
+		addMeal: 'Добавить еду',
+		addMealHint: 'Сделай фото или выбери из галереи',
+		camera: 'Камера',
+		gallery: 'Галерея',
+		analyzing: 'Анализируем фото…',
+		analyzeError: 'Не удалось разобрать фото',
+		loadError: 'Не удалось загрузить день',
+		permissionTitle: 'Нужен доступ',
+		permissionBody: 'Разрешите камеру или галерею, чтобы добавить еду',
+		editMeal: 'Изменить',
+		name: 'Название',
+		save: 'Сохранить',
+		saveError: 'Не удалось сохранить',
+		delete: 'Удалить',
+		deleteTitle: 'Удалить запись?',
+		incompleteProfile:
+			'Заполните рост, вес, возраст и пол в профиле для точных целей',
+	},
+	profile: {
     title: 'Профиль',
     subtitle: 'Управляйте аккаунтом',
     ratingEntry: 'Мой рейтинг',
     ratingEntrySubtitle: 'Уровень, достижения и очки',
     ratingSocialSection: 'Рейтинг и соцсети',
+    templatesEntry: 'Шаблоны тренировок',
+    templatesEntrySubtitle: 'Быстрый старт знакомых программ',
     marketplaceEntry: 'Маркетплейс',
     marketplaceSubtitle: 'Тренеры и планы тренировок',
     gymPassEntry: 'Fitex Pass',
@@ -1677,6 +1864,18 @@ export const ru: Translations = {
     socialTiktokPh: '@ник или ссылка',
     socialStravaPh: 'Ссылка на профиль Strava',
     socialWebsitePh: 'https://…',
+    settingsEntry: 'Настройки',
+    settingsSubtitle: 'Уведомления, язык, синхронизация и экспорт',
+    bodyRecoveryEntry: 'Тело и восстановление',
+    bodyRecoverySubtitle: 'Карта мышц и готовность к тренировке',
+    adminEntry: 'Админка',
+    adminSubtitle: 'Раздача Premium пользователям',
+  },
+  admin: {
+    title: 'Админка',
+    search: 'Найти',
+    searchPlaceholder: 'Email или имя…',
+    empty: 'Введите запрос или нажмите «Найти»',
   },
   trial: {
     badge: 'Бесплатный период',
@@ -1850,6 +2049,13 @@ export const en: Translations = {
     weight: 'Weight (kg)',
     deleteTitle: 'Delete Template?',
     deleteMsg: 'This cannot be undone',
+    tapToStart: 'Tap to start workout',
+    emptyHint: 'Create a template once — start it in one tap later',
+    emptyWorkout: 'Empty workout',
+    emptyWorkoutSub: 'Start blank and add exercises manually',
+    manageTemplates: 'Manage templates',
+    savedTitle: 'Template saved',
+    savedMsg: 'Start it anytime from the center button',
   },
   measurements: {
     title: 'Body Measurements',
@@ -2330,12 +2536,13 @@ export const en: Translations = {
     resetSubmit: 'Reset Password',
     backToLogin: 'Back to Sign In',
   },
-  tabs: {
-    progress: 'Progress',
-    body: 'Body',
-    history: 'History',
-    profile: 'Profile',
-  },
+	tabs: {
+		progress: 'Progress',
+		body: 'Body',
+		history: 'History',
+		profile: 'Profile',
+		nutrition: 'Food',
+	},
   progress: {
     title: 'Progress Statistics',
     subtitle: 'All your fitness results in one place',
@@ -2368,13 +2575,25 @@ export const en: Translations = {
     noWorkouts: 'No workouts',
     startFirstWorkoutCta: 'Start workout',
     progressEmptyHint:
-      'Analytics, measurements and records will appear here after your first completed workout.',
+      'Complete your first workout to unlock KPIs and charts. Measurements and records are still available below.',
     statsOverview: 'Overview',
     workoutInsights: 'Training',
-    volumeLast7Days: 'Volume — last 7 days (t)',
+    volumeLast7Days: 'Volume by day (t)',
     durationTrend: 'Duration, min',
     volumeByMuscle: 'Volume by muscle group',
     volumeOther: 'Other',
+    period7d: '7d',
+    period30d: '30d',
+    period90d: '90d',
+    periodAll: 'All',
+    workoutsCount: 'Workouts',
+    periodVolume: 'Volume',
+    streak: 'Streak',
+    vsPrevPeriod: 'vs prev. period',
+    tonShort: 't',
+    kgShort: 'kg',
+    daysShort: 'd',
+    minShort: 'min',
   },
   recovery: {
     title: 'Recovery',
@@ -2393,20 +2612,23 @@ export const en: Translations = {
     legendRest: 'Rest',
     fullyRecovered: 'Recovered',
     timeLeft: 'Left',
+    hoursShort: 'h',
+    minutesShort: 'm',
+    daysShort: 'd',
     bodyStatsCard: 'My stats',
     bodyStatsEdit: 'Edit',
     bodyStatsEmpty: 'Add height, weight and age',
   },
   bodyProfile: {
     onboardingTitle: 'Your details',
-    onboardingSubtitle: 'Used for load and progress estimates',
+    onboardingSubtitle: 'Age, weight, height, sex, goal and training frequency',
     editTitle: 'Body stats',
     height: 'Height',
     weight: 'Weight',
     age: 'Age',
     sex: 'Sex',
-    goal: 'Goal',
-    activity: 'Activity',
+    goal: 'Training goal',
+    activity: 'Workouts per week',
     save: 'Save',
     skip: 'Skip',
     cm: 'cm',
@@ -2421,11 +2643,11 @@ export const en: Translations = {
     goalMaintain: 'Stay in shape',
     goalHealth: 'Health',
     goalUnspecified: 'Prefer not to say',
-    actSedentary: 'Sedentary',
-    actLight: 'Light',
-    actModerate: 'Moderate',
-    actActive: 'Active',
-    actVery: 'Very active',
+    actSedentary: '1× or less',
+    actLight: '2×',
+    actModerate: '3×',
+    actActive: '4–5×',
+    actVery: '6–7×',
     actUnspecified: 'Prefer not to say',
     fillRequired: 'Enter height, weight and age',
     next: 'Next',
@@ -2447,13 +2669,78 @@ export const en: Translations = {
     workout1: 'workout',
     workout2: 'workouts',
     workout5: 'workouts',
+    activityTitle: 'Activity',
+    less: 'Less',
+    more: 'More',
+    daySets: '{count} sets',
   },
-  profile: {
+  settings: {
+    title: 'Settings',
+    subtitle: 'Notifications, language and data',
+    notifications: 'Notifications',
+    workoutReminder: 'Workout reminders',
+    workoutReminderSubtitle: 'Mon–Fri at the selected time',
+    notifDisabled: 'Off',
+    notifTimeLabel: 'Reminder time',
+    recoveryReady: 'Muscle recovery',
+    recoveryReadySubtitle: 'Alert when a muscle group is ready again',
+    recoveryNotifTitle: 'Muscles recovered',
+    recoveryNotifBody: '{group} is ready to train again',
+    cloud: 'Cloud',
+    syncData: 'Sync data',
+    syncSubtitle: 'Upload and download data from the server',
+    export: 'Export data',
+    exportAll: 'Export everything',
+    exportAllSubtitle: 'Workouts, measurements, records to CSV',
+    exportWorkouts: 'Workouts only',
+    language: 'Language',
+    permissionsTitle: 'Permission needed',
+    notifPermission:
+      'Allow notifications in device settings to receive reminders.',
+    notifError: 'Failed to change notification settings',
+    exportError: 'Failed to export data',
+    workoutReminderTitle: 'Time to train!',
+		workoutReminderBody: "Don't skip today's workout — you're so close to your goal!",
+	},
+	nutrition: {
+		today: 'Today',
+		left: 'left',
+		over: 'over',
+		kcal: 'kcal',
+		g: 'g',
+		protein: 'Protein',
+		carbs: 'Carbs',
+		fat: 'Fat',
+		vitamins: 'Vitamins',
+		meals: 'Meals',
+		emptyTitle: 'Nothing yet',
+		emptyBody: 'Snap a meal — we estimate calories and macros',
+		addMeal: 'Add food',
+		addMealHint: 'Take a photo or pick from your library',
+		camera: 'Camera',
+		gallery: 'Gallery',
+		analyzing: 'Analyzing photo…',
+		analyzeError: 'Could not analyze photo',
+		loadError: 'Could not load today',
+		permissionTitle: 'Permission needed',
+		permissionBody: 'Allow camera or photos to log food',
+		editMeal: 'Edit meal',
+		name: 'Name',
+		save: 'Save',
+		saveError: 'Could not save',
+		delete: 'Delete',
+		deleteTitle: 'Delete this meal?',
+		incompleteProfile:
+			'Add height, weight, age and sex in your profile for accurate targets',
+	},
+	profile: {
     title: 'Profile',
     subtitle: 'Manage your account',
     ratingEntry: 'My Rating',
     ratingEntrySubtitle: 'Level, achievements & score',
     ratingSocialSection: 'Rating & social',
+    templatesEntry: 'Workout templates',
+    templatesEntrySubtitle: 'Quick start for familiar programs',
     marketplaceEntry: 'Marketplace',
     marketplaceSubtitle: 'Trainers and workout plans',
     gymPassEntry: 'Fitex Pass',
@@ -2533,6 +2820,18 @@ export const en: Translations = {
     socialTiktokPh: '@handle or URL',
     socialStravaPh: 'Strava profile URL',
     socialWebsitePh: 'https://…',
+    settingsEntry: 'Settings',
+    settingsSubtitle: 'Notifications, language, sync and export',
+    bodyRecoveryEntry: 'Body & recovery',
+    bodyRecoverySubtitle: 'Muscle map and readiness to train',
+    adminEntry: 'Admin',
+    adminSubtitle: 'Grant Premium to users',
+  },
+  admin: {
+    title: 'Admin',
+    search: 'Search',
+    searchPlaceholder: 'Email or name…',
+    empty: 'Enter a query or tap Search',
   },
   trial: {
     badge: 'Free Trial',
@@ -2706,6 +3005,13 @@ export const az: Translations = {
     weight: 'Çəki (kq)',
     deleteTitle: 'Şablonu sil?',
     deleteMsg: 'Bu əməliyyat geri alına bilməz',
+    tapToStart: 'Toxun — məşqə başla',
+    emptyHint: 'Bir dəfə şablon yarat — sonra bir toxunuşla başla',
+    emptyWorkout: 'Boş məşq',
+    emptyWorkoutSub: 'Şablonsuz başla və məşqləri əl ilə əlavə et',
+    manageTemplates: 'Şablonları idarə et',
+    savedTitle: 'Şablon saxlanıldı',
+    savedMsg: 'Mərkəz düyməsindən istənilən vaxt başlada bilərsən',
   },
   measurements: {
     title: 'Bədən ölçüləri',
@@ -3186,12 +3492,13 @@ export const az: Translations = {
     resetSubmit: 'Şifrəni sıfırla',
     backToLogin: 'Girişə qayıt',
   },
-  tabs: {
-    progress: 'Tərəqqi',
-    body: 'Bədən',
-    history: 'Tarixçə',
-    profile: 'Profil',
-  },
+	tabs: {
+		progress: 'Tərəqqi',
+		body: 'Bədən',
+		history: 'Tarixçə',
+		profile: 'Profil',
+		nutrition: 'Yemək',
+	},
   progress: {
     title: 'Tərəqqi statistikası',
     subtitle: 'Nəticələriniz haqqında bütün məlumat',
@@ -3224,13 +3531,25 @@ export const az: Translations = {
     noWorkouts: 'Məşq yoxdur',
     startFirstWorkoutCta: 'Məşqə başla',
     progressEmptyHint:
-      'İlk tamamlanmış məşqdən sonra burada analitika, ölçülər və rekordlar görünəcək.',
+      'KPI və qrafiklər üçün ilk məşqi tamamlayın. Ölçülər və rekordlar aşağıda əlçatandır.',
     statsOverview: 'Xülasə',
     workoutInsights: 'Məşqlər',
-    volumeLast7Days: 'Son 7 günün həcmi (t)',
+    volumeLast7Days: 'Günlük həcm (t)',
     durationTrend: 'Müddət, dəq',
     volumeByMuscle: 'Əzələ qrupları üzrə həcm',
     volumeOther: 'Digər',
+    period7d: '7 gün',
+    period30d: '30 gün',
+    period90d: '90 gün',
+    periodAll: 'Hamısı',
+    workoutsCount: 'Məşqlər',
+    periodVolume: 'Həcm',
+    streak: 'Seriya',
+    vsPrevPeriod: 'əvvəlki dövrə görə',
+    tonShort: 't',
+    kgShort: 'kq',
+    daysShort: 'gün',
+    minShort: 'dəq',
   },
   recovery: {
     title: 'Bərpa',
@@ -3249,20 +3568,23 @@ export const az: Translations = {
     legendRest: 'İstirahət',
     fullyRecovered: 'Bərpa edilib',
     timeLeft: 'Qaldı',
+    hoursShort: 'saat',
+    minutesShort: 'dəq',
+    daysShort: 'gün',
     bodyStatsCard: 'Parametrlərim',
     bodyStatsEdit: 'Dəyiş',
     bodyStatsEmpty: 'Boy, çəki və yaş qeyd edin',
   },
   bodyProfile: {
     onboardingTitle: 'Məlumatlarınız',
-    onboardingSubtitle: 'Yük və tərəqqi üçün lazımdır',
+    onboardingSubtitle: 'Yaş, çəki, boy, cins, məqsəd və məşq tezliyi',
     editTitle: 'Bədən parametrləri',
     height: 'Boy',
     weight: 'Çəki',
     age: 'Yaş',
     sex: 'Cins',
-    goal: 'Məqsəd',
-    activity: 'Aktivlik',
+    goal: 'Məşq məqsədi',
+    activity: 'Həftədə neçə məşq',
     save: 'Saxla',
     skip: 'Keç',
     cm: 'sm',
@@ -3277,11 +3599,11 @@ export const az: Translations = {
     goalMaintain: 'Formanı saxlamaq',
     goalHealth: 'Sağlamlıq',
     goalUnspecified: 'Göstərmə',
-    actSedentary: 'Az hərəkətli',
-    actLight: 'Yüngül',
-    actModerate: 'Orta',
-    actActive: 'Yüksək',
-    actVery: 'Çox yüksək',
+    actSedentary: '1 və ya daha az',
+    actLight: '2 dəfə',
+    actModerate: '3 dəfə',
+    actActive: '4–5 dəfə',
+    actVery: '6–7 dəfə',
     actUnspecified: 'Göstərmə',
     fillRequired: 'Boy, çəki və yaş daxil edin',
     next: 'Növbəti',
@@ -3303,13 +3625,78 @@ export const az: Translations = {
     workout1: 'məşq',
     workout2: 'məşq',
     workout5: 'məşq',
+    activityTitle: 'Aktivlik',
+    less: 'Az',
+    more: 'Çox',
+    daySets: '{count} yanaş.',
   },
-  profile: {
+  settings: {
+    title: 'Ayarlar',
+    subtitle: 'Bildirişlər, dil və məlumatlar',
+    notifications: 'Bildirişlər',
+    workoutReminder: 'Məşq xatırlatmaları',
+    workoutReminderSubtitle: 'B.e.–Cümə seçilmiş vaxtda',
+    notifDisabled: 'Söndürülüb',
+    notifTimeLabel: 'Xatırlatma vaxtı',
+    recoveryReady: 'Əzələ bərpası',
+    recoveryReadySubtitle: 'Əzələ qrupu hazır olanda bildiriş',
+    recoveryNotifTitle: 'Əzələlər bərpa olundu',
+    recoveryNotifBody: '{group} yenidən məşqə hazırdır',
+    cloud: 'Bulud',
+    syncData: 'Məlumatları sinxronlaşdır',
+    syncSubtitle: 'Serverə yüklə və yüklə',
+    export: 'Məlumat ixracı',
+    exportAll: 'Hamısını ixrac et',
+    exportAllSubtitle: 'Məşqlər, ölçülər, rekordlar CSV-yə',
+    exportWorkouts: 'Yalnız məşqlər',
+    language: 'Dil',
+    permissionsTitle: 'İcazə lazımdır',
+    notifPermission:
+      'Xatırlatmalar üçün cihaz ayarlarında bildirişlərə icazə verin.',
+    notifError: 'Bildiriş ayarlarını dəyişmək mümkün olmadı',
+    exportError: 'Məlumatları ixrac etmək mümkün olmadı',
+    workoutReminderTitle: 'Məşq vaxtı!',
+		workoutReminderBody: 'Bu günkü məşqi unutma — məqsədə çox yaxınsan!',
+	},
+	nutrition: {
+		today: 'Bu gün',
+		left: 'qalıb',
+		over: 'artıq',
+		kcal: 'kkal',
+		g: 'q',
+		protein: 'Zülal',
+		carbs: 'Karbohidrat',
+		fat: 'Yağ',
+		vitamins: 'Vitaminlər',
+		meals: 'Yeməklər',
+		emptyTitle: 'Hələ boşdur',
+		emptyBody: 'Yeməyi çək — kalori və BJU qiymətləndirəcəyik',
+		addMeal: 'Yemək əlavə et',
+		addMealHint: 'Foto çək və ya qalereyadan seç',
+		camera: 'Kamera',
+		gallery: 'Qalereya',
+		analyzing: 'Foto təhlil olunur…',
+		analyzeError: 'Fotonu təhlil etmək mümkün olmadı',
+		loadError: 'Günü yükləmək mümkün olmadı',
+		permissionTitle: 'İcazə lazımdır',
+		permissionBody: 'Yemək əlavə etmək üçün kamera və ya foto icazəsi verin',
+		editMeal: 'Redaktə',
+		name: 'Ad',
+		save: 'Saxla',
+		saveError: 'Saxlamaq mümkün olmadı',
+		delete: 'Sil',
+		deleteTitle: 'Yazını silək?',
+		incompleteProfile:
+			'Dəqiq hədəflər üçün profildə boy, çəki, yaş və cinsi doldurun',
+	},
+	profile: {
     title: 'Profil',
     subtitle: 'Hesabınızı idarə edin',
     ratingEntry: 'Mənim reytinqim',
     ratingEntrySubtitle: 'Səviyyə, nailiyyətlər və bal',
     ratingSocialSection: 'Reytinq və sosial şəbəkələr',
+    templatesEntry: 'Məşq şablonları',
+    templatesEntrySubtitle: 'Tanış proqramlara sürətli start',
     marketplaceEntry: 'Bazar',
     marketplaceSubtitle: 'Məşqçilər və məşq planları',
     gymPassEntry: 'Fitex Pass',
@@ -3389,6 +3776,18 @@ export const az: Translations = {
     socialTiktokPh: '@ləqəb və ya keçid',
     socialStravaPh: 'Strava profil keçidi',
     socialWebsitePh: 'https://…',
+    settingsEntry: 'Ayarlar',
+    settingsSubtitle: 'Bildirişlər, dil, sinxron və ixrac',
+    bodyRecoveryEntry: 'Bədən və bərpa',
+    bodyRecoverySubtitle: 'Əzələ xəritəsi və məşqə hazırlıq',
+    adminEntry: 'Admin',
+    adminSubtitle: 'İstifadəçilərə Premium vermək',
+  },
+  admin: {
+    title: 'Admin',
+    search: 'Axtar',
+    searchPlaceholder: 'Email və ya ad…',
+    empty: 'Sorğu yazın və ya Axtar düyməsinə basın',
   },
   trial: {
     badge: 'Pulsuz Sınaq',

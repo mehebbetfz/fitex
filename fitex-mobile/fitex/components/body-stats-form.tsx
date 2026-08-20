@@ -46,8 +46,8 @@ export function mergeBodyStatsWithDefaults(initial: BodyStatsState): BodyStatsSt
 		weight: normalizeIntString(initial.weight, '70', 30, 300),
 		age: normalizeIntString(initial.age, '25', 13, 120),
 		sex: normalizeSexId(initial.sex),
-		fitnessGoal: initial.fitnessGoal || 'unspecified',
-		activityLevel: initial.activityLevel || 'unspecified',
+		fitnessGoal: initial.fitnessGoal || 'maintain',
+		activityLevel: initial.activityLevel || 'moderate',
 	}
 }
 
@@ -76,8 +76,8 @@ export function useBodyStatsInitial(user: User | null): BodyStatsState {
 			weight: user?.weightKg != null ? String(Math.round(user.weightKg)) : '',
 			age: user?.age != null ? String(user.age) : '',
 			sex: normalizeSexId(user?.sex),
-			fitnessGoal: user?.fitnessGoal ?? 'unspecified',
-			activityLevel: user?.activityLevel ?? 'unspecified',
+			fitnessGoal: user?.fitnessGoal ?? 'maintain',
+			activityLevel: user?.activityLevel ?? 'moderate',
 		}),
 		[user],
 	)
@@ -111,7 +111,6 @@ export function BodyStatsFormSections({
 			{ id: 'gain_muscle', label: t('bodyProfile', 'goalGain') },
 			{ id: 'maintain', label: t('bodyProfile', 'goalMaintain') },
 			{ id: 'health', label: t('bodyProfile', 'goalHealth') },
-			{ id: 'unspecified', label: t('bodyProfile', 'goalUnspecified') },
 		],
 		[t],
 	)
@@ -122,7 +121,6 @@ export function BodyStatsFormSections({
 			{ id: 'moderate', label: t('bodyProfile', 'actModerate') },
 			{ id: 'active', label: t('bodyProfile', 'actActive') },
 			{ id: 'very_active', label: t('bodyProfile', 'actVery') },
-			{ id: 'unspecified', label: t('bodyProfile', 'actUnspecified') },
 		],
 		[t],
 	)
@@ -148,8 +146,8 @@ export function BodyStatsFormSections({
 	const safeWeight = weightValues.includes(state.weight) ? state.weight : '70'
 	const safeAge = ageValues.includes(state.age) ? state.age : '25'
 	const safeSex = sexIds.includes(state.sex) ? state.sex : 'male'
-	const safeGoal = goalIds.includes(state.fitnessGoal) ? state.fitnessGoal : 'unspecified'
-	const safeAct = actIds.includes(state.activityLevel) ? state.activityLevel : 'unspecified'
+	const safeGoal = goalIds.includes(state.fitnessGoal) ? state.fitnessGoal : 'maintain'
+	const safeAct = actIds.includes(state.activityLevel) ? state.activityLevel : 'moderate'
 
 	return (
 		<>

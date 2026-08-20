@@ -1,10 +1,15 @@
 import { STATS_HISTORY_COLORS as COLORS, STATS_HISTORY_THEME as T } from '@/constants/stats-history-theme'
 import { useLanguage } from '@/contexts/language-context'
 import { translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
+import ActivityHeatmap from '@/components/activity-heatmap'
+import {
+	aggregateSetsByDay,
+	buildHeatmapGrid,
+} from '@/scripts/activity-heatmap'
 import { Workout } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
-import { useFocusEffect, useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	ActivityIndicator,
@@ -231,6 +236,7 @@ const InitialLoadingSkeleton = () => (
 
 export default function FullHistoryScreen() {
 	const router = useRouter()
+	const params = useLocalSearchParams<{ muscleGroup?: string | string[] }>()
 	const { t, language } = useLanguage()
 	const { workouts: allWorkouts, refreshWorkouts } = useDatabase()
 
@@ -242,6 +248,15 @@ export default function FullHistoryScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [selectedFilter, setSelectedFilter] = useState('all')
 	const [isInitialLoading, setIsInitialLoading] = useState(true)
+	const filterListRef = useRef<FlatList<string>>(null)
+
+	const muscleGroupParam = useMemo(() => {
+		const raw = params.muscleGroup
+		if (!raw) return null
+		const value = Array.isArray(raw) ? raw[0] : raw
+		const trimmed = value?.trim()
+		return trimmed ? trimmed : null
+	}, [params.muscleGroup])
 
 	// Первоначальная загрузка
 	useEffect(() => {
@@ -253,13 +268,20 @@ export default function FullHistoryScreen() {
 		loadInitialData()
 	}, [])
 
+	// Фильтр с экрана восстановления
+	useEffect(() => {
+		if (!muscleGroupParam) return
+		setSelectedFilter(muscleGroupParam)
+		router.setParams({ muscleGroup: '' })
+	}, [muscleGroupParam, router])
+
 	// Обновление при фокусе (без показа скелетонов)
 	useFocusEffect(
 		useCallback(() => {
 			if (!isInitialLoading) {
 				refreshWorkouts()
 			}
-		}, [isInitialLoading]),
+		}, [isInitialLoading, refreshWorkouts]),
 	)
 
 	// Фильтрация тренировок
@@ -272,6 +294,28 @@ export default function FullHistoryScreen() {
 				.some(group => group.trim() === selectedFilter),
 		)
 	}, [allWorkouts, selectedFilter])
+
+	const heatmapWeeks = useMemo(() => {
+		const byDay = aggregateSetsByDay(filteredWorkouts)
+		return buildHeatmapGrid(byDay)
+	}, [filteredWorkouts])
+
+	const heatmapLocale =
+		language === 'en' ? 'en-US' : language === 'az' ? 'az-AZ' : 'ru-RU'
+
+	const formatHeatmapDate = useCallback(
+		(isoDate: string) => {
+			try {
+				return new Date(isoDate + 'T12:00:00').toLocaleDateString(
+					heatmapLocale,
+					{ day: 'numeric', month: 'long', year: 'numeric' },
+				)
+			} catch {
+				return isoDate
+			}
+		},
+		[heatmapLocale],
+	)
 
 	// Сброс пагинации при изменении фильтра
 	useEffect(() => {
@@ -315,8 +359,23 @@ export default function FullHistoryScreen() {
 				})
 			}
 		})
+		if (selectedFilter !== 'all') groups.add(selectedFilter)
 		return ['all', ...Array.from(groups).sort()]
-	}, [allWorkouts])
+	}, [allWorkouts, selectedFilter])
+
+	useEffect(() => {
+		if (selectedFilter === 'all') return
+		const index = muscleGroups.indexOf(selectedFilter)
+		if (index < 0) return
+		const timer = setTimeout(() => {
+			filterListRef.current?.scrollToIndex({
+				index,
+				animated: true,
+				viewPosition: 0.4,
+			})
+		}, 80)
+		return () => clearTimeout(timer)
+	}, [selectedFilter, muscleGroups])
 
 	const handleWorkoutPress = (id: number) => {
 		router.push({
@@ -451,11 +510,22 @@ export default function FullHistoryScreen() {
 				</View>
 			</View>
 
+			<ActivityHeatmap
+				weeks={heatmapWeeks}
+				locale={heatmapLocale}
+				title={t('history', 'activityTitle')}
+				lessLabel={t('history', 'less')}
+				moreLabel={t('history', 'more')}
+				daySetsTemplate={t('history', 'daySets')}
+				formatDate={formatHeatmapDate}
+			/>
+
 			{/* Фильтры */}
 			{muscleGroups.length > 1 && (
 				<View style={styles.filtersSection}>
 					<Text style={styles.filtersTitle}>{t('history', 'filterByMuscle')}</Text>
 					<FlatList
+						ref={filterListRef}
 						horizontal
 						data={muscleGroups}
 						renderItem={({ item }) => (
@@ -480,6 +550,12 @@ export default function FullHistoryScreen() {
 						keyExtractor={item => item}
 						showsHorizontalScrollIndicator={false}
 						contentContainerStyle={styles.filtersContainer}
+						onScrollToIndexFailed={({ index }) => {
+							filterListRef.current?.scrollToOffset({
+								offset: Math.max(0, index * 88),
+								animated: true,
+							})
+						}}
 					/>
 				</View>
 			)}

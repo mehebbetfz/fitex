@@ -9,6 +9,8 @@ import { GymPassModule } from './modules/gym-pass/gym-pass.module'
 import { IapModule } from './modules/iap/iap.module'
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module'
 import { MarketplaceModule } from './modules/marketplace/marketplace.module'
+import { NutritionModule } from './modules/nutrition/nutrition.module'
+import { AdminModule } from './modules/admin/admin.module'
 import { SubscriptionModule } from './modules/subscription/subscription.module'
 import { SyncModule } from './modules/sync/sync.module'
 import { UserModule } from './modules/user/user.module'
@@ -39,6 +41,8 @@ import configuration from './strategies/configuration'
     MarketplaceModule,
     GymPassModule,
     LeaderboardModule,
+    NutritionModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

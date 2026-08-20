@@ -37,7 +37,7 @@ export async function pickSquareAvatarJpeg(): Promise<PickSquareAvatarResult> {
 /** Ответ POST /auth/avatar — полный публичный объект пользователя. */
 export async function uploadProfileAvatar(jpegUri: string): Promise<User> {
 	const token = await SecureStore.getItemAsync('access_token')
-	const base = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000').replace(
+	const base = (process.env.EXPO_PUBLIC_API_URL || 'https://fitex.4talk.club').replace(
 		/\/$/,
 		'',
 	)

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fitex Admin</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card: #161616;
+      --border: #2a2a2a;
+      --text: #fff;
+      --muted: #8e8e93;
+      --green: #34c759;
+      --red: #ff3b30;
+      --orange: #ff9500;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 18px 80px; }
+    h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.4px; }
+    .sub { color: var(--muted); margin-bottom: 28px; font-size: 14px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input {
+      width: 100%;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    input:focus { outline: none; border-color: var(--green); }
+    button, .btn {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--green);
+      color: #000;
+    }
+    button.secondary { background: #2a2a2a; color: #fff; }
+    button.danger { background: rgba(255,59,48,0.15); color: var(--red); }
+    button.ghost { background: transparent; color: var(--muted); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .search-row { display: flex; gap: 10px; }
+    .search-row input { margin: 0; flex: 1; }
+    .user {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .user:last-child { border-bottom: none; }
+    .email { font-weight: 600; font-size: 15px; }
+    .meta { color: var(--muted); font-size: 12px; margin-top: 4px; line-height: 1.45; }
+    .pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+    .pill.ok { background: rgba(52,199,89,0.15); color: var(--green); }
+    .pill.off { background: rgba(142,142,147,0.15); color: var(--muted); }
+    .pill.admin { background: rgba(255,149,0,0.15); color: var(--orange); }
+    .pill.life { background: rgba(90,200,250,0.15); color: #5ac8fa; }
+    .actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 340px; }
+    .chips button { padding: 7px 10px; font-size: 12px; }
+    .err { color: var(--red); font-size: 13px; margin-top: 8px; }
+    .okmsg { color: var(--green); font-size: 13px; margin-top: 8px; }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .hidden { display: none !important; }
+    .custom { display: flex; gap: 6px; align-items: center; }
+    .custom input { width: 88px; margin: 0; padding: 8px 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Fitex Admin</h1>
+        <div class="sub">Раздача Premium · только для role=admin</div>
+      </div>
+      <button class="ghost hidden" id="logoutBtn" type="button">Выйти</button>
+    </div>
+
+    <div class="card" id="loginCard">
+      <label>Email</label>
+      <input id="email" type="email" autocomplete="username" placeholder="admin@…" />
+      <label>Пароль</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <button id="loginBtn" type="button">Войти</button>
+      <div class="err hidden" id="loginErr"></div>
+    </div>
+
+    <div class="hidden" id="app">
+      <div class="card">
+        <div class="search-row">
+          <input id="q" type="search" placeholder="Поиск: email, имя…" />
+          <button id="searchBtn" type="button">Найти</button>
+        </div>
+        <div class="err hidden" id="listErr"></div>
+        <div class="okmsg hidden" id="listOk"></div>
+      </div>
+      <div class="card" id="users"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin
+    const TOKEN_KEY = 'fitex_admin_token'
+
+    const $ = (id) => document.getElementById(id)
+    const token = () => localStorage.getItem(TOKEN_KEY)
+
+    function show(el, on) {
+      el.classList.toggle('hidden', !on)
+    }
+
+    async function api(path, opts = {}) {
+      const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) }
+      const t = token()
+      if (t) headers.Authorization = 'Bearer ' + t
+      const res = await fetch(API + path, { ...opts, headers })
+      const text = await res.text()
+      let data = null
+      try { data = text ? JSON.parse(text) : null } catch { data = { message: text } }
+      if (!res.ok) {
+        const msg = Array.isArray(data?.message) ? data.message.join(', ') : (data?.message || res.statusText)
+        throw new Error(msg)
+      }
+      return data
+    }
+
+    function fmtExpires(u) {
+      if (u.premiumLifetime) return '∞ lifetime'
+      if (!u.premiumExpiresAt) return '—'
+      try {
+        return new Date(u.premiumExpiresAt).toLocaleString()
+      } catch { return u.premiumExpiresAt }
+    }
+
+    function nameOf(u) {
+      return [u.firstName, u.lastName].filter(Boolean).join(' ') || '—'
+    }
+
+    async function grant(id, body) {
+      show($('listOk'), false)
+      show($('listErr'), false)
+      try {
+        await api('/admin/users/' + id + '/premium', {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        })
+        $('listOk').textContent = 'Premium обновлён'
+        show($('listOk'), true)
+        await loadUsers()
+      } catch (e) {
+        $('listErr').textContent = e.message
+        show($('listErr'), true)
+      }
+    }
+
+    function renderUsers(list) {
+      const root = $('users')
+      if (!list.length) {
+        root.innerHTML = '<div class="meta">Никого не найдено</div>'
+        return
+      }
+      root.innerHTML = list.map(u => `
+        <div class="user" data-id="${u.id}">
+          <div>
+            <div class="email">${escapeHtml(u.email)}</div>
+            <div class="meta">
+              ${escapeHtml(nameOf(u))} · ${escapeHtml(u.provider || '')}
+              <div style="margin-top:6px">
+                <span class="pill ${u.premiumActive ? 'ok' : 'off'}">${u.premiumActive ? 'Premium' : 'Free'}</span>
+                ${u.premiumLifetime ? '<span class="pill life">∞</span>' : ''}
+                ${u.role === 'admin' ? '<span class="pill admin">admin</span>' : ''}
+              </div>
+              <div>до: ${escapeHtml(fmtExpires(u))}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <div class="chips">
+              <button type="button" data-d="7d">7д</button>
+              <button type="button" data-d="30d">30д</button>
+              <button type="button" data-d="90d">90д</button>
+              <button type="button" data-d="180d">180д</button>
+              <button type="button" data-d="365d">1 год</button>
+              <button type="button" data-d="lifetime">∞</button>
+              <button type="button" class="danger" data-d="revoke">Снять</button>
+            </div>
+            <div class="custom">
+              <input type="number" min="1" max="3650" placeholder="дней" data-custom />
+              <button type="button" class="secondary" data-custom-btn>OK</button>
+            </div>
+          </div>
+        </div>
+      `).join('')
+
+      root.querySelectorAll('.user').forEach(row => {
+        const id = row.getAttribute('data-id')
+        row.querySelectorAll('[data-d]').forEach(btn => {
+          btn.addEventListener('click', () => grant(id, { duration: btn.getAttribute('data-d') }))
+        })
+        const input = row.querySelector('[data-custom]')
+        row.querySelector('[data-custom-btn]').addEventListener('click', () => {
+          const days = parseInt(input.value, 10)
+          if (!days || days < 1) return
+          grant(id, { customDays: days })
+        })
+      })
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+    }
+
+    async function loadUsers() {
+      const q = $('q').value.trim()
+      const list = await api('/admin/users?limit=50' + (q ? '&q=' + encodeURIComponent(q) : ''))
+      renderUsers(list)
+    }
+
+    async function enterApp() {
+      show($('loginCard'), false)
+      show($('app'), true)
+      show($('logoutBtn'), true)
+      await loadUsers()
+    }
+
+    async function trySession() {
+      if (!token()) return
+      try {
+        const me = await api('/auth/me')
+        if (!me.isAdmin) throw new Error('not admin')
+        await enterApp()
+      } catch {
+        localStorage.removeItem(TOKEN_KEY)
+      }
+    }
+
+    $('loginBtn').addEventListener('click', async () => {
+      show($('loginErr'), false)
+      try {
+        const data = await api('/auth/login-email', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: $('email').value.trim(),
+            password: $('password').value,
+          }),
+        })
+        if (!data.user?.isAdmin) {
+          throw new Error('У этого аккаунта нет роли admin')
+        }
+        localStorage.setItem(TOKEN_KEY, data.access_token)
+        await enterApp()
+      } catch (e) {
+        $('loginErr').textContent = e.message
+        show($('loginErr'), true)
+      }
+    })
+
+    $('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem(TOKEN_KEY)
+      location.reload()
+    })
+
+    $('searchBtn').addEventListener('click', () => loadUsers().catch(e => {
+      $('listErr').textContent = e.message
+      show($('listErr'), true)
+    }))
+    $('q').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') $('searchBtn').click()
+    })
+
+    trySession()
+  </script>
+</body>
+</html>

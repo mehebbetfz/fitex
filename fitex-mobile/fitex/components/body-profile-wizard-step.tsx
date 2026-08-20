@@ -79,7 +79,6 @@ export function BodyProfileWizardStep({
 				{ id: 'gain_muscle', label: t('bodyProfile', 'goalGain') },
 				{ id: 'maintain', label: t('bodyProfile', 'goalMaintain') },
 				{ id: 'health', label: t('bodyProfile', 'goalHealth') },
-				{ id: 'unspecified', label: t('bodyProfile', 'goalUnspecified') },
 			] as const,
 		[t],
 	)
@@ -91,7 +90,6 @@ export function BodyProfileWizardStep({
 				{ id: 'moderate', label: t('bodyProfile', 'actModerate') },
 				{ id: 'active', label: t('bodyProfile', 'actActive') },
 				{ id: 'very_active', label: t('bodyProfile', 'actVery') },
-				{ id: 'unspecified', label: t('bodyProfile', 'actUnspecified') },
 			] as const,
 		[t],
 	)
@@ -118,8 +116,8 @@ export function BodyProfileWizardStep({
 	const safeAge = ageValues.includes(state.age) ? state.age : '25'
 	const sexNorm = normalizeSexId(state.sex)
 	const safeSex = sexIds.includes(sexNorm) ? sexNorm : 'male'
-	const safeGoal = goalIds.includes(state.fitnessGoal) ? state.fitnessGoal : 'unspecified'
-	const safeAct = actIds.includes(state.activityLevel) ? state.activityLevel : 'unspecified'
+	const safeGoal = goalIds.includes(state.fitnessGoal) ? state.fitnessGoal : 'maintain'
+	const safeAct = actIds.includes(state.activityLevel) ? state.activityLevel : 'moderate'
 
 	const stepIndex = BODY_PROFILE_STEPS.indexOf(step)
 	const totalSteps = BODY_PROFILE_STEPS.length

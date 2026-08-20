@@ -903,6 +903,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 	const refreshRecoveryWithRecalc = useCallback(async () => {
 		await recalculateAllRecovery()
 		await refreshRecoveryData()
+		void import('@/services/recovery-notifications').then(m =>
+			m.syncRecoveryReadyNotifications(),
+		)
 	}, [])
 
 	const createNewWorkout = useCallback(async (name: string) => {
@@ -950,6 +953,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 				// Обновляем восстановление с учетом усталости каждой мышцы
 				await updateRecoveryAfterWorkout(exercisesWithDetails)
 				await refreshAllData()
+				void import('@/services/recovery-notifications').then(m =>
+					m.syncRecoveryReadyNotifications(),
+				)
 
 				return workoutId
 			} catch (error) {

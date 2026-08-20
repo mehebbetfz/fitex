@@ -19,10 +19,10 @@ function stepParam(raw: string | string[] | undefined): string | undefined {
 export default function OnboardingBodyStepScreen() {
 	const router = useRouter()
 	const raw = stepParam(useLocalSearchParams().step)
-	const { state, setState, loading, submitSkip, submitSave } = useOnboardingBody()
+	const { state, setState, loading, submitSave } = useOnboardingBody()
 
 	if (!raw || !isBodyProfileStep(raw)) {
-		return <Redirect href='/(auth)/onboarding-body/weight' />
+		return <Redirect href='/(auth)/onboarding-body/age' />
 	}
 
 	const step: BodyProfileStep = raw
@@ -49,8 +49,6 @@ export default function OnboardingBodyStepScreen() {
 				onPrimary={goNext}
 				canFooterBack={canFooterBack}
 				onFooterBack={() => router.back()}
-				showSkip
-				onSkip={submitSkip}
 			/>
 		</SafeAreaView>
 	)

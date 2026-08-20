@@ -149,6 +149,10 @@ export class User {
 
 	@Prop()
 	socialWebsite?: string
+
+	/** user | admin — админка раздачи Premium */
+	@Prop({ enum: ['user', 'admin'], default: 'user', index: true })
+	role: string
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

@@ -16,6 +16,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../contexts/auth-context'
+import { formatApiError } from '@/services/api'
 
 // Цветовая схема из history.tsx
 const COLORS = {
@@ -39,7 +40,7 @@ export default function LoginScreen() {
 		try {
 			await signInWithGoogle()
 		} catch (error: any) {
-			Alert.alert(t('common', 'error'), error.message)
+			Alert.alert(t('common', 'error'), formatApiError(error))
 		} finally {
 			setLoading(null)
 		}
@@ -50,7 +51,7 @@ export default function LoginScreen() {
 		try {
 			await signInWithApple()
 		} catch (error: any) {
-			Alert.alert(t('common', 'error'), error.message)
+			Alert.alert(t('common', 'error'), formatApiError(error))
 		} finally {
 			setLoading(null)
 		}
@@ -61,7 +62,7 @@ export default function LoginScreen() {
 		try {
 			await signInDemo()
 		} catch (error: any) {
-			Alert.alert(t('common', 'error'), error.message)
+			Alert.alert(t('common', 'error'), formatApiError(error))
 		} finally {
 			setLoading(null)
 		}

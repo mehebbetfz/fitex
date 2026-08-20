@@ -6,7 +6,7 @@ import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
-import { formatDate } from '@/scripts/database'
+import { Language } from '@/locales'
 import { router, useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -51,6 +51,52 @@ const STATUS_BG = {
 	needs_rest: 'rgba(255, 59, 48, 0.1)',
 	not_trained: 'rgba(58, 58, 60, 0.3)',
 } as const
+
+const DATE_LOCALES: Record<Language, string> = {
+	ru: 'ru-RU',
+	en: 'en-US',
+	az: 'az-AZ',
+}
+
+/** Recovery body groups → top-level names stored on workouts */
+const RECOVERY_TO_HISTORY_FILTER: Record<string, string> = {
+	Грудь: 'Грудь',
+	Пресс: 'Пресс',
+	Бицепс: 'Руки',
+	Трицепс: 'Руки',
+	Предплечья: 'Руки',
+	Плечи: 'Дельты',
+	Трапеции: 'Спина',
+	Ноги: 'Ноги',
+	Ягодицы: 'Ноги',
+	Спина: 'Спина',
+	Шея: 'Дельты',
+}
+
+const formatRecoveryLastTrained = (
+	dateString: string,
+	language: Language,
+	todayLabel: string,
+	yesterdayLabel: string,
+): string => {
+	try {
+		const date = new Date(dateString)
+		const today = new Date()
+		const yesterday = new Date(today)
+		yesterday.setDate(yesterday.getDate() - 1)
+
+		if (date.toDateString() === today.toDateString()) return todayLabel
+		if (date.toDateString() === yesterday.toDateString()) return yesterdayLabel
+
+		return date.toLocaleDateString(DATE_LOCALES[language] ?? 'ru-RU', {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric',
+		})
+	} catch {
+		return dateString
+	}
+}
 
 const MUSCLE_IMAGE_TO_NAME_MAP: { [key: string]: string } = {
 	leftPectoralisMajor: 'Грудь',
@@ -511,11 +557,16 @@ const SectionLabel = ({ label }: { label: string }) => (
 const MuscleCardDate = ({ lastTrained }: { lastTrained: string }) => {
 	const { t } = useLanguage()
 	const noDataLabel = t('recovery', 'noData')
+	const isEmpty =
+		!lastTrained ||
+		lastTrained === noDataLabel ||
+		lastTrained === 'Нет данных' ||
+		lastTrained === 'No data'
 	return (
 		<Text style={styles.cardDate} numberOfLines={1}>
-			{lastTrained && lastTrained !== 'Нет данных' && lastTrained !== noDataLabel
-				? `${t('recovery', 'lastTrained')} ${lastTrained}`
-				: noDataLabel}
+			{isEmpty
+				? noDataLabel
+				: `${t('recovery', 'lastTrained')} ${lastTrained}`}
 		</Text>
 	)
 }
@@ -532,6 +583,7 @@ type MuscleCardProps = {
 	liveStats: { status: string; recovery: number; lastTrained: string }
 	allFrontImages: string[]
 	allBackImages: string[]
+	onPress: () => void
 }
 
 const MuscleCard = ({
@@ -541,6 +593,7 @@ const MuscleCard = ({
 	liveStats,
 	allFrontImages,
 	allBackImages,
+	onPress,
 }: MuscleCardProps) => {
 	const liveColor =
 		STATUS_COLORS[liveStats.status as keyof typeof STATUS_COLORS] ??
@@ -563,18 +616,23 @@ const MuscleCard = ({
 
 	const getTimeLeft = () => {
 		if (liveStats.recovery >= 100) return t('recovery', 'fullyRecovered')
-		const totalHours = Math.round((100 - liveStats.recovery) / 100 * 72)
+		const totalHours = Math.round(((100 - liveStats.recovery) / 100) * 72)
 		if (totalHours <= 0) return t('recovery', 'fullyRecovered')
-		if (totalHours < 60) {
-			const mins = totalHours * 60
-			if (mins < 60) return `${mins} ${t('profile', 'minutes')}`
-			return `${totalHours} ${t('profile', 'hours')}`
+
+		const h = t('recovery', 'hoursShort')
+		const m = t('recovery', 'minutesShort')
+		const d = t('recovery', 'daysShort')
+
+		if (totalHours < 1) {
+			const mins = Math.max(1, Math.round(totalHours * 60))
+			return `${mins} ${m}`
 		}
+		if (totalHours < 24) return `${totalHours} ${h}`
+
 		const days = Math.floor(totalHours / 24)
 		const hours = totalHours % 24
-		if (days > 0 && hours > 0) return `${days} ${t('rating', 'days')} ${hours} ${t('profile', 'hours')}`
-		if (days > 0) return `${days} ${t('rating', 'days')}`
-		return `${hours} ${t('profile', 'hours')}`
+		if (hours > 0) return `${days} ${d} ${hours} ${h}`
+		return `${days} ${d}`
 	}
 
 	return (
@@ -584,6 +642,7 @@ const MuscleCard = ({
 				isSelected && { borderColor: liveColor, backgroundColor: liveBg },
 			]}
 			activeOpacity={0.7}
+			onPress={onPress}
 		>
 			<View
 				style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 12 }}
@@ -634,7 +693,7 @@ export default function RecoveryTab() {
 	const [muscleSide, setMuscleSide] = useState<string | null>(null)
 	const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
-	const { t } = useLanguage()
+	const { t, language } = useLanguage()
 	const { user } = useAuth()
 
 	const { recoveryData, refreshRecoveryWithRecalc } = useDatabase()
@@ -663,12 +722,13 @@ export default function RecoveryTab() {
 		if (!user) return null
 		const parts: string[] = []
 		if (user.heightCm != null && user.heightCm > 0)
-			parts.push(`${user.heightCm} cm`)
+			parts.push(`${user.heightCm} ${t('bodyProfile', 'cm')}`)
 		if (user.weightKg != null && user.weightKg > 0)
-			parts.push(`${user.weightKg} kg`)
-		if (user.age != null && user.age > 0) parts.push(String(user.age))
+			parts.push(`${user.weightKg} ${t('bodyProfile', 'kg')}`)
+		if (user.age != null && user.age > 0)
+			parts.push(`${user.age} ${t('bodyProfile', 'years')}`)
 		return parts.length > 0 ? parts.join(' · ') : null
-	}, [user])
+	}, [user, t])
 
 	const getMuscleGroupStats = useCallback(
 		(
@@ -690,8 +750,12 @@ export default function RecoveryTab() {
 							r => r.muscle_name?.toLowerCase() === muscleName.toLowerCase(),
 						)
 
-		if (matched.length === 0)
-			return { status: 'not_trained', recovery: 0, lastTrained: t('recovery', 'noData') }
+			if (matched.length === 0)
+				return {
+					status: 'not_trained',
+					recovery: 0,
+					lastTrained: t('recovery', 'noData'),
+				}
 
 			const avgRecovery = Math.round(
 				matched.reduce((sum, r) => sum + (r.recovery ?? 0), 0) / matched.length,
@@ -709,12 +773,29 @@ export default function RecoveryTab() {
 				.filter(Boolean) as string[]
 			const lastTrained =
 				lastDates.length > 0
-					? formatDate(lastDates.sort().reverse()[0])
-				: t('recovery', 'noData')
+					? formatRecoveryLastTrained(
+							lastDates.sort().reverse()[0],
+							language ?? 'ru',
+							t('exercises', 'today'),
+							t('exercises', 'yesterday'),
+						)
+					: t('recovery', 'noData')
 
-		return { status, recovery: avgRecovery, lastTrained }
+			return { status, recovery: avgRecovery, lastTrained }
 		},
-		[recoveryData],
+		[recoveryData, t, language],
+	)
+
+	const openMuscleHistory = useCallback(
+		(recoveryGroupName: string) => {
+			const muscleGroup =
+				RECOVERY_TO_HISTORY_FILTER[recoveryGroupName] ?? recoveryGroupName
+			router.push({
+				pathname: '/(tabs)/history',
+				params: { muscleGroup },
+			})
+		},
+		[],
 	)
 
 	const frontDataWithStats = useMemo(
@@ -998,6 +1079,7 @@ export default function RecoveryTab() {
 										liveStats={m.stats}
 										allFrontImages={allFrontImages}
 										allBackImages={allBackImages}
+										onPress={() => openMuscleHistory(m.name)}
 									/>
 								))}
 								<SectionLabel label={t('recovery', 'backMuscles')} />
@@ -1012,6 +1094,7 @@ export default function RecoveryTab() {
 										liveStats={m.stats}
 										allFrontImages={allFrontImages}
 										allBackImages={allBackImages}
+										onPress={() => openMuscleHistory(m.name)}
 									/>
 								))}
 							</View>
@@ -1024,10 +1107,8 @@ export default function RecoveryTab() {
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212', paddingBottom: -40 },
+	container: { flex: 1, backgroundColor: COLORS.background },
 	cardSvgContainer: { width: 180, height: 480 },
-
-	// Header
 	header: {
 		width: '100%',
 		flexDirection: 'row',

@@ -1,4 +1,4 @@
-import { useLanguage } from '@/contexts/language-context'
+﻿import { useLanguage } from '@/contexts/language-context'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
@@ -30,7 +30,7 @@ const COLORS = {
 	text: '#FFFFFF',
 	textSecondary: '#8E8E93',
 	accent: '#FF9500',
-	gold: '#FFD700',
+	gold: '#E8C547',
 	purple: '#AF52DE',
 } as const
 
@@ -61,7 +61,7 @@ export default function TrialPaywallScreen() {
 			if (result.ok) {
 				await refreshProfile()
 				await dismissTrialPaywall()
-				router.replace('/(tabs)')
+				router.replace('/')
 			} else {
 				const msg =
 					result.message === 'noReceipt' ? t('trial', 'noReceipt') : result.message
@@ -115,7 +115,7 @@ export default function TrialPaywallScreen() {
 						if (r.ok) {
 							await refreshProfile()
 							await dismissTrialPaywall()
-							router.replace('/(tabs)')
+							router.replace('/')
 						} else {
 							Alert.alert(
 								t('subscription', 'purchaseError'),
@@ -247,7 +247,7 @@ export default function TrialPaywallScreen() {
 					onPress: async () => {
 						// Limited access — do NOT start trial without StoreKit purchase
 						await dismissTrialPaywall()
-						router.replace('/(tabs)')
+						router.replace('/')
 					},
 				},
 			],
@@ -274,6 +274,7 @@ export default function TrialPaywallScreen() {
 		return product?.description ?? ''
 	}
 
+
 	if (initializing) {
 		return (
 			<SafeAreaView style={styles.loadingContainer}>
@@ -286,322 +287,354 @@ export default function TrialPaywallScreen() {
 	const yearlyPrice = getPrice(SKUS.yearly)
 
 	return (
-		<SafeAreaView style={styles.container}>
-			<View style={styles.topCloseBar}>
-				<TouchableOpacity
-					onPress={skipForNow}
-					hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-					activeOpacity={0.7}
-					accessibilityRole='button'
-					accessibilityLabel={t('trial', 'skipLimited')}
-				>
-					<Ionicons name='close' size={28} color={COLORS.textSecondary} />
-				</TouchableOpacity>
-			</View>
-			<ScrollView
-				contentContainerStyle={styles.scroll}
-				showsVerticalScrollIndicator={false}
-			>
-			{/* Hero */}
+		<View style={styles.root}>
 			<LinearGradient
-				colors={['#0D1F0D', '#0A0A0A']}
-				style={styles.hero}
-			>
-				<View style={styles.badgeRow}>
-					<View style={styles.badge}>
-						<Ionicons name='shield-checkmark' size={14} color={COLORS.primary} />
-						<Text style={styles.badgeText}>{t('trial', 'badge')}</Text>
-					</View>
-				</View>
-
-				<Text style={styles.heroTitle}>{t('trial', 'heroTitle')}</Text>
-				<Text style={styles.heroSubtitle}>{t('trial', 'heroSubtitle')}</Text>
-
-				{/* Timeline */}
-				<View style={styles.timeline}>
-					<View style={styles.timelineStep}>
-						<View style={[styles.timelineDot, { backgroundColor: COLORS.primary }]}>
-							<Ionicons name='card-outline' size={14} color='#fff' />
-						</View>
-						<Text style={styles.timelineTitle}>{t('trial', 'timelineCard')}</Text>
-						<Text style={styles.timelineDesc}>{t('trial', 'timelineCardDesc')}</Text>
-					</View>
-					<View style={styles.timelineLine} />
-					<View style={styles.timelineStep}>
-						<View style={[styles.timelineDot, { backgroundColor: COLORS.accent }]}>
-							<Ionicons name='trophy-outline' size={14} color='#fff' />
-						</View>
-						<Text style={styles.timelineTitle}>{TRIAL_DAYS} {t('trial', 'timelineDays')}</Text>
-						<Text style={styles.timelineDesc}>{t('trial', 'timelineFree')}</Text>
-					</View>
-					<View style={styles.timelineLine} />
-					<View style={styles.timelineStep}>
-						<View style={[styles.timelineDot, { backgroundColor: '#8E8E93' }]}>
-							<Ionicons name='refresh-outline' size={14} color='#fff' />
-						</View>
-						<Text style={styles.timelineTitle}>{t('trial', 'timelineCharge')}</Text>
-						<Text style={styles.timelineDesc}>{t('trial', 'timelineChargeDesc')}</Text>
-					</View>
-				</View>
-
-				<View style={styles.noChargeRow}>
-					<Ionicons name='checkmark-circle' size={16} color={COLORS.primary} />
-					<Text style={styles.noChargeText}>{t('trial', 'noChargeToday')}</Text>
-				</View>
-			</LinearGradient>
-
-				{/* Features */}
-				<View style={styles.featuresSection}>
-				<Text style={styles.sectionTitle}>{t('trial', 'featuresTitle')}</Text>
-				{FEATURES.map(f => (
-					<FeatureRow key={f.icon} icon={f.icon} text={t('subscription', f.key as any)} color={f.color} />
-				))}
-				</View>
-
-				{/* Plan selector */}
-				<View style={styles.plansSection}>
-					<Text style={styles.sectionTitle}>{t('trial', 'choosePlan')}</Text>
-
-				<TouchableOpacity
-					style={[styles.planCard, selectedSku === SKUS.yearly && styles.planCardSelected]}
-					onPress={() => setSelectedSku(SKUS.yearly)}
-					activeOpacity={0.8}
-				>
-					<View style={styles.planBestValue}>
-						<Text style={styles.planBestValueText}>{t('subscription', 'bestValue')}</Text>
-					</View>
-					<View style={styles.planRow}>
-						<View style={styles.planRadio}>
-							{selectedSku === SKUS.yearly && <View style={styles.planRadioDot} />}
-						</View>
-						<View style={styles.planInfo}>
-							<Text style={styles.planName}>{t('trial', 'trialFreeLabel')}</Text>
-							<Text style={styles.planTrialSub}>
-								{t('trial', 'thenPay')} {yearlyPrice} / {t('trial', 'yearShort')}
-							</Text>
-						</View>
-						<View style={styles.planPriceWrap}>
-							<Text style={styles.planPriceFree}>{t('trial', 'free')}</Text>
-							<Text style={styles.planPriceSub}>{TRIAL_DAYS} {t('trial', 'days')}</Text>
-						</View>
-					</View>
-				</TouchableOpacity>
-
-				<TouchableOpacity
-					style={[styles.planCard, selectedSku === SKUS.monthly && styles.planCardSelected]}
-					onPress={() => setSelectedSku(SKUS.monthly)}
-					activeOpacity={0.8}
-				>
-					<View style={styles.planRow}>
-						<View style={styles.planRadio}>
-							{selectedSku === SKUS.monthly && <View style={styles.planRadioDot} />}
-						</View>
-						<View style={styles.planInfo}>
-							<Text style={styles.planName}>{t('trial', 'trialFreeLabel')}</Text>
-							<Text style={styles.planTrialSub}>
-								{t('trial', 'thenPay')} {monthlyPrice} / {t('trial', 'monthShort')}
-							</Text>
-						</View>
-						<View style={styles.planPriceWrap}>
-							<Text style={styles.planPriceFree}>{t('trial', 'free')}</Text>
-							<Text style={styles.planPriceSub}>{TRIAL_DAYS} {t('trial', 'days')}</Text>
-						</View>
-					</View>
-				</TouchableOpacity>
-				</View>
-
-				{/* CTA */}
-				<View style={styles.ctaSection}>
+				colors={['#122A1A', '#0A0A0A', '#0A0A0A']}
+				locations={[0, 0.38, 1]}
+				style={StyleSheet.absoluteFill}
+			/>
+			<SafeAreaView style={styles.container}>
+				<View style={styles.topCloseBar}>
 					<TouchableOpacity
-						style={styles.ctaButton}
-						onPress={buySubscription}
-						disabled={loading}
-						activeOpacity={0.85}
+						onPress={skipForNow}
+						hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+						activeOpacity={0.7}
+						style={styles.closeBtn}
+						accessibilityRole='button'
+						accessibilityLabel={t('trial', 'skipLimited')}
 					>
-						<LinearGradient
-							colors={['#34C759', '#28A745']}
-							start={{ x: 0, y: 0 }}
-							end={{ x: 1, y: 0 }}
-							style={styles.ctaGradient}
-						>
-						{loading ? (
-							<ActivityIndicator color='#fff' />
-						) : (
-							<>
-								<View style={styles.ctaInner}>
-									<Ionicons name='card-outline' size={20} color='#fff' />
-									<Text style={styles.ctaText}>{t('trial', 'ctaNew')}</Text>
+						<Ionicons name='close' size={20} color='rgba(255,255,255,0.65)' />
+					</TouchableOpacity>
+				</View>
+				<ScrollView
+					contentContainerStyle={styles.scroll}
+					showsVerticalScrollIndicator={false}
+				>
+					<View style={styles.hero}>
+						<View style={styles.badge}>
+							<Ionicons name='sparkles' size={13} color={COLORS.gold} />
+							<Text style={styles.badgeText}>{t('trial', 'badge')}</Text>
+						</View>
+
+						<View style={styles.daysOrb}>
+							<LinearGradient
+								colors={['rgba(52,199,89,0.35)', 'rgba(52,199,89,0.08)']}
+								style={styles.daysOrbGrad}
+							>
+								<Text style={styles.trialDays}>{TRIAL_DAYS}</Text>
+								<Text style={styles.trialLabel}>{t('trial', 'days')}</Text>
+							</LinearGradient>
+						</View>
+
+						<Text style={styles.heroTitle}>{t('trial', 'heroTitle')}</Text>
+						<Text style={styles.heroSubtitle}>{t('trial', 'heroSubtitle')}</Text>
+
+						<View style={styles.timeline}>
+							{(
+								[
+									{
+										icon: 'card-outline' as const,
+										color: COLORS.primary,
+										title: t('trial', 'timelineCard'),
+										desc: t('trial', 'timelineCardDesc'),
+									},
+									{
+										icon: 'trophy-outline' as const,
+										color: COLORS.gold,
+										title: `${TRIAL_DAYS} ${t('trial', 'timelineDays')}`,
+										desc: t('trial', 'timelineFree'),
+									},
+									{
+										icon: 'refresh-outline' as const,
+										color: '#8E8E93',
+										title: t('trial', 'timelineCharge'),
+										desc: t('trial', 'timelineChargeDesc'),
+									},
+								] as const
+							).map((step, i) => (
+								<View key={step.title} style={styles.timelineCol}>
+									{i > 0 ? <View style={styles.timelineConnector} /> : null}
+									<View style={[styles.timelineDot, { backgroundColor: step.color }]}>
+										<Ionicons name={step.icon} size={14} color='#fff' />
+									</View>
+									<Text style={styles.timelineTitle}>{step.title}</Text>
+									<Text style={styles.timelineDesc}>{step.desc}</Text>
 								</View>
-								<Text style={styles.ctaSubtext}>{t('trial', 'ctaNewSub')}</Text>
-							</>
-						)}
-						</LinearGradient>
-					</TouchableOpacity>
+							))}
+						</View>
 
-				<Text style={styles.legalText}>{t('trial', 'legal')}</Text>
+						<View style={styles.noChargeRow}>
+							<Ionicons name='checkmark-circle' size={16} color={COLORS.primary} />
+							<Text style={styles.noChargeText}>{t('trial', 'noChargeToday')}</Text>
+						</View>
+					</View>
 
-				{/* Required EULA + Privacy links for App Store compliance */}
-				<View style={styles.linksRow}>
-					<TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
-						<Text style={styles.linkText}>{t('trial', 'termsLink')}</Text>
-					</TouchableOpacity>
-					<Text style={styles.linkSep}> · </Text>
-					<TouchableOpacity onPress={() => Linking.openURL('https://github.com/mehebbetfz/fitex/blob/main/fitex-mobile/fitex/privacy-policy.md')}>
-						<Text style={styles.linkText}>{t('trial', 'privacyLink')}</Text>
-					</TouchableOpacity>
-				</View>
+					<View style={styles.featuresSection}>
+						<Text style={styles.sectionTitle}>{t('trial', 'featuresTitle')}</Text>
+						<View style={styles.featuresPanel}>
+							{FEATURES.map(f => (
+								<FeatureRow
+									key={f.icon}
+									icon={f.icon}
+									text={t('subscription', f.key as any)}
+									color={f.color}
+								/>
+							))}
+						</View>
+					</View>
 
-				<TouchableOpacity onPress={skipForNow} style={styles.skipButton}>
-					<Text style={styles.skipText}>{t('trial', 'skipLimited')}</Text>
-				</TouchableOpacity>
-				</View>
-			</ScrollView>
-		</SafeAreaView>
+					<View style={styles.plansSection}>
+						<Text style={styles.sectionTitle}>{t('trial', 'choosePlan')}</Text>
+
+						<TouchableOpacity
+							style={[styles.planCard, selectedSku === SKUS.yearly && styles.planCardSelected]}
+							onPress={() => setSelectedSku(SKUS.yearly)}
+							activeOpacity={0.85}
+						>
+							<View style={styles.planBestValue}>
+								<Text style={styles.planBestValueText}>{t('subscription', 'bestValue')}</Text>
+							</View>
+							<View style={styles.planRow}>
+								<View style={[styles.planRadio, selectedSku === SKUS.yearly && styles.planRadioOn]}>
+									{selectedSku === SKUS.yearly ? <View style={styles.planRadioDot} /> : null}
+								</View>
+								<View style={styles.planInfo}>
+									<Text style={styles.planName}>{t('trial', 'trialFreeLabel')}</Text>
+									<Text style={styles.planTrialSub}>
+										{t('trial', 'thenPay')} {yearlyPrice} / {t('trial', 'yearShort')}
+									</Text>
+								</View>
+								<View style={styles.planPriceWrap}>
+									<Text style={styles.planPriceFree}>{t('trial', 'free')}</Text>
+									<Text style={styles.planPriceSub}>
+										{TRIAL_DAYS} {t('trial', 'days')}
+									</Text>
+								</View>
+							</View>
+						</TouchableOpacity>
+
+						<TouchableOpacity
+							style={[styles.planCard, selectedSku === SKUS.monthly && styles.planCardSelected]}
+							onPress={() => setSelectedSku(SKUS.monthly)}
+							activeOpacity={0.85}
+						>
+							<View style={styles.planRow}>
+								<View style={[styles.planRadio, selectedSku === SKUS.monthly && styles.planRadioOn]}>
+									{selectedSku === SKUS.monthly ? <View style={styles.planRadioDot} /> : null}
+								</View>
+								<View style={styles.planInfo}>
+									<Text style={styles.planName}>{t('trial', 'trialFreeLabel')}</Text>
+									<Text style={styles.planTrialSub}>
+										{t('trial', 'thenPay')} {monthlyPrice} / {t('trial', 'monthShort')}
+									</Text>
+								</View>
+								<View style={styles.planPriceWrap}>
+									<Text style={styles.planPriceFree}>{t('trial', 'free')}</Text>
+									<Text style={styles.planPriceSub}>
+										{TRIAL_DAYS} {t('trial', 'days')}
+									</Text>
+								</View>
+							</View>
+						</TouchableOpacity>
+					</View>
+
+					<View style={styles.ctaSection}>
+						<TouchableOpacity
+							style={styles.ctaButton}
+							onPress={buySubscription}
+							disabled={loading}
+							activeOpacity={0.85}
+						>
+							<LinearGradient
+								colors={['#3DDB66', '#2FB350']}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={styles.ctaGradient}
+							>
+								{loading ? (
+									<ActivityIndicator color='#06140A' />
+								) : (
+									<>
+										<View style={styles.ctaInner}>
+											<Ionicons name='diamond' size={18} color='#06140A' />
+											<Text style={styles.ctaText}>{t('trial', 'ctaNew')}</Text>
+										</View>
+										<Text style={styles.ctaSubtext}>{t('trial', 'ctaNewSub')}</Text>
+									</>
+								)}
+							</LinearGradient>
+						</TouchableOpacity>
+
+						<Text style={styles.legalText}>{t('trial', 'legal')}</Text>
+
+						<View style={styles.linksRow}>
+							<TouchableOpacity
+								onPress={() =>
+									Linking.openURL(
+										'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+									)
+								}
+							>
+								<Text style={styles.linkText}>{t('trial', 'termsLink')}</Text>
+							</TouchableOpacity>
+							<Text style={styles.linkSep}> · </Text>
+							<TouchableOpacity
+								onPress={() =>
+									Linking.openURL(
+										'https://github.com/mehebbetfz/fitex/blob/main/fitex-mobile/fitex/privacy-policy.md',
+									)
+								}
+							>
+								<Text style={styles.linkText}>{t('trial', 'privacyLink')}</Text>
+							</TouchableOpacity>
+						</View>
+
+						<TouchableOpacity onPress={skipForNow} style={styles.skipButton}>
+							<Text style={styles.skipText}>{t('trial', 'skipLimited')}</Text>
+						</TouchableOpacity>
+					</View>
+				</ScrollView>
+			</SafeAreaView>
+		</View>
 	)
 }
 
-// ── Feature list ──────────────────────────────────────────────────────────────
 const FEATURES = [
-	{ icon: 'ribbon-outline',       key: 'feature1', color: '#FFD700' },
-	{ icon: 'podium-outline',        key: 'feature4', color: '#FF9500' },
-	{ icon: 'cloud-upload-outline',  key: 'feature2', color: '#5AC8FA' },
-	{ icon: 'analytics-outline',     key: 'feature3', color: '#AF52DE' },
-	{ icon: 'body-outline',          key: 'feature5', color: '#34C759' },
+	{ icon: 'ribbon-outline', key: 'feature1', color: '#E8C547' },
+	{ icon: 'podium-outline', key: 'feature4', color: '#FF9500' },
+	{ icon: 'cloud-upload-outline', key: 'feature2', color: '#5AC8FA' },
+	{ icon: 'analytics-outline', key: 'feature3', color: '#34C759' },
+	{ icon: 'body-outline', key: 'feature5', color: '#34C759' },
 ]
 
 function FeatureRow({ icon, text, color }: { icon: string; text: string; color: string }) {
 	return (
 		<View style={styles.featureRow}>
-			<View style={[styles.featureIconWrap, { backgroundColor: `${color}20` }]}>
-				<Ionicons name={icon as any} size={20} color={color} />
+			<View style={[styles.featureIconWrap, { backgroundColor: `${color}18` }]}>
+				<Ionicons name={icon as any} size={18} color={color} />
 			</View>
 			<Text style={styles.featureText}>{text}</Text>
-			<View style={[styles.featureCheck, { backgroundColor: `${color}18` }]}>
-				<Ionicons name='checkmark' size={14} color={color} />
-			</View>
+			<Ionicons name='checkmark' size={16} color={COLORS.primary} />
 		</View>
 	)
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: COLORS.background,
-	},
+	root: { flex: 1, backgroundColor: COLORS.background },
+	container: { flex: 1, backgroundColor: 'transparent' },
 	loadingContainer: {
 		flex: 1,
 		backgroundColor: COLORS.background,
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
-	scroll: {
-		paddingBottom: 40,
-	},
+	scroll: { paddingBottom: 48 },
 	topCloseBar: {
 		flexDirection: 'row',
 		justifyContent: 'flex-end',
 		alignItems: 'center',
-		paddingHorizontal: 8,
+		paddingHorizontal: 16,
 		paddingVertical: 4,
 	},
-
-	// Hero
-	hero: {
-		alignItems: 'center',
-		paddingTop: 8,
-		paddingBottom: 36,
-		paddingHorizontal: 24,
-	},
-	badgeRow: {
-		marginBottom: 16,
-	},
-	badge: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 6,
-		backgroundColor: 'rgba(52,199,89,0.15)',
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 20,
-		borderWidth: 1,
-		borderColor: 'rgba(52,199,89,0.3)',
-	},
-	badgeText: {
-		fontSize: 12,
-		fontWeight: '600',
-		color: COLORS.primary,
-		letterSpacing: 0.5,
-		textTransform: 'uppercase',
-	},
-	heroTitle: {
-		fontSize: 32,
-		fontWeight: '800',
-		color: COLORS.text,
-		textAlign: 'center',
-		letterSpacing: -0.5,
-		marginBottom: 8,
-	},
-	heroSubtitle: {
-		fontSize: 16,
-		color: COLORS.textSecondary,
-		textAlign: 'center',
-		lineHeight: 22,
-		marginBottom: 32,
-	},
-	trialBubble: {
-		width: 120,
-		height: 120,
-		borderRadius: 60,
-		backgroundColor: COLORS.primary,
-		justifyContent: 'center',
-		alignItems: 'center',
-		shadowColor: COLORS.primary,
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.4,
-		shadowRadius: 16,
-		elevation: 12,
-		marginBottom: 12,
-	},
-	trialDays: {
-		fontSize: 48,
-		fontWeight: '900',
-		color: '#fff',
-		lineHeight: 52,
-	},
-	trialLabel: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: 'rgba(255,255,255,0.85)',
-		textTransform: 'uppercase',
-		letterSpacing: 1,
-	},
-	trialFree: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: COLORS.primary,
-	},
-
-	// Timeline
-	timeline: {
-		flexDirection: 'row',
-		alignItems: 'flex-start',
-		marginTop: 24,
-		marginBottom: 16,
-		paddingHorizontal: 8,
-	},
-	timelineStep: {
-		flex: 1,
-		alignItems: 'center',
-		gap: 6,
-	},
-	timelineDot: {
+	closeBtn: {
 		width: 36,
 		height: 36,
 		borderRadius: 18,
 		alignItems: 'center',
 		justifyContent: 'center',
-		marginBottom: 4,
+		backgroundColor: 'rgba(255,255,255,0.06)',
+	},
+	hero: {
+		alignItems: 'center',
+		paddingTop: 4,
+		paddingBottom: 28,
+		paddingHorizontal: 24,
+	},
+	badge: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		backgroundColor: 'rgba(232,197,71,0.12)',
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: 'rgba(232,197,71,0.28)',
+		marginBottom: 18,
+	},
+	badgeText: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: COLORS.gold,
+		letterSpacing: 0.6,
+		textTransform: 'uppercase',
+	},
+	daysOrb: { marginBottom: 18 },
+	daysOrbGrad: {
+		width: 120,
+		height: 120,
+		borderRadius: 60,
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderWidth: 1,
+		borderColor: 'rgba(52,199,89,0.35)',
+	},
+	trialDays: {
+		fontSize: 44,
+		fontWeight: '900',
+		color: '#fff',
+		lineHeight: 48,
+		letterSpacing: -1,
+	},
+	trialLabel: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: 'rgba(255,255,255,0.7)',
+		textTransform: 'uppercase',
+		letterSpacing: 1.2,
+	},
+	heroTitle: {
+		fontSize: 30,
+		fontWeight: '800',
+		color: COLORS.text,
+		textAlign: 'center',
+		letterSpacing: -0.6,
+		marginBottom: 8,
+	},
+	heroSubtitle: {
+		fontSize: 15,
+		color: 'rgba(255,255,255,0.55)',
+		textAlign: 'center',
+		lineHeight: 22,
+		marginBottom: 24,
+	},
+	timeline: {
+		flexDirection: 'row',
+		alignItems: 'flex-start',
+		marginBottom: 16,
+		width: '100%',
+	},
+	timelineCol: {
+		flex: 1,
+		alignItems: 'center',
+		gap: 6,
+		position: 'relative',
+	},
+	timelineConnector: {
+		position: 'absolute',
+		left: -14,
+		top: 17,
+		width: 28,
+		height: 2,
+		backgroundColor: 'rgba(255,255,255,0.12)',
+	},
+	timelineDot: {
+		width: 34,
+		height: 34,
+		borderRadius: 17,
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 2,
 	},
 	timelineTitle: {
 		fontSize: 12,
@@ -615,21 +648,14 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		lineHeight: 14,
 	},
-	timelineLine: {
-		flex: 0,
-		width: 28,
-		height: 2,
-		backgroundColor: 'rgba(255,255,255,0.15)',
-		marginTop: 17,
-	},
 	noChargeRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 6,
 		backgroundColor: 'rgba(52,199,89,0.12)',
 		paddingHorizontal: 14,
-		paddingVertical: 8,
-		borderRadius: 12,
+		paddingVertical: 9,
+		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: 'rgba(52,199,89,0.25)',
 	},
@@ -638,78 +664,79 @@ const styles = StyleSheet.create({
 		color: COLORS.primary,
 		fontWeight: '600',
 	},
-
-	// Features
 	featuresSection: {
 		paddingHorizontal: 20,
-		paddingTop: 28,
+		paddingTop: 8,
 		paddingBottom: 8,
 	},
 	sectionTitle: {
 		fontSize: 18,
 		fontWeight: '700',
 		color: COLORS.text,
-		marginBottom: 16,
+		marginBottom: 14,
+		letterSpacing: -0.2,
+	},
+	featuresPanel: {
+		borderRadius: 18,
+		backgroundColor: 'rgba(255,255,255,0.04)',
+		borderWidth: 1,
+		borderColor: 'rgba(255,255,255,0.06)',
+		paddingHorizontal: 4,
+		overflow: 'hidden',
 	},
 	featureRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		paddingVertical: 13,
+		paddingHorizontal: 12,
+		borderBottomWidth: StyleSheet.hairlineWidth,
+		borderBottomColor: 'rgba(255,255,255,0.06)',
 	},
 	featureIconWrap: {
-		width: 36,
-		height: 36,
+		width: 34,
+		height: 34,
 		borderRadius: 10,
-		backgroundColor: 'rgba(52,199,89,0.12)',
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginRight: 12,
 	},
-	featureCheck: {
-		width: 26, height: 26, borderRadius: 8,
-		alignItems: 'center', justifyContent: 'center',
-	},
 	featureText: {
 		flex: 1,
-		fontSize: 15,
+		fontSize: 14,
 		color: COLORS.text,
-		fontWeight: '500',
+		fontWeight: '600',
 	},
-
-	// Plans
 	plansSection: {
 		paddingHorizontal: 20,
-		paddingTop: 28,
+		paddingTop: 24,
 		paddingBottom: 8,
 	},
 	planCard: {
-		backgroundColor: COLORS.card,
-		borderRadius: 16,
+		backgroundColor: 'rgba(255,255,255,0.04)',
+		borderRadius: 18,
 		padding: 16,
 		marginBottom: 12,
-		borderWidth: 2,
-		borderColor: COLORS.border,
+		borderWidth: 1.5,
+		borderColor: 'rgba(255,255,255,0.08)',
 	},
 	planCardSelected: {
 		borderColor: COLORS.primary,
-		backgroundColor: 'rgba(52,199,89,0.05)',
+		backgroundColor: 'rgba(52,199,89,0.08)',
 	},
 	planBestValue: {
 		alignSelf: 'flex-start',
-		backgroundColor: COLORS.primary,
-		paddingHorizontal: 8,
+		backgroundColor: COLORS.gold,
+		paddingHorizontal: 9,
 		paddingVertical: 3,
-		borderRadius: 6,
+		borderRadius: 8,
 		marginBottom: 10,
 	},
 	planBestValueText: {
 		fontSize: 11,
-		fontWeight: '700',
-		color: '#fff',
+		fontWeight: '800',
+		color: '#1A1400',
 		textTransform: 'uppercase',
-		letterSpacing: 0.5,
+		letterSpacing: 0.4,
 	},
 	planRow: {
 		flexDirection: 'row',
@@ -717,41 +744,33 @@ const styles = StyleSheet.create({
 		gap: 12,
 	},
 	planRadio: {
-		width: 20,
-		height: 20,
-		borderRadius: 10,
+		width: 22,
+		height: 22,
+		borderRadius: 11,
 		borderWidth: 2,
-		borderColor: COLORS.primary,
+		borderColor: 'rgba(255,255,255,0.25)',
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
+	planRadioOn: { borderColor: COLORS.primary },
 	planRadioDot: {
 		width: 10,
 		height: 10,
 		borderRadius: 5,
 		backgroundColor: COLORS.primary,
 	},
-	planInfo: {
-		flex: 1,
-	},
+	planInfo: { flex: 1 },
 	planName: {
 		fontSize: 15,
 		fontWeight: '700',
 		color: COLORS.text,
-	},
-	planDesc: {
-		fontSize: 13,
-		color: COLORS.textSecondary,
-		marginTop: 2,
 	},
 	planTrialSub: {
 		fontSize: 12,
 		color: COLORS.textSecondary,
 		marginTop: 3,
 	},
-	planPriceWrap: {
-		alignItems: 'flex-end',
-	},
+	planPriceWrap: { alignItems: 'flex-end' },
 	planPriceFree: {
 		fontSize: 18,
 		fontWeight: '800',
@@ -761,30 +780,18 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		color: COLORS.textSecondary,
 	},
-	planPrice: {
-		fontSize: 17,
-		fontWeight: '700',
-		color: COLORS.text,
-	},
-
-	// CTA
 	ctaSection: {
 		paddingHorizontal: 20,
-		paddingTop: 28,
+		paddingTop: 24,
 		alignItems: 'center',
 	},
 	ctaButton: {
 		width: '100%',
-		borderRadius: 16,
+		borderRadius: 18,
 		overflow: 'hidden',
-		shadowColor: COLORS.primary,
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.35,
-		shadowRadius: 12,
-		elevation: 8,
 	},
 	ctaGradient: {
-		paddingVertical: 18,
+		paddingVertical: 16,
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
@@ -794,15 +801,16 @@ const styles = StyleSheet.create({
 		gap: 8,
 	},
 	ctaText: {
-		fontSize: 18,
+		fontSize: 16,
 		fontWeight: '800',
-		color: '#fff',
-		letterSpacing: 0.3,
+		color: '#06140A',
+		letterSpacing: 0.2,
 	},
 	ctaSubtext: {
-		fontSize: 13,
-		color: 'rgba(255,255,255,0.75)',
-		marginTop: 2,
+		fontSize: 12,
+		color: 'rgba(6,20,10,0.7)',
+		marginTop: 3,
+		fontWeight: '600',
 	},
 	legalText: {
 		fontSize: 12,
@@ -821,7 +829,7 @@ const styles = StyleSheet.create({
 	},
 	linkText: {
 		fontSize: 12,
-		color: '#5AC8FA',
+		color: 'rgba(255,255,255,0.55)',
 		textDecorationLine: 'underline',
 	},
 	linkSep: {
@@ -835,7 +843,6 @@ const styles = StyleSheet.create({
 	},
 	skipText: {
 		fontSize: 14,
-		color: COLORS.textSecondary,
-		textDecorationLine: 'underline',
+		color: 'rgba(255,255,255,0.4)',
 	},
 })

@@ -20,6 +20,7 @@ const GROUP_NAMES: Record<string, Record<Language, string>> = {
   'Спина':           { ru: 'Спина',          en: 'Back',         az: 'Arxa' },
   'Трапеции':        { ru: 'Трапеции',       en: 'Traps',        az: 'Trapezius' },
   'Плечи':           { ru: 'Плечи',          en: 'Shoulders',    az: 'Çiynlər' },
+  'Шея':             { ru: 'Шея',            en: 'Neck',         az: 'Boyun' },
   // Subgroups
   'Верх груди':      { ru: 'Верх груди',     en: 'Upper Chest',  az: 'Üst döş' },
   'Низ груди':       { ru: 'Низ груди',      en: 'Lower Chest',  az: 'Alt döş' },

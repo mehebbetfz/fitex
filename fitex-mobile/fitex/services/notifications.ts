@@ -1,25 +1,39 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
+import type { RecoveryData } from '@/scripts/database'
 
-const STORAGE_KEY_ENABLED = 'notification_reminder_enabled'
-const STORAGE_KEY_HOUR = 'notification_reminder_hour'
-const STORAGE_KEY_MINUTE = 'notification_reminder_minute'
-const STORAGE_KEY_IDS = 'notification_reminder_ids'
+const KEY_WORKOUT_ENABLED = 'notification_reminder_enabled'
+const KEY_WORKOUT_HOUR = 'notification_reminder_hour'
+const KEY_WORKOUT_MINUTE = 'notification_reminder_minute'
+const KEY_WORKOUT_IDS = 'notification_reminder_ids'
+const KEY_RECOVERY_ENABLED = 'notification_recovery_enabled'
+const KEY_RECOVERY_IDS = 'notification_recovery_ids'
 
-// Показывать уведомления даже когда приложение открыто
+const ANDROID_CHANNEL_ID = 'fitex-default'
+
 Notifications.setNotificationHandler({
 	handleNotification: async () => ({
 		shouldShowAlert: true,
 		shouldPlaySound: true,
 		shouldSetBadge: false,
+		shouldShowBanner: true,
+		shouldShowList: true,
 	}),
 })
 
+/** @deprecated use AppNotificationSettings */
 export interface NotificationSettings {
 	enabled: boolean
 	hour: number
 	minute: number
+}
+
+export interface AppNotificationSettings {
+	workoutReminders: boolean
+	hour: number
+	minute: number
+	recoveryReady: boolean
 }
 
 export const DEFAULT_SETTINGS: NotificationSettings = {
@@ -28,33 +42,82 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
 	minute: 0,
 }
 
+export const DEFAULT_APP_SETTINGS: AppNotificationSettings = {
+	workoutReminders: false,
+	hour: 9,
+	minute: 0,
+	recoveryReady: true,
+}
+
+export async function ensureAndroidChannel(): Promise<void> {
+	if (Platform.OS !== 'android') return
+	await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
+		name: 'Fitex',
+		importance: Notifications.AndroidImportance.DEFAULT,
+		vibrationPattern: [0, 250, 250, 250],
+		lightColor: '#34C759',
+	})
+}
+
 export const loadNotificationSettings = async (): Promise<NotificationSettings> => {
-	try {
-		const [enabled, hour, minute] = await Promise.all([
-			AsyncStorage.getItem(STORAGE_KEY_ENABLED),
-			AsyncStorage.getItem(STORAGE_KEY_HOUR),
-			AsyncStorage.getItem(STORAGE_KEY_MINUTE),
-		])
-		return {
-			enabled: enabled === 'true',
-			hour: hour !== null ? parseInt(hour, 10) : DEFAULT_SETTINGS.hour,
-			minute: minute !== null ? parseInt(minute, 10) : DEFAULT_SETTINGS.minute,
-		}
-	} catch {
-		return DEFAULT_SETTINGS
+	const app = await loadAppNotificationSettings()
+	return {
+		enabled: app.workoutReminders,
+		hour: app.hour,
+		minute: app.minute,
 	}
 }
 
-export const saveNotificationSettings = async (settings: NotificationSettings): Promise<void> => {
+export const loadAppNotificationSettings =
+	async (): Promise<AppNotificationSettings> => {
+		try {
+			const [enabled, hour, minute, recovery] = await Promise.all([
+				AsyncStorage.getItem(KEY_WORKOUT_ENABLED),
+				AsyncStorage.getItem(KEY_WORKOUT_HOUR),
+				AsyncStorage.getItem(KEY_WORKOUT_MINUTE),
+				AsyncStorage.getItem(KEY_RECOVERY_ENABLED),
+			])
+			return {
+				workoutReminders: enabled === 'true',
+				hour: hour !== null ? parseInt(hour, 10) : DEFAULT_APP_SETTINGS.hour,
+				minute:
+					minute !== null ? parseInt(minute, 10) : DEFAULT_APP_SETTINGS.minute,
+				recoveryReady:
+					recovery === null
+						? DEFAULT_APP_SETTINGS.recoveryReady
+						: recovery === 'true',
+			}
+		} catch {
+			return { ...DEFAULT_APP_SETTINGS }
+		}
+	}
+
+export const saveNotificationSettings = async (
+	settings: NotificationSettings,
+): Promise<void> => {
+	const app = await loadAppNotificationSettings()
+	await saveAppNotificationSettings({
+		...app,
+		workoutReminders: settings.enabled,
+		hour: settings.hour,
+		minute: settings.minute,
+	})
+}
+
+export const saveAppNotificationSettings = async (
+	settings: AppNotificationSettings,
+): Promise<void> => {
 	await Promise.all([
-		AsyncStorage.setItem(STORAGE_KEY_ENABLED, String(settings.enabled)),
-		AsyncStorage.setItem(STORAGE_KEY_HOUR, String(settings.hour)),
-		AsyncStorage.setItem(STORAGE_KEY_MINUTE, String(settings.minute)),
+		AsyncStorage.setItem(KEY_WORKOUT_ENABLED, String(settings.workoutReminders)),
+		AsyncStorage.setItem(KEY_WORKOUT_HOUR, String(settings.hour)),
+		AsyncStorage.setItem(KEY_WORKOUT_MINUTE, String(settings.minute)),
+		AsyncStorage.setItem(KEY_RECOVERY_ENABLED, String(settings.recoveryReady)),
 	])
 }
 
 export const requestNotificationPermissions = async (): Promise<boolean> => {
 	if (Platform.OS === 'web') return false
+	await ensureAndroidChannel()
 
 	const { status: existing } = await Notifications.getPermissionsAsync()
 	if (existing === 'granted') return true
@@ -63,46 +126,56 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 	return status === 'granted'
 }
 
-// Дни недели: 2=Пн, 3=Вт, 4=Ср, 5=Чт, 6=Пт (рабочие дни)
 const WEEKDAYS = [2, 3, 4, 5, 6]
 
-export const scheduleWorkoutReminders = async (hour: number, minute: number): Promise<void> => {
+export type WorkoutReminderCopy = { title: string; body: string }
+
+export const scheduleWorkoutReminders = async (
+	hour: number,
+	minute: number,
+	copy?: WorkoutReminderCopy,
+): Promise<void> => {
 	await cancelWorkoutReminders()
+	await ensureAndroidChannel()
+
+	const title = copy?.title ?? 'Fitex'
+	const body = copy?.body ?? 'Time to train!'
 
 	const ids: string[] = []
 	for (const weekday of WEEKDAYS) {
 		const id = await Notifications.scheduleNotificationAsync({
 			content: {
-				title: '💪 Время тренировки!',
-				body: 'Не забудь про сегодняшнюю тренировку — ты уже так близко к цели!',
+				title,
+				body,
 				sound: true,
 				data: { type: 'workout_reminder' },
+				...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
 			},
 			trigger: {
 				type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
 				weekday,
 				hour,
 				minute,
-				repeats: true,
-			},
+			} as Notifications.WeeklyTriggerInput,
 		})
 		ids.push(id)
 	}
 
-	await AsyncStorage.setItem(STORAGE_KEY_IDS, JSON.stringify(ids))
+	await AsyncStorage.setItem(KEY_WORKOUT_IDS, JSON.stringify(ids))
 }
 
 export const cancelWorkoutReminders = async (): Promise<void> => {
 	try {
-		const stored = await AsyncStorage.getItem(STORAGE_KEY_IDS)
+		const stored = await AsyncStorage.getItem(KEY_WORKOUT_IDS)
 		if (stored) {
 			const ids: string[] = JSON.parse(stored)
-			await Promise.all(ids.map(id => Notifications.cancelScheduledNotificationAsync(id)))
+			await Promise.all(
+				ids.map(id => Notifications.cancelScheduledNotificationAsync(id)),
+			)
 		}
-		await AsyncStorage.removeItem(STORAGE_KEY_IDS)
+		await AsyncStorage.removeItem(KEY_WORKOUT_IDS)
 	} catch {
-		// Если не получилось — отменяем все
-		await Notifications.cancelAllScheduledNotificationsAsync()
+		// leave other notifications intact
 	}
 }
 
@@ -110,16 +183,164 @@ export const toggleWorkoutReminders = async (
 	enabled: boolean,
 	hour: number,
 	minute: number,
+	copy?: WorkoutReminderCopy,
 ): Promise<boolean> => {
+	const app = await loadAppNotificationSettings()
 	if (enabled) {
 		const granted = await requestNotificationPermissions()
 		if (!granted) return false
-		await scheduleWorkoutReminders(hour, minute)
+		await scheduleWorkoutReminders(hour, minute, copy)
 	} else {
 		await cancelWorkoutReminders()
 	}
-	await saveNotificationSettings({ enabled, hour, minute })
+	await saveAppNotificationSettings({
+		...app,
+		workoutReminders: enabled,
+		hour,
+		minute,
+	})
 	return true
+}
+
+/** Hours until recovery >= 95 given fatigue and last_trained. */
+export function hoursUntilRecovered(
+	fatigue: number,
+	lastTrainedDate: string | null,
+): number | null {
+	if (!lastTrainedDate) return null
+	const last = new Date(lastTrainedDate).getTime()
+	if (!Number.isFinite(last)) return null
+
+	const hoursElapsed = (Date.now() - last) / 3_600_000
+	const recoveryFromTime = Math.min(100, (hoursElapsed / 72) * 100)
+	const totalRecovery = Math.max(0, Math.min(100, recoveryFromTime - fatigue))
+	if (totalRecovery >= 95) return 0
+
+	const hoursNeeded = ((95 + fatigue) * 72) / 100
+	return Math.max(0, hoursNeeded - hoursElapsed)
+}
+
+/**
+ * Per group_name: when the slowest muscle in the group reaches recovered.
+ * Skips groups already fully recovered.
+ */
+export function computeGroupReadyTimes(
+	rows: RecoveryData[],
+): { groupName: string; readyAt: Date }[] {
+	const byGroup = new Map<string, number>() // group -> max ready timestamp ms
+
+	for (const row of rows) {
+		const group = (row.group_name || row.muscle_name || '').trim()
+		if (!group) continue
+		const hoursLeft = hoursUntilRecovered(row.fatigue ?? 0, row.last_trained)
+		if (hoursLeft == null) continue
+		if (hoursLeft <= 0) continue // already recovered
+		const readyMs = Date.now() + hoursLeft * 3_600_000
+		const prev = byGroup.get(group) ?? 0
+		if (readyMs > prev) byGroup.set(group, readyMs)
+	}
+
+	return [...byGroup.entries()].map(([groupName, ms]) => ({
+		groupName,
+		readyAt: new Date(ms),
+	}))
+}
+
+export type RecoveryNotifCopy = {
+	title: string
+	bodyForGroup: (groupDisplayName: string) => string
+}
+
+export const cancelRecoveryNotifications = async (): Promise<void> => {
+	try {
+		const stored = await AsyncStorage.getItem(KEY_RECOVERY_IDS)
+		if (stored) {
+			const ids: string[] = JSON.parse(stored)
+			await Promise.all(
+				ids.map(id => Notifications.cancelScheduledNotificationAsync(id)),
+			)
+		}
+		await AsyncStorage.removeItem(KEY_RECOVERY_IDS)
+	} catch {
+		// ignore
+	}
+}
+
+export const scheduleRecoveryNotifications = async (
+	groups: { groupName: string; displayName: string; readyAt: Date }[],
+	copy: RecoveryNotifCopy,
+): Promise<void> => {
+	await cancelRecoveryNotifications()
+	await ensureAndroidChannel()
+
+	const now = Date.now()
+	const ids: string[] = []
+
+	for (const g of groups) {
+		const when = g.readyAt.getTime()
+		// Skip if more than ~10 days out or already past (add 30s buffer)
+		if (when <= now + 30_000) continue
+		if (when > now + 10 * 24 * 3_600_000) continue
+
+		const id = await Notifications.scheduleNotificationAsync({
+			content: {
+				title: copy.title,
+				body: copy.bodyForGroup(g.displayName),
+				sound: true,
+				data: { type: 'recovery_ready', group: g.groupName },
+				...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
+			},
+			trigger: {
+				type: Notifications.SchedulableTriggerInputTypes.DATE,
+				date: g.readyAt,
+			},
+		})
+		ids.push(id)
+	}
+
+	await AsyncStorage.setItem(KEY_RECOVERY_IDS, JSON.stringify(ids))
+}
+
+export const toggleRecoveryNotifications = async (
+	enabled: boolean,
+): Promise<boolean> => {
+	const app = await loadAppNotificationSettings()
+	if (enabled) {
+		const granted = await requestNotificationPermissions()
+		if (!granted) return false
+	} else {
+		await cancelRecoveryNotifications()
+	}
+	await saveAppNotificationSettings({ ...app, recoveryReady: enabled })
+	return true
+}
+
+/**
+ * Re-read recovery rows and (re)schedule group-ready notifications if enabled.
+ */
+export const rescheduleRecoveryNotifications = async (
+	rows: RecoveryData[],
+	displayName: (groupName: string) => string,
+	copy: RecoveryNotifCopy,
+): Promise<void> => {
+	if (Platform.OS === 'web') return
+	const settings = await loadAppNotificationSettings()
+	if (!settings.recoveryReady) {
+		await cancelRecoveryNotifications()
+		return
+	}
+	const granted = await requestNotificationPermissions()
+	if (!granted) return
+
+	const times = computeGroupReadyTimes(rows)
+	await scheduleRecoveryNotifications(
+		times.map(t => ({
+			groupName: t.groupName,
+			displayName: displayName(t.groupName),
+			readyAt: t.readyAt,
+		})),
+		copy,
+	)
 }
 
 export const formatTime = (hour: number, minute: number): string => {

@@ -16,6 +16,9 @@ export interface User {
 	isPremium: boolean
 	/** ISO string from server; App Store / Play subscription end time */
 	premiumExpiresAt?: string
+	/** admin | user */
+	role?: string
+	isAdmin?: boolean
 	trialStartedAt?: string   // ISO date string, set when user starts trial
 	trialEndsAt?: string      // ISO date string = trialStartedAt + 30 days
 	isNewUser?: boolean       // true on very first login
@@ -143,12 +146,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 			setUser(userData)
 			console.log('[Auth] User saved successfully')
-			// Новый пользователь без Premium — trial paywall; с активной подпиской — сразу в приложение
-			if (userData.isNewUser && !hasActivePremium(userData)) {
-				router.replace('/(auth)/trial-paywall')
-			} else {
-				router.replace('/(tabs)')
-			}
+			// Единый гейт: language → body onboarding → trial → tabs (см. app/index.tsx)
+			router.replace('/')
 		} catch (err) {
 			console.error('[Auth] Error saving user:', err)
 		}

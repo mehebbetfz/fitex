@@ -1,17 +1,6 @@
-import { useDatabase } from '@/app/contexts/database-context'
 import { useLanguage } from '@/contexts/language-context'
-import { Language, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '@/locales'
-import {
-	exportAllDataToCsv,
-	exportWorkoutsToCsv,
-} from '@/services/export'
-import {
-	DEFAULT_SETTINGS,
-	formatTime,
-	loadNotificationSettings,
-	NotificationSettings,
-	toggleWorkoutReminders,
-} from '@/services/notifications'
+import { Language } from '@/locales'
+import ProfileStatsSections from '@/components/profile-stats-sections'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -19,10 +8,8 @@ import {
 	ActivityIndicator,
 	Alert,
 	Animated,
-	Modal,
 	ScrollView,
 	StyleSheet,
-	Switch,
 	Text,
 	TouchableOpacity,
 	View,
@@ -349,115 +336,13 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 )
 
 // ─────────────────────────────────────────────
-// Time picker modal
-// ─────────────────────────────────────────────
-const HOURS = Array.from({ length: 24 }, (_, i) => i)
-const MINUTES = [0, 15, 30, 45]
-
-const TimePickerModal = ({
-	visible,
-	hour,
-	minute,
-	onConfirm,
-	onClose,
-}: {
-	visible: boolean
-	hour: number
-	minute: number
-	onConfirm: (h: number, m: number) => void
-	onClose: () => void
-}) => {
-	const [selectedHour, setSelectedHour] = useState(hour)
-	const [selectedMinute, setSelectedMinute] = useState(minute)
-	const { t } = useLanguage()
-
-	return (
-		<Modal transparent animationType='fade' visible={visible} onRequestClose={onClose}>
-			<TouchableOpacity
-				style={pickerStyles.overlay}
-				activeOpacity={1}
-				onPress={onClose}
-			>
-				<TouchableOpacity activeOpacity={1} onPress={() => {}}>
-					<View style={pickerStyles.container}>
-						<Text style={pickerStyles.title}>{t('profile', 'reminderTime')}</Text>
-						<View style={pickerStyles.pickers}>
-							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>{t('profile', 'hours')}</Text>
-								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
-									{HOURS.map(h => (
-										<TouchableOpacity
-											key={h}
-											style={[pickerStyles.option, selectedHour === h && pickerStyles.optionSelected]}
-											onPress={() => setSelectedHour(h)}
-										>
-											<Text style={[pickerStyles.optionText, selectedHour === h && pickerStyles.optionTextSelected]}>
-												{String(h).padStart(2, '0')}
-											</Text>
-										</TouchableOpacity>
-									))}
-								</ScrollView>
-							</View>
-							<Text style={pickerStyles.colon}>:</Text>
-							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>{t('profile', 'minutes')}</Text>
-								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
-									{MINUTES.map(m => (
-										<TouchableOpacity
-											key={m}
-											style={[pickerStyles.option, selectedMinute === m && pickerStyles.optionSelected]}
-											onPress={() => setSelectedMinute(m)}
-										>
-											<Text style={[pickerStyles.optionText, selectedMinute === m && pickerStyles.optionTextSelected]}>
-												{String(m).padStart(2, '0')}
-											</Text>
-										</TouchableOpacity>
-									))}
-								</ScrollView>
-							</View>
-						</View>
-						<View style={pickerStyles.actions}>
-							<TouchableOpacity style={pickerStyles.cancelBtn} onPress={onClose}>
-								<Text style={pickerStyles.cancelText}>{t('common', 'cancel')}</Text>
-							</TouchableOpacity>
-							<TouchableOpacity
-								style={pickerStyles.confirmBtn}
-								onPress={() => onConfirm(selectedHour, selectedMinute)}
-							>
-								<Text style={pickerStyles.confirmText}>{t('common', 'save')}</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</TouchableOpacity>
-			</TouchableOpacity>
-		</Modal>
-	)
-}
-
-// ─────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────
 export default function ProfileScreen() {
 	const { user, signOut } = useAuth()
-	const { t, language, setLanguage } = useLanguage()
-	const {
-		syncWithServer,
-		isLoading: dbLoading,
-		workouts,
-		bodyMeasurements,
-		personalRecords,
-	} = useDatabase()
-	const [syncing, setSyncing] = useState(false)
+	const { t, language } = useLanguage()
 	const [signingOut, setSigningOut] = useState(false)
 	const [loading, setLoading] = useState(true)
-
-	// Уведомления
-	const [notifSettings, setNotifSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS)
-	const [togglingNotif, setTogglingNotif] = useState(false)
-	const [showTimePicker, setShowTimePicker] = useState(false)
-
-	// Экспорт
-	const [exporting, setExporting] = useState(false)
 
 	const premium = user ? hasActivePremium(user) : false
 
@@ -467,89 +352,11 @@ export default function ProfileScreen() {
 	}, [premium, user?.premiumExpiresAt, language])
 
 	useEffect(() => {
-		loadNotificationSettings().then(setNotifSettings)
-	}, [])
-
-	// Simulate auth data resolving — remove the delay if useAuth already guards
-	useEffect(() => {
 		if (user !== undefined) {
 			const timer = setTimeout(() => setLoading(false), 300)
 			return () => clearTimeout(timer)
 		}
 	}, [user])
-
-	const handleSync = async () => {
-		if (!premium) {
-			router.push('/(auth)/subscription')
-			return
-		}
-		setSyncing(true)
-		try {
-			await syncWithServer(premium)
-		} catch (error) {
-			Alert.alert(t('common', 'error'), t('profile', 'syncError') + error)
-		} finally {
-			setSyncing(false)
-		}
-	}
-
-	const handleToggleNotifications = async (enabled: boolean) => {
-		setTogglingNotif(true)
-		try {
-			const success = await toggleWorkoutReminders(
-				enabled,
-				notifSettings.hour,
-				notifSettings.minute,
-			)
-			if (success) {
-				setNotifSettings(prev => ({ ...prev, enabled }))
-			} else if (enabled) {
-				Alert.alert(t('profile', 'permissionsTitle'), t('profile', 'notifPermission'))
-			}
-		} catch (e) {
-			Alert.alert(t('common', 'error'), t('profile', 'notifError'))
-		} finally {
-			setTogglingNotif(false)
-		}
-	}
-
-	const handleTimeConfirm = async (hour: number, minute: number) => {
-		setShowTimePicker(false)
-		const updated = { ...notifSettings, hour, minute }
-		setNotifSettings(updated)
-		if (notifSettings.enabled) {
-			await toggleWorkoutReminders(true, hour, minute)
-		} else {
-			const { saveNotificationSettings } = await import('@/services/notifications')
-			await saveNotificationSettings(updated)
-		}
-	}
-
-	const handleExportAll = async () => {
-		setExporting(true)
-		try {
-			await exportAllDataToCsv(workouts, bodyMeasurements, personalRecords)
-		} catch (e) {
-			Alert.alert(t('common', 'error'), t('profile', 'exportError'))
-		} finally {
-			setExporting(false)
-		}
-	}
-
-	const handleExportWorkouts = async () => {
-		setExporting(true)
-		try {
-			await exportWorkoutsToCsv(workouts)
-		} catch (e) {
-			Alert.alert(t('common', 'error'), t('profile', 'exportError'))
-		} finally {
-			setExporting(false)
-		}
-	}
-
-	const handleLanguageChange = async (lang: Language) => {
-		await setLanguage(lang)
-	}
 
 	const handleSignOut = () => {
 		Alert.alert(t('profile', 'signOutTitle'), t('profile', 'signOutConfirm'), [
@@ -579,13 +386,6 @@ export default function ProfileScreen() {
 
 	return (
 		<SafeAreaView style={styles.container} edges={['top']}>
-			<TimePickerModal
-				visible={showTimePicker}
-				hour={notifSettings.hour}
-				minute={notifSettings.minute}
-				onConfirm={handleTimeConfirm}
-				onClose={() => setShowTimePicker(false)}
-			/>
 			<ScrollView
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={styles.scrollContent}
@@ -723,36 +523,39 @@ export default function ProfileScreen() {
 					</FadeIn>
 				)}
 
-				{/* Sync section (premium only) */}
-				{loading ? (
-					<SettingsSectionSkeleton rows={2} />
-				) : premium ? (
+				{!loading ? (
 					<FadeIn show={!loading}>
-						<View style={styles.section}>
-							<Text style={styles.sectionTitle}>{t('profile', 'cloud')}</Text>
-							<SettingsItem
-								icon='cloud-upload-outline'
-								title={t('profile', 'syncData')}
-								subtitle={t('profile', 'syncSubtitle')}
-								onPress={handleSync}
-								showChevron={false}
-								rightElement={
-									syncing || dbLoading ? (
-										<ActivityIndicator size='small' color={COLORS.primary} />
-									) : null
-								}
-							/>
-							<SettingsItem
-								icon='stats-chart-outline'
-								title={t('sync', 'statsTitle')}
-								subtitle={t('sync', 'lastSync')}
-								onPress={() => router.push('/(auth)/(routes)/sync-stats')}
-							/>
-						</View>
+						<ProfileStatsSections />
 					</FadeIn>
 				) : null}
 
-			{/* Rating + social (marketplace / gym-pass hidden) */}
+				{/* Settings entry */}
+				{loading ? (
+					<SettingsSectionSkeleton rows={1} />
+				) : (
+					<FadeIn show={!loading}>
+						<View style={styles.section}>
+							{user?.isAdmin ? (
+								<SettingsItem
+									icon='shield-checkmark-outline'
+									title={t('profile', 'adminEntry')}
+									subtitle={t('profile', 'adminSubtitle')}
+									onPress={() => router.push('/(auth)/(routes)/admin')}
+									iconColor={COLORS.accent}
+								/>
+							) : null}
+							<SettingsItem
+								icon='settings-outline'
+								title={t('profile', 'settingsEntry')}
+								subtitle={t('profile', 'settingsSubtitle')}
+								onPress={() => router.push('/(auth)/(routes)/settings')}
+								iconColor={COLORS.textSecondary}
+							/>
+						</View>
+					</FadeIn>
+				)}
+
+			{/* Rating + social */}
 			{loading ? (
 				<SettingsSectionSkeleton rows={2} />
 			) : (
@@ -767,6 +570,13 @@ export default function ProfileScreen() {
 							iconColor='#FFD700'
 						/>
 						<SettingsItem
+							icon='copy-outline'
+							title={t('profile', 'templatesEntry')}
+							subtitle={t('profile', 'templatesEntrySubtitle')}
+							onPress={() => router.push('/templates')}
+							iconColor='#34C759'
+						/>
+						<SettingsItem
 							icon='share-social-outline'
 							title={t('profile', 'socialLinksEntry')}
 							subtitle={t('profile', 'socialLinksSubtitle')}
@@ -775,117 +585,6 @@ export default function ProfileScreen() {
 						/>
 					</View>
 				</FadeIn>
-			)}
-
-			{/* Notifications section */}
-			{loading ? (
-				<SettingsSectionSkeleton rows={2} />
-			) : (
-				<FadeIn show={!loading}>
-					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>{t('profile', 'notifications')}</Text>
-							<SettingsItem
-								icon='notifications-outline'
-								title={t('profile', 'reminder')}
-								subtitle={
-									notifSettings.enabled
-										? `${t('profile', 'reminderSchedule')} ${formatTime(notifSettings.hour, notifSettings.minute)}`
-										: t('profile', 'notifDisabled')
-								}
-								onPress={() => {}}
-								showChevron={false}
-								rightElement={
-									togglingNotif ? (
-										<ActivityIndicator size='small' color={COLORS.primary} />
-									) : (
-										<Switch
-											value={notifSettings.enabled}
-											onValueChange={handleToggleNotifications}
-											trackColor={{ false: COLORS.border, true: `${COLORS.primary}80` }}
-											thumbColor={notifSettings.enabled ? COLORS.primary : COLORS.textSecondary}
-										/>
-									)
-								}
-							/>
-							{notifSettings.enabled && (
-								<SettingsItem
-									icon='time-outline'
-									title={t('profile', 'notifTimeLabel')}
-									subtitle={formatTime(notifSettings.hour, notifSettings.minute)}
-									onPress={() => setShowTimePicker(true)}
-									iconColor={COLORS.accent}
-								/>
-							)}
-						</View>
-					</FadeIn>
-			)}
-
-				{/* Export section */}
-				{loading ? (
-					<SettingsSectionSkeleton rows={2} />
-				) : (
-					<FadeIn show={!loading}>
-						<View style={styles.section}>
-							<Text style={styles.sectionTitle}>{t('profile', 'export')}</Text>
-							<SettingsItem
-								icon='download-outline'
-								title={t('profile', 'exportAll')}
-								subtitle={t('profile', 'exportAllSubtitle')}
-								onPress={handleExportAll}
-								showChevron={false}
-								iconColor='#5AC8FA'
-								rightElement={
-									exporting ? (
-										<ActivityIndicator size='small' color='#5AC8FA' />
-									) : null
-								}
-							/>
-							<SettingsItem
-								icon='barbell-outline'
-								title={t('profile', 'exportWorkouts')}
-								subtitle={`${workouts.length} ${t('profile', 'recordsLabel')}`}
-								onPress={handleExportWorkouts}
-								showChevron={false}
-								iconColor='#5AC8FA'
-							/>
-						</View>
-					</FadeIn>
-			)}
-
-				{/* Language section */}
-				{loading ? (
-					<SettingsSectionSkeleton rows={3} />
-				) : (
-					<FadeIn show={!loading}>
-						<View style={styles.section}>
-							<Text style={styles.sectionTitle}>{t('profile', 'language')}</Text>
-							{(['ru', 'en', 'az'] as Language[]).map(lang => {
-								const selected = lang === language
-								return (
-									<SettingsItem
-										key={lang}
-										icon='language-outline'
-										title={`${LANGUAGE_FLAGS[lang]} ${LANGUAGE_NAMES[lang]}`}
-										onPress={() => handleLanguageChange(lang)}
-										showChevron={false}
-										iconColor={selected ? COLORS.primary : COLORS.textSecondary}
-										rightElement={
-											<View
-												style={[
-													styles.langCheckBox,
-													selected && styles.langCheckBoxSelected,
-												]}
-											>
-												{selected ? (
-													<Ionicons name='checkmark' size={16} color={COLORS.text} />
-												) : null}
-											</View>
-										}
-									/>
-								)
-							})}
-						</View>
-					</FadeIn>
 			)}
 
 				{/* Sign out */}
@@ -1025,116 +724,4 @@ const styles = StyleSheet.create({
 	settingsContent: { flex: 1 },
 	settingsTitle: { fontSize: 16, fontWeight: '500', color: COLORS.text },
 	settingsSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
-	langCheckBox: {
-		width: 26,
-		height: 26,
-		borderRadius: 7,
-		borderWidth: 2,
-		borderColor: COLORS.border,
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: 'transparent',
-	},
-	langCheckBoxSelected: {
-		borderColor: COLORS.primary,
-		backgroundColor: COLORS.primary,
-	},
-})
-
-const pickerStyles = StyleSheet.create({
-	overlay: {
-		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.7)',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	container: {
-		backgroundColor: '#1C1C1E',
-		borderRadius: 20,
-		padding: 24,
-		width: 300,
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-	},
-	title: {
-		fontSize: 18,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		textAlign: 'center',
-		marginBottom: 20,
-	},
-	pickers: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginBottom: 20,
-	},
-	pickerCol: {
-		alignItems: 'center',
-		width: 90,
-	},
-	pickerLabel: {
-		fontSize: 12,
-		color: '#8E8E93',
-		marginBottom: 8,
-	},
-	scroll: {
-		height: 160,
-	},
-	option: {
-		paddingVertical: 10,
-		paddingHorizontal: 20,
-		borderRadius: 10,
-		marginBottom: 4,
-	},
-	optionSelected: {
-		backgroundColor: 'rgba(52,199,89,0.2)',
-	},
-	optionText: {
-		fontSize: 20,
-		color: '#8E8E93',
-		textAlign: 'center',
-		fontWeight: '500',
-	},
-	optionTextSelected: {
-		color: '#34C759',
-		fontWeight: '700',
-	},
-	colon: {
-		fontSize: 28,
-		color: '#FFFFFF',
-		fontWeight: '700',
-		marginHorizontal: 8,
-		marginTop: 20,
-	},
-	actions: {
-		flexDirection: 'row',
-		gap: 12,
-	},
-	cancelBtn: {
-		flex: 1,
-		paddingVertical: 14,
-		borderRadius: 12,
-		backgroundColor: '#2C2C2E',
-		alignItems: 'center',
-	},
-	cancelText: {
-		color: '#8E8E93',
-		fontSize: 16,
-		fontWeight: '600',
-	},
-	confirmBtn: {
-		flex: 1,
-		paddingVertical: 14,
-		borderRadius: 12,
-		backgroundColor: 'rgba(52,199,89,0.2)',
-		borderWidth: 1,
-		borderColor: 'rgba(52,199,89,0.4)',
-		alignItems: 'center',
-	},
-	confirmText: {
-		color: '#34C759',
-		fontSize: 16,
-		fontWeight: '600',
-	},
 })

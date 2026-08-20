@@ -310,6 +310,8 @@ export class AuthService {
 			avatarUrl: user.avatarUrl,
 			isPremium: user.isPremium,
 			premiumExpiresAt: user.premiumExpiresAt ?? null,
+			role: user.role || 'user',
+			isAdmin: (user.role || 'user') === 'admin',
 			trialStartedAt: user.trialStartedAt ?? null,
 			trialEndsAt: user.trialEndsAt ?? null,
 			// С активной подпиской не показываем trial paywall (клиент редиректит по isNewUser).
@@ -382,6 +384,7 @@ export class AuthService {
 			sub: u._id,
 			email: u.email,
 			isPremium: u.isPremium,
+			role: u.role || 'user',
 		}
 
 		return {
