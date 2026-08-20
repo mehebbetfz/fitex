@@ -52,10 +52,13 @@ jobs:
         id: msg
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "message=${{ inputs.message }}" >> $GITHUB_OUTPUT
+            MSG="${{ inputs.message }}"
           else
-            echo "message=${{ github.event.head_commit.message }}" >> $GITHUB_OUTPUT
+            MSG=$(git log -1 --pretty=%s)
           fi
+          # GITHUB_OUTPUT cannot contain newlines
+          MSG=$(printf '%s' "$MSG" | tr '\n\r' '  ' | head -c 200)
+          echo "message=$MSG" >> "$GITHUB_OUTPUT"
 
       - name: Publish OTA update → production channel
         working-directory: fitex-mobile/fitex
