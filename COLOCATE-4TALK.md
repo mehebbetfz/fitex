@@ -107,6 +107,23 @@ MONGODB_URI=...   # отдельная БД/кластер Fitex (не Toki)
 JWT_SECRET=...    # свой секрет, не от 4talk
 ```
 
+`.env` **не в git**. Клади один раз вручную и не удаляй каталог `/opt/fitex` целиком.
+Бэкап на сервере: `/opt/fitex.env.backup` (деплой копирует туда автоматически).
+
+Восстановление с ПК:
+
+```powershell
+scp fitex-server/fitex/.env root@ТВОЙ_IP:/opt/fitex/fitex-server/fitex/.env
+```
+
+Потом на сервере:
+
+```bash
+cp -a /opt/fitex/fitex-server/fitex/.env /opt/fitex.env.backup
+cd /opt/fitex/fitex-server/fitex
+docker compose -f docker-compose.colocate.yml up -d --force-recreate
+```
+
 Сертификаты Apple (если нужны вебхуки) — в `./certs`.
 
 Запуск:
