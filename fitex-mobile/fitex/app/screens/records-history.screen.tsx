@@ -1,9 +1,11 @@
-import { useLanguage } from '@/contexts/language-context'
+import type { AppColors } from '@/constants/app-theme'
 import { translateExerciseName } from '@/constants/exercise-i18n'
+import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	ActivityIndicator,
 	Animated,
@@ -28,6 +30,8 @@ interface Record {
 	improvement?: string
 }
 
+type Styles = ReturnType<typeof makeStyles>
+
 const getCategories = (t: (s: string, k: string) => string) => [
 	{ id: 'all', name: t('records', 'all'), icon: 'list' },
 	{ id: 'strength', name: t('records', 'strength'), icon: 'barbell' },
@@ -41,15 +45,13 @@ const CATEGORY_COLORS: Record<string, string> = {
 	endurance: '#5856D6',
 }
 
-// Количество рекордов для загрузки за раз
 const PAGE_SIZE = 10
 
-const getTrendColor = (t: string) =>
-	t === 'up' ? '#34C759' : t === 'down' ? '#FF3B30' : '#8E8E93'
+const getTrendColor = (t: string, C: AppColors) =>
+	t === 'up' ? C.primary : t === 'down' ? C.error : C.textSecondary
 const getTrendIcon = (t: string) =>
 	t === 'up' ? 'trending-up' : t === 'down' ? 'trending-down' : 'remove'
 
-// ── Shimmer animation hook ──
 const useShimmer = () => {
 	const anim = useRef(new Animated.Value(0)).current
 	useEffect(() => {
@@ -78,15 +80,20 @@ const ShimmerBlock = ({ style }: { style: any }) => {
 	return <Animated.View style={[style, { opacity }]} />
 }
 
-// ── Скелетон карточки рекорда ──
-const RecordCardSkeleton = () => (
+const RecordCardSkeleton = ({
+	s,
+	skeleton,
+}: {
+	s: Styles
+	skeleton: string
+}) => (
 	<View style={s.recordItem}>
-		<ShimmerBlock style={[s.categoryBar, { backgroundColor: '#2C2C2E' }]} />
+		<ShimmerBlock style={[s.categoryBar, { backgroundColor: skeleton }]} />
 		<View style={s.recordBody}>
 			<ShimmerBlock
 				style={[
 					s.exerciseName,
-					{ width: '60%', height: 16, backgroundColor: '#2C2C2E' },
+					{ width: '60%', height: 16, backgroundColor: skeleton },
 				]}
 			/>
 			<View style={s.recordMeta}>
@@ -94,7 +101,7 @@ const RecordCardSkeleton = () => (
 					style={{
 						width: 70,
 						height: 12,
-						backgroundColor: '#2C2C2E',
+						backgroundColor: skeleton,
 						borderRadius: 4,
 					}}
 				/>
@@ -104,14 +111,14 @@ const RecordCardSkeleton = () => (
 			<ShimmerBlock
 				style={[
 					s.recordWeight,
-					{ width: 60, height: 15, backgroundColor: '#2C2C2E' },
+					{ width: 60, height: 15, backgroundColor: skeleton },
 				]}
 			/>
 			<ShimmerBlock
 				style={{
 					width: 45,
 					height: 11,
-					backgroundColor: '#2C2C2E',
+					backgroundColor: skeleton,
 					borderRadius: 4,
 					marginTop: 3,
 				}}
@@ -120,20 +127,18 @@ const RecordCardSkeleton = () => (
 	</View>
 )
 
-// ── Скелетон статистики ──
-const StatsSkeleton = () => (
+const StatsSkeleton = ({ s, skeleton }: { s: Styles; skeleton: string }) => (
 	<View style={s.statsRow}>
 		{[1, 2, 3].map(i => (
 			<ShimmerBlock
 				key={i}
-				style={[s.statCard, { height: 70, backgroundColor: '#2C2C2E' }]}
+				style={[s.statCard, { height: 70, backgroundColor: skeleton }]}
 			/>
 		))}
 	</View>
 )
 
-// ── Скелетон фильтров ──
-const FilterSkeleton = () => (
+const FilterSkeleton = ({ s, skeleton }: { s: Styles; skeleton: string }) => (
 	<View style={s.filterRow}>
 		<FlatList
 			horizontal
@@ -145,7 +150,7 @@ const FilterSkeleton = () => (
 				<ShimmerBlock
 					style={[
 						s.filterChip,
-						{ width: 70, height: 34, backgroundColor: '#2C2C2E' },
+						{ width: 70, height: 34, backgroundColor: skeleton },
 					]}
 				/>
 			)}
@@ -153,19 +158,29 @@ const FilterSkeleton = () => (
 	</View>
 )
 
-// ── Скелетон для подгрузки ──
-const LoadingFooter = () => {
+const LoadingFooter = ({
+	s,
+	primary,
+}: {
+	s: Styles
+	primary: string
+}) => {
 	const { t } = useLanguage()
 	return (
 		<View style={s.loadingFooter}>
-			<ActivityIndicator size='small' color='#34C759' />
+			<ActivityIndicator size='small' color={primary} />
 			<Text style={s.loadingFooterText}>{t('records', 'loading')}</Text>
 		</View>
 	)
 }
 
-// ── Полный скелетон для первой загрузки ──
-const InitialLoadingSkeleton = () => (
+const InitialLoadingSkeleton = ({
+	s,
+	skeleton,
+}: {
+	s: Styles
+	skeleton: string
+}) => (
 	<SafeAreaView style={s.container}>
 		<View style={s.header}>
 			<ShimmerBlock
@@ -175,7 +190,7 @@ const InitialLoadingSkeleton = () => (
 						width: 30,
 						height: 30,
 						borderRadius: 15,
-						backgroundColor: '#2C2C2E',
+						backgroundColor: skeleton,
 					},
 				]}
 			/>
@@ -183,7 +198,7 @@ const InitialLoadingSkeleton = () => (
 				<ShimmerBlock
 					style={[
 						s.headerTitle,
-						{ width: 140, height: 18, backgroundColor: '#2C2C2E' },
+						{ width: 140, height: 18, backgroundColor: skeleton },
 					]}
 				/>
 				<ShimmerBlock
@@ -193,7 +208,7 @@ const InitialLoadingSkeleton = () => (
 							width: 120,
 							height: 11,
 							marginTop: 4,
-							backgroundColor: '#2C2C2E',
+							backgroundColor: skeleton,
 						},
 					]}
 				/>
@@ -201,17 +216,17 @@ const InitialLoadingSkeleton = () => (
 			<ShimmerBlock
 				style={[
 					s.autoBadge,
-					{ width: 70, height: 30, backgroundColor: '#2C2C2E' },
+					{ width: 70, height: 30, backgroundColor: skeleton },
 				]}
 			/>
 		</View>
 
-		<StatsSkeleton />
-		<FilterSkeleton />
+		<StatsSkeleton s={s} skeleton={skeleton} />
+		<FilterSkeleton s={s} skeleton={skeleton} />
 
 		<View style={s.listContent}>
 			{[1, 2, 3, 4, 5].map(i => (
-				<RecordCardSkeleton key={i} />
+				<RecordCardSkeleton key={i} s={s} skeleton={skeleton} />
 			))}
 		</View>
 	</SafeAreaView>
@@ -220,13 +235,14 @@ const InitialLoadingSkeleton = () => (
 export default function RecordsHistoryScreen() {
 	const router = useRouter()
 	const { t, language } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const s = useMemo(() => makeStyles(C), [C])
 	const [selectedCategory, setSelectedCategory] = useState('all')
 	const [selectedRecord, setSelectedRecord] = useState<Record | null>(null)
 	const [modalVisible, setModalVisible] = useState(false)
 	const [allRecords, setAllRecords] = useState<Record[]>([])
 	const [loading, setLoading] = useState(true)
 
-	// Состояния для пагинации
 	const [displayedRecords, setDisplayedRecords] = useState<Record[]>([])
 	const [currentPage, setCurrentPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
@@ -253,7 +269,6 @@ export default function RecordsHistoryScreen() {
 		}
 	}
 
-	// Первоначальная загрузка
 	useEffect(() => {
 		const loadInitialData = async () => {
 			setIsInitialLoading(true)
@@ -265,7 +280,6 @@ export default function RecordsHistoryScreen() {
 		loadInitialData()
 	}, [])
 
-	// Загрузка при смене категории
 	useEffect(() => {
 		const loadCategoryData = async () => {
 			if (isInitialLoading) return
@@ -280,7 +294,6 @@ export default function RecordsHistoryScreen() {
 		loadCategoryData()
 	}, [selectedCategory])
 
-	// Обновление при фокусе
 	useFocusEffect(
 		useCallback(() => {
 			if (!isInitialLoading) {
@@ -295,20 +308,17 @@ export default function RecordsHistoryScreen() {
 		}, [selectedCategory, isInitialLoading]),
 	)
 
-	// Обновление отображаемых рекордов при изменении всех рекордов
 	useEffect(() => {
 		setCurrentPage(1)
 		setDisplayedRecords(allRecords.slice(0, PAGE_SIZE))
 		setHasMore(allRecords.length > PAGE_SIZE)
 	}, [allRecords])
 
-	// Загрузка следующей порции
 	const loadNextPage = useCallback(() => {
 		if (isLoadingMore || !hasMore || loading) return
 
 		setIsLoadingMore(true)
 
-		// Небольшая задержка для плавности
 		setTimeout(() => {
 			const nextPage = currentPage + 1
 			const endIndex = nextPage * PAGE_SIZE
@@ -323,7 +333,7 @@ export default function RecordsHistoryScreen() {
 
 	const renderFooter = () => {
 		if (!hasMore) return null
-		if (isLoadingMore) return <LoadingFooter />
+		if (isLoadingMore) return <LoadingFooter s={s} primary={C.primary} />
 		return null
 	}
 
@@ -339,7 +349,7 @@ export default function RecordsHistoryScreen() {
 			<View
 				style={[
 					s.categoryBar,
-					{ backgroundColor: CATEGORY_COLORS[item.category] ?? '#34C759' },
+					{ backgroundColor: CATEGORY_COLORS[item.category] ?? C.primary },
 				]}
 			/>
 			<View style={s.recordBody}>
@@ -347,7 +357,7 @@ export default function RecordsHistoryScreen() {
 					{translateExerciseName(item.exercise, language)}
 				</Text>
 				<View style={s.recordMeta}>
-					<Ionicons name='calendar-outline' size={12} color='#8E8E93' />
+					<Ionicons name='calendar-outline' size={12} color={C.textSecondary} />
 					<Text style={s.recordDate}>
 						{db.formatDate(item.date) || item.date}
 					</Text>
@@ -365,9 +375,11 @@ export default function RecordsHistoryScreen() {
 						<Ionicons
 							name={getTrendIcon(item.trend) as any}
 							size={11}
-							color={getTrendColor(item.trend)}
+							color={getTrendColor(item.trend, C)}
 						/>
-						<Text style={[s.improveText, { color: getTrendColor(item.trend) }]}>
+						<Text
+							style={[s.improveText, { color: getTrendColor(item.trend, C) }]}
+						>
 							{item.improvement}
 						</Text>
 					</View>
@@ -376,49 +388,45 @@ export default function RecordsHistoryScreen() {
 		</TouchableOpacity>
 	)
 
-	// Показываем полный скелетон при первой загрузке
 	if (isInitialLoading) {
-		return <InitialLoadingSkeleton />
+		return <InitialLoadingSkeleton s={s} skeleton={C.skeleton} />
 	}
 
 	return (
 		<SafeAreaView style={s.container}>
-			{/* Header */}
 			<View style={s.header}>
 				<TouchableOpacity onPress={() => router.back()} style={s.iconBtn}>
-					<Ionicons name='arrow-back' size={22} color='#FFF' />
+					<Ionicons name='arrow-back' size={22} color={C.text} />
 				</TouchableOpacity>
 				<View>
-				<Text style={s.headerTitle}>{t('records', 'title')}</Text>
-				<Text style={s.headerSub}>{t('records', 'autoUpdate')}</Text>
+					<Text style={s.headerTitle}>{t('records', 'title')}</Text>
+					<Text style={s.headerSub}>{t('records', 'autoUpdate')}</Text>
 				</View>
 				<View style={s.autoBadge}>
-					<Ionicons name='flash' size={14} color='#FF9500' />
+					<Ionicons name='flash' size={14} color={C.accent} />
 					<Text style={s.autoBadgeText}>{t('records', 'auto')}</Text>
 				</View>
 			</View>
 
-			{/* Quick stats */}
 			<View style={s.statsRow}>
 				<View style={s.statCard}>
 					<Text style={s.statValue}>{allRecords.length}</Text>
 					<Text style={s.statLabel}>{t('records', 'total')}</Text>
 				</View>
 				<View style={s.statCard}>
-					<Text style={[s.statValue, { color: '#34C759' }]}>
+					<Text style={[s.statValue, { color: C.primary }]}>
 						{allRecords.filter(r => r.trend === 'up').length}
 					</Text>
 					<Text style={s.statLabel}>{t('records', 'improved')}</Text>
 				</View>
 				<View style={s.statCard}>
-					<Text style={[s.statValue, { color: '#FF9500' }]}>
+					<Text style={[s.statValue, { color: C.accent }]}>
 						{allRecords.filter(r => r.category === 'strength').length}
 					</Text>
 					<Text style={s.statLabel}>{t('records', 'strength')}</Text>
 				</View>
 			</View>
 
-			{/* Category filter */}
 			<View style={s.filterRow}>
 				<FlatList
 					horizontal
@@ -437,7 +445,7 @@ export default function RecordsHistoryScreen() {
 								<Ionicons
 									name={item.icon as any}
 									size={14}
-									color={active ? '#FFF' : '#8E8E93'}
+									color={active ? '#FFFFFF' : C.textSecondary}
 								/>
 								<Text
 									style={[s.filterChipText, active && s.filterChipTextActive]}
@@ -450,11 +458,10 @@ export default function RecordsHistoryScreen() {
 				/>
 			</View>
 
-			{/* List with pagination */}
 			{loading ? (
 				<View style={s.listContent}>
 					{[1, 2, 3].map(i => (
-						<RecordCardSkeleton key={i} />
+						<RecordCardSkeleton key={i} s={s} skeleton={C.skeleton} />
 					))}
 				</View>
 			) : (
@@ -469,7 +476,7 @@ export default function RecordsHistoryScreen() {
 					ListFooterComponent={renderFooter}
 					ListEmptyComponent={
 						<View style={s.emptyWrap}>
-							<Ionicons name='trophy-outline' size={48} color='#3A3A3C' />
+							<Ionicons name='trophy-outline' size={48} color={C.border} />
 							<Text style={s.emptyTitle}>{t('records', 'empty')}</Text>
 							<Text style={s.emptyText}>{t('records', 'emptyHint')}</Text>
 						</View>
@@ -477,7 +484,6 @@ export default function RecordsHistoryScreen() {
 				/>
 			)}
 
-			{/* Detail modal */}
 			<Modal
 				animationType='slide'
 				transparent
@@ -485,7 +491,13 @@ export default function RecordsHistoryScreen() {
 				onRequestClose={() => setModalVisible(false)}
 			>
 				<View style={s.modalOverlay}>
+					<TouchableOpacity
+						style={StyleSheet.absoluteFill}
+						activeOpacity={1}
+						onPress={() => setModalVisible(false)}
+					/>
 					<View style={s.modalContent}>
+						<View style={s.sheetHandle} />
 						{selectedRecord && (
 							<>
 								<View style={s.modalHeader}>
@@ -494,15 +506,16 @@ export default function RecordsHistoryScreen() {
 											s.modalCatDot,
 											{
 												backgroundColor:
-													CATEGORY_COLORS[selectedRecord.category] ?? '#34C759',
+													CATEGORY_COLORS[selectedRecord.category] ??
+													C.primary,
 											},
 										]}
 									/>
-								<Text style={s.modalTitle} numberOfLines={1}>
-									{translateExerciseName(selectedRecord.exercise, language)}
-								</Text>
+									<Text style={s.modalTitle} numberOfLines={1}>
+										{translateExerciseName(selectedRecord.exercise, language)}
+									</Text>
 									<TouchableOpacity onPress={() => setModalVisible(false)}>
-										<Ionicons name='close' size={22} color='#8E8E93' />
+										<Ionicons name='close' size={22} color={C.textSecondary} />
 									</TouchableOpacity>
 								</View>
 
@@ -514,13 +527,17 @@ export default function RecordsHistoryScreen() {
 										</Text>
 									</View>
 									<View style={s.modalStat}>
-										<Text style={s.modalStatLabel}>{t('records', 'previous')}</Text>
+										<Text style={s.modalStatLabel}>
+											{t('records', 'previous')}
+										</Text>
 										<Text style={s.modalStatValue}>
 											{selectedRecord.previousRecord || '—'}
 										</Text>
 									</View>
 									<View style={s.modalStat}>
-										<Text style={s.modalStatLabel}>{t('records', 'progress')}</Text>
+										<Text style={s.modalStatLabel}>
+											{t('records', 'progress')}
+										</Text>
 										<View
 											style={{
 												flexDirection: 'row',
@@ -531,12 +548,12 @@ export default function RecordsHistoryScreen() {
 											<Ionicons
 												name={getTrendIcon(selectedRecord.trend) as any}
 												size={14}
-												color={getTrendColor(selectedRecord.trend)}
+												color={getTrendColor(selectedRecord.trend, C)}
 											/>
 											<Text
 												style={[
 													s.modalStatValue,
-													{ color: getTrendColor(selectedRecord.trend) },
+													{ color: getTrendColor(selectedRecord.trend, C) },
 												]}
 											>
 												{selectedRecord.improvement || '—'}
@@ -546,12 +563,16 @@ export default function RecordsHistoryScreen() {
 								</View>
 
 								<View style={s.modalDateRow}>
-									<Ionicons name='calendar-outline' size={14} color='#8E8E93' />
+									<Ionicons
+										name='calendar-outline'
+										size={14}
+										color={C.textSecondary}
+									/>
 									<Text style={s.modalDate}>
 										{db.formatDate(selectedRecord.date) || selectedRecord.date}
 									</Text>
 									<View style={s.autoTag}>
-										<Ionicons name='flash' size={11} color='#FF9500' />
+										<Ionicons name='flash' size={11} color={C.accent} />
 										<Text style={s.autoTagText}>{t('records', 'auto')}</Text>
 									</View>
 								</View>
@@ -570,176 +591,184 @@ export default function RecordsHistoryScreen() {
 	)
 }
 
-// Обновляем стили, добавляем новые
-const s = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212' },
-	center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: { flex: 1, backgroundColor: C.background },
+		center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 12,
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	iconBtn: { padding: 4 },
-	headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
-	headerSub: { fontSize: 11, color: '#8E8E93', marginTop: 1 },
-	autoBadge: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4,
-		backgroundColor: 'rgba(255,149,0,0.12)',
-		borderRadius: 20,
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderWidth: 1,
-		borderColor: 'rgba(255,149,0,0.2)',
-	},
-	autoBadgeText: { fontSize: 12, fontWeight: '600', color: '#FF9500' },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 12,
+			paddingVertical: 12,
+			borderBottomWidth: 1,
+			borderBottomColor: C.cardLight,
+		},
+		iconBtn: { padding: 4 },
+		headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
+		headerSub: { fontSize: 11, color: C.textSecondary, marginTop: 1 },
+		autoBadge: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			backgroundColor: 'rgba(255,149,0,0.12)',
+			borderRadius: 20,
+			paddingHorizontal: 10,
+			paddingVertical: 5,
+			borderWidth: 1,
+			borderColor: 'rgba(255,149,0,0.2)',
+		},
+		autoBadgeText: { fontSize: 12, fontWeight: '600', color: C.accent },
 
-	statsRow: {
-		flexDirection: 'row',
-		paddingHorizontal: 12,
-		paddingVertical: 12,
-		gap: 8,
-	},
-	statCard: {
-		flex: 1,
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		paddingVertical: 12,
-		alignItems: 'center',
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-	},
-	statValue: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: '#FFF',
-		marginBottom: 2,
-	},
-	statLabel: { fontSize: 11, color: '#8E8E93' },
+		statsRow: {
+			flexDirection: 'row',
+			paddingHorizontal: 12,
+			paddingVertical: 12,
+			gap: 8,
+		},
+		statCard: {
+			flex: 1,
+			backgroundColor: C.card,
+			borderRadius: 12,
+			paddingVertical: 12,
+			alignItems: 'center',
+			borderWidth: 1,
+			borderColor: C.cardLight,
+		},
+		statValue: {
+			fontSize: 18,
+			fontWeight: '700',
+			color: C.text,
+			marginBottom: 2,
+		},
+		statLabel: { fontSize: 11, color: C.textSecondary },
 
-	filterRow: {
-		flexDirection: 'row',
-		paddingHorizontal: 12,
-		gap: 8,
-		marginBottom: 8,
-		flexWrap: 'wrap',
-	},
-	filterChip: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 5,
-		paddingHorizontal: 12,
-		paddingVertical: 7,
-		borderRadius: 20,
-		backgroundColor: '#1C1C1E',
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-	},
-	filterChipActive: { backgroundColor: '#34C759', borderColor: '#34C759' },
-	filterChipText: { fontSize: 13, fontWeight: '500', color: '#8E8E93' },
-	filterChipTextActive: { color: '#FFF' },
+		filterRow: {
+			flexDirection: 'row',
+			paddingHorizontal: 12,
+			gap: 8,
+			marginBottom: 8,
+			flexWrap: 'wrap',
+		},
+		filterChip: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 5,
+			paddingHorizontal: 12,
+			paddingVertical: 7,
+			borderRadius: 20,
+			backgroundColor: C.card,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+		},
+		filterChipActive: { backgroundColor: C.primary, borderColor: C.primary },
+		filterChipText: { fontSize: 13, fontWeight: '500', color: C.textSecondary },
+		filterChipTextActive: { color: '#FFFFFF' },
 
-	listContent: { paddingHorizontal: 12, paddingBottom: 40, gap: 6 },
+		listContent: { paddingHorizontal: 12, paddingBottom: 40, gap: 6 },
 
-	recordItem: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-		overflow: 'hidden',
-	},
-	categoryBar: { width: 3, alignSelf: 'stretch' },
-	recordBody: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, gap: 3 },
-	exerciseName: { fontSize: 14, fontWeight: '600', color: '#FFF' },
-	recordMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-	recordDate: { fontSize: 12, color: '#8E8E93' },
-	recordNotes: { fontSize: 12, color: '#8E8E93', flex: 1 },
-	recordRight: { paddingRight: 12, alignItems: 'flex-end', gap: 3 },
-	recordWeight: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-	improveBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-	improveText: { fontSize: 11, fontWeight: '600' },
+		recordItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: C.card,
+			borderRadius: 12,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+			overflow: 'hidden',
+		},
+		categoryBar: { width: 3, alignSelf: 'stretch' },
+		recordBody: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, gap: 3 },
+		exerciseName: { fontSize: 14, fontWeight: '600', color: C.text },
+		recordMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+		recordDate: { fontSize: 12, color: C.textSecondary },
+		recordNotes: { fontSize: 12, color: C.textSecondary, flex: 1 },
+		recordRight: { paddingRight: 12, alignItems: 'flex-end', gap: 3 },
+		recordWeight: { fontSize: 15, fontWeight: '700', color: C.text },
+		improveBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+		improveText: { fontSize: 11, fontWeight: '600' },
 
-	emptyWrap: { alignItems: 'center', paddingTop: 80, gap: 10 },
-	emptyTitle: { fontSize: 16, fontWeight: '600', color: '#FFF' },
-	emptyText: {
-		fontSize: 13,
-		color: '#8E8E93',
-		textAlign: 'center',
-		lineHeight: 20,
-	},
+		emptyWrap: { alignItems: 'center', paddingTop: 80, gap: 10 },
+		emptyTitle: { fontSize: 16, fontWeight: '600', color: C.text },
+		emptyText: {
+			fontSize: 13,
+			color: C.textSecondary,
+			textAlign: 'center',
+			lineHeight: 20,
+		},
 
-	modalOverlay: {
-		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.6)',
-		justifyContent: 'flex-end',
-	},
-	modalContent: {
-		backgroundColor: '#1C1C1E',
-		borderTopLeftRadius: 20,
-		borderTopRightRadius: 20,
-		padding: 20,
-	},
-	modalHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-		marginBottom: 16,
-	},
-	modalCatDot: { width: 10, height: 10, borderRadius: 5 },
-	modalTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#FFF' },
-	modalStatsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-	modalStat: {
-		flex: 1,
-		backgroundColor: '#242424',
-		borderRadius: 10,
-		padding: 12,
-		gap: 4,
-	},
-	modalStatLabel: { fontSize: 11, color: '#8E8E93' },
-	modalStatValue: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-	modalDateRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 6,
-		marginBottom: 12,
-	},
-	modalDate: { fontSize: 13, color: '#8E8E93', flex: 1 },
-	autoTag: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 3,
-		backgroundColor: 'rgba(255,149,0,0.1)',
-		borderRadius: 8,
-		paddingHorizontal: 7,
-		paddingVertical: 3,
-	},
-	autoTagText: { fontSize: 11, color: '#FF9500', fontWeight: '600' },
-	notesBox: {
-		backgroundColor: '#242424',
-		borderRadius: 10,
-		padding: 12,
-		marginBottom: 4,
-	},
-	notesText: { fontSize: 14, color: '#B0B0B0', lineHeight: 20 },
+		modalOverlay: {
+			flex: 1,
+			backgroundColor: C.overlay,
+			justifyContent: 'flex-end',
+		},
+		modalContent: {
+			backgroundColor: C.modalSurface,
+			borderTopLeftRadius: 20,
+			borderTopRightRadius: 20,
+			padding: 20,
+		},
+		sheetHandle: {
+			alignSelf: 'center',
+			width: 36,
+			height: 4,
+			borderRadius: 2,
+			backgroundColor: C.border,
+			marginBottom: 14,
+		},
+		modalHeader: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 10,
+			marginBottom: 16,
+		},
+		modalCatDot: { width: 10, height: 10, borderRadius: 5 },
+		modalTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: C.text },
+		modalStatsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+		modalStat: {
+			flex: 1,
+			backgroundColor: C.cardLight,
+			borderRadius: 10,
+			padding: 12,
+			gap: 4,
+		},
+		modalStatLabel: { fontSize: 11, color: C.textSecondary },
+		modalStatValue: { fontSize: 15, fontWeight: '700', color: C.text },
+		modalDateRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			marginBottom: 12,
+		},
+		modalDate: { fontSize: 13, color: C.textSecondary, flex: 1 },
+		autoTag: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 3,
+			backgroundColor: 'rgba(255,149,0,0.1)',
+			borderRadius: 8,
+			paddingHorizontal: 7,
+			paddingVertical: 3,
+		},
+		autoTagText: { fontSize: 11, color: C.accent, fontWeight: '600' },
+		notesBox: {
+			backgroundColor: C.cardLight,
+			borderRadius: 10,
+			padding: 12,
+			marginBottom: 4,
+		},
+		notesText: { fontSize: 14, color: C.textSecondary, lineHeight: 20 },
 
-	// Новые стили для пагинации и скелетонов
-	loadingFooter: {
-		paddingVertical: 20,
-		alignItems: 'center',
-		justifyContent: 'center',
-		flexDirection: 'row',
-		gap: 8,
-	},
-	loadingFooterText: {
-		color: '#8E8E93',
-		fontSize: 14,
-	},
-})
+		loadingFooter: {
+			paddingVertical: 20,
+			alignItems: 'center',
+			justifyContent: 'center',
+			flexDirection: 'row',
+			gap: 8,
+		},
+		loadingFooterText: {
+			color: C.textSecondary,
+			fontSize: 14,
+		},
+	})
+}

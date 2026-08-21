@@ -1,8 +1,10 @@
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
 	Alert,
 	ScrollView,
@@ -30,16 +32,18 @@ const MEASUREMENT_TYPES = [
 export default function AddMeasurementScreen() {
 	const router = useRouter()
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const s = useMemo(() => makeStyles(C), [C])
 	const [selectedType, setSelectedType] = useState(MEASUREMENT_TYPES[0])
 	const [value, setValue] = useState('')
 	const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 	const [goal, setGoal] = useState('')
 
 	const handleSave = async () => {
-	if (!value.trim()) {
-		Alert.alert(t('common', 'error'), t('measurements', 'value'))
-		return
-	}
+		if (!value.trim()) {
+			Alert.alert(t('common', 'error'), t('measurements', 'value'))
+			return
+		}
 		try {
 			const previousMeasurements = await db.getBodyMeasurements()
 			const previousForType = previousMeasurements
@@ -64,11 +68,11 @@ export default function AddMeasurementScreen() {
 				goal: goal ? parseFloat(goal) : undefined,
 			})
 
-		Alert.alert(t('common', 'success'), t('measurements', 'saveBtn'), [
-			{ text: 'OK', onPress: () => router.back() },
-		])
-	} catch (error) {
-		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+			Alert.alert(t('common', 'success'), t('measurements', 'saveBtn'), [
+				{ text: 'OK', onPress: () => router.back() },
+			])
+		} catch (error) {
+			Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 		}
 	}
 
@@ -76,7 +80,7 @@ export default function AddMeasurementScreen() {
 		<SafeAreaView style={s.container}>
 			<View style={s.header}>
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-					<Ionicons name='arrow-back' size={22} color='#FFF' />
+					<Ionicons name='arrow-back' size={22} color={C.text} />
 				</TouchableOpacity>
 				<Text style={s.headerTitle}>{t('measurements', 'saveBtn')}</Text>
 				<View style={{ width: 30 }} />
@@ -86,7 +90,6 @@ export default function AddMeasurementScreen() {
 				contentContainerStyle={s.content}
 				showsVerticalScrollIndicator={false}
 			>
-				{/* Тип замера */}
 				<Text style={s.label}>{t('measurements', 'current')}</Text>
 				<ScrollView
 					horizontal
@@ -105,11 +108,11 @@ export default function AddMeasurementScreen() {
 									<Ionicons
 										name={type.icon as any}
 										size={20}
-										color={active ? '#34C759' : '#8E8E93'}
+										color={active ? C.primary : C.textSecondary}
 									/>
-								<Text style={[s.typeName, active && s.typeNameActive]}>
-								{t('measurements', type.labelKey as any)}
-							</Text>
+									<Text style={[s.typeName, active && s.typeNameActive]}>
+										{t('measurements', type.labelKey as any)}
+									</Text>
 									<Text style={s.typeUnit}>{type.unit}</Text>
 								</TouchableOpacity>
 							)
@@ -117,7 +120,6 @@ export default function AddMeasurementScreen() {
 					</View>
 				</ScrollView>
 
-				{/* Значение */}
 				<Text style={s.label}>{t('measurements', 'value')}</Text>
 				<View style={s.inputRow}>
 					<TextInput
@@ -125,123 +127,124 @@ export default function AddMeasurementScreen() {
 						value={value}
 						onChangeText={setValue}
 						placeholder='0'
-						placeholderTextColor='#3A3A3C'
+						placeholderTextColor={C.border}
 						keyboardType='numeric'
 						autoFocus
 					/>
 					<Text style={s.unitLabel}>{selectedType.unit}</Text>
 				</View>
 
-				{/* Дата */}
-			<Text style={s.label}>{t('measurements', 'date')}</Text>
-			<TextInput
-				style={s.input}
-				value={date}
-				onChangeText={setDate}
-				placeholder='YYYY-MM-DD'
-					placeholderTextColor='#8E8E93'
+				<Text style={s.label}>{t('measurements', 'date')}</Text>
+				<TextInput
+					style={s.input}
+					value={date}
+					onChangeText={setDate}
+					placeholder='YYYY-MM-DD'
+					placeholderTextColor={C.textSecondary}
 				/>
 
-				{/* Цель */}
-			<Text style={s.label}>
-				{t('measurements', 'goal')} <Text style={s.optional}>({t('common', 'optional')})</Text>
-			</Text>
+				<Text style={s.label}>
+					{t('measurements', 'goal')}{' '}
+					<Text style={s.optional}>({t('common', 'optional')})</Text>
+				</Text>
 				<View style={s.inputRow}>
 					<TextInput
 						style={s.bigInput}
 						value={goal}
 						onChangeText={setGoal}
 						placeholder='0'
-						placeholderTextColor='#3A3A3C'
+						placeholderTextColor={C.border}
 						keyboardType='numeric'
 					/>
 					<Text style={s.unitLabel}>{selectedType.unit}</Text>
 				</View>
 
-			<TouchableOpacity style={s.saveBtn} onPress={handleSave}>
-				<Text style={s.saveBtnText}>{t('measurements', 'saveBtn')}</Text>
-			</TouchableOpacity>
+				<TouchableOpacity style={s.saveBtn} onPress={handleSave}>
+					<Text style={s.saveBtnText}>{t('measurements', 'saveBtn')}</Text>
+				</TouchableOpacity>
 			</ScrollView>
 		</SafeAreaView>
 	)
 }
 
-const s = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212' },
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 12,
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	backBtn: { padding: 4 },
-	headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
-	content: { padding: 16, paddingBottom: 48 },
-	label: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: '#8E8E93',
-		marginBottom: 8,
-		marginTop: 20,
-		textTransform: 'uppercase',
-		letterSpacing: 0.6,
-	},
-	optional: { fontWeight: '400', textTransform: 'none', letterSpacing: 0 },
-	hScroll: { marginHorizontal: -16 },
-	hRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8 },
-	typeCard: {
-		alignItems: 'center',
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		paddingVertical: 12,
-		paddingHorizontal: 14,
-		gap: 4,
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-		minWidth: 80,
-	},
-	typeCardActive: {
-		borderColor: '#34C759',
-		backgroundColor: 'rgba(52,199,89,0.08)',
-	},
-	typeName: { fontSize: 13, fontWeight: '500', color: '#8E8E93' },
-	typeNameActive: { color: '#FFF' },
-	typeUnit: { fontSize: 11, color: '#8E8E93' },
-	inputRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		paddingHorizontal: 16,
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-	},
-	bigInput: {
-		flex: 1,
-		fontSize: 28,
-		fontWeight: '700',
-		color: '#FFF',
-		paddingVertical: 14,
-	},
-	unitLabel: { fontSize: 18, color: '#8E8E93', marginLeft: 8 },
-	input: {
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		padding: 14,
-		fontSize: 15,
-		color: '#FFF',
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-	},
-	saveBtn: {
-		backgroundColor: '#34C759',
-		borderRadius: 12,
-		paddingVertical: 16,
-		alignItems: 'center',
-		marginTop: 32,
-	},
-	saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: { flex: 1, backgroundColor: C.background },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 12,
+			paddingVertical: 12,
+			borderBottomWidth: 1,
+			borderBottomColor: C.cardLight,
+		},
+		backBtn: { padding: 4 },
+		headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
+		content: { padding: 16, paddingBottom: 48 },
+		label: {
+			fontSize: 13,
+			fontWeight: '600',
+			color: C.textSecondary,
+			marginBottom: 8,
+			marginTop: 20,
+			textTransform: 'uppercase',
+			letterSpacing: 0.6,
+		},
+		optional: { fontWeight: '400', textTransform: 'none', letterSpacing: 0 },
+		hScroll: { marginHorizontal: -16 },
+		hRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8 },
+		typeCard: {
+			alignItems: 'center',
+			backgroundColor: C.card,
+			borderRadius: 12,
+			paddingVertical: 12,
+			paddingHorizontal: 14,
+			gap: 4,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+			minWidth: 80,
+		},
+		typeCardActive: {
+			borderColor: C.primary,
+			backgroundColor: 'rgba(52,199,89,0.08)',
+		},
+		typeName: { fontSize: 13, fontWeight: '500', color: C.textSecondary },
+		typeNameActive: { color: C.text },
+		typeUnit: { fontSize: 11, color: C.textSecondary },
+		inputRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: C.card,
+			borderRadius: 12,
+			paddingHorizontal: 16,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+		},
+		bigInput: {
+			flex: 1,
+			fontSize: 28,
+			fontWeight: '700',
+			color: C.text,
+			paddingVertical: 14,
+		},
+		unitLabel: { fontSize: 18, color: C.textSecondary, marginLeft: 8 },
+		input: {
+			backgroundColor: C.card,
+			borderRadius: 12,
+			padding: 14,
+			fontSize: 15,
+			color: C.text,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+		},
+		saveBtn: {
+			backgroundColor: C.primary,
+			borderRadius: 12,
+			paddingVertical: 16,
+			alignItems: 'center',
+			marginTop: 32,
+		},
+		saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+	})
+}

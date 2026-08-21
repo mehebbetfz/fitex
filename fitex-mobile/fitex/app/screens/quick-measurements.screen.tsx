@@ -1,9 +1,11 @@
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
 	Alert,
 	KeyboardAvoidingView,
@@ -33,6 +35,8 @@ const MEASUREMENT_TYPES = [
 export default function QuickMeasurementsScreen() {
 	const router = useRouter()
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const s = useMemo(() => makeStyles(C), [C])
 	const [values, setValues] = useState<Record<string, string>>(
 		Object.fromEntries(MEASUREMENT_TYPES.map(m => [m.name, ''])),
 	)
@@ -41,10 +45,10 @@ export default function QuickMeasurementsScreen() {
 	const filledCount = Object.values(values).filter(v => v.trim()).length
 
 	const handleSave = async () => {
-	if (filledCount === 0) {
-		Alert.alert(t('common', 'noData'), t('measurements', 'emptySubtitle'))
-		return
-	}
+		if (filledCount === 0) {
+			Alert.alert(t('common', 'noData'), t('measurements', 'emptySubtitle'))
+			return
+		}
 
 		try {
 			setSaving(true)
@@ -55,7 +59,6 @@ export default function QuickMeasurementsScreen() {
 				const val = values[type.name].trim()
 				if (!val) continue
 
-				// Рассчитываем тренд
 				const prev = allMeasurements
 					.filter(m => m.name === type.name)
 					.sort(
@@ -79,12 +82,12 @@ export default function QuickMeasurementsScreen() {
 			}
 
 			await AsyncStorage.setItem('lastMeasurementDate', today)
-		Alert.alert(t('common', 'success'), `${t('measurements', 'saveBtn')}: ${filledCount}`, [
-			{ text: t('common', 'ok'), onPress: () => router.back() },
-		])
-	} catch (err) {
-		console.error(err)
-		Alert.alert(t('common', 'error'), t('common', 'unknownError'))
+			Alert.alert(t('common', 'success'), `${t('measurements', 'saveBtn')}: ${filledCount}`, [
+				{ text: t('common', 'ok'), onPress: () => router.back() },
+			])
+		} catch (err) {
+			console.error(err)
+			Alert.alert(t('common', 'error'), t('common', 'unknownError'))
 		} finally {
 			setSaving(false)
 		}
@@ -94,13 +97,12 @@ export default function QuickMeasurementsScreen() {
 		<SafeAreaView style={s.container}>
 			<View style={s.header}>
 				<TouchableOpacity onPress={() => router.back()} style={s.iconBtn}>
-					<Ionicons name='arrow-back' size={22} color='#FFF' />
+					<Ionicons name='arrow-back' size={22} color={C.text} />
 				</TouchableOpacity>
 				<View>
-				<Text style={s.headerTitle}>{t('measurements', 'title')}</Text>
-				<Text style={s.headerSub}>{t('measurements', 'emptySubtitle')}</Text>
+					<Text style={s.headerTitle}>{t('measurements', 'title')}</Text>
+					<Text style={s.headerSub}>{t('measurements', 'emptySubtitle')}</Text>
 				</View>
-				{/* Счётчик заполненных */}
 				{filledCount > 0 ? (
 					<View style={s.filledBadge}>
 						<Text style={s.filledBadgeText}>{filledCount}</Text>
@@ -126,14 +128,14 @@ export default function QuickMeasurementsScreen() {
 							<View key={i} style={[s.row, filled && s.rowFilled]}>
 								<View style={[s.iconWrap, filled && s.iconWrapFilled]}>
 									<Ionicons
-										name={(ICONS[type.name] ?? 'body') as any}
+										name={(type.icon ?? 'body') as any}
 										size={16}
-										color={filled ? '#34C759' : '#8E8E93'}
+										color={filled ? C.primary : C.textSecondary}
 									/>
 								</View>
-							<Text style={[s.rowName, filled && s.rowNameFilled]}>
-								{t('measurements', type.labelKey as any)}
-							</Text>
+								<Text style={[s.rowName, filled && s.rowNameFilled]}>
+									{t('measurements', type.labelKey as any)}
+								</Text>
 								<View style={s.inputWrap}>
 									<TextInput
 										style={s.input}
@@ -142,7 +144,7 @@ export default function QuickMeasurementsScreen() {
 											setValues(prev => ({ ...prev, [type.name]: text }))
 										}
 										placeholder='—'
-										placeholderTextColor='#3A3A3C'
+										placeholderTextColor={C.border}
 										keyboardType='numeric'
 									/>
 									<Text style={s.unit}>{type.unit}</Text>
@@ -156,11 +158,11 @@ export default function QuickMeasurementsScreen() {
 						onPress={handleSave}
 						disabled={saving || filledCount === 0}
 					>
-						<Ionicons name='checkmark-circle' size={20} color='#FFF' />
+						<Ionicons name='checkmark-circle' size={20} color='#FFFFFF' />
 						<Text style={s.saveBtnText}>
-						{saving
-							? t('templates', 'saving')
-							: `${t('common', 'save')}${filledCount > 0 ? ` (${filledCount})` : ''}`}
+							{saving
+								? t('templates', 'saving')
+								: `${t('common', 'save')}${filledCount > 0 ? ` (${filledCount})` : ''}`}
 						</Text>
 					</TouchableOpacity>
 				</ScrollView>
@@ -169,88 +171,90 @@ export default function QuickMeasurementsScreen() {
 	)
 }
 
-const s = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212' },
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: { flex: 1, backgroundColor: C.background },
 
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 12,
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	iconBtn: { padding: 4 },
-	headerTitle: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: '#FFF',
-		textAlign: 'center',
-	},
-	headerSub: { fontSize: 12, color: '#8E8E93', marginTop: 1 },
-	filledBadge: {
-		width: 28,
-		height: 28,
-		borderRadius: 14,
-		backgroundColor: '#34C759',
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	filledBadgeText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 12,
+			paddingVertical: 12,
+			borderBottomWidth: 1,
+			borderBottomColor: C.cardLight,
+		},
+		iconBtn: { padding: 4 },
+		headerTitle: {
+			fontSize: 18,
+			fontWeight: '700',
+			color: C.text,
+			textAlign: 'center',
+		},
+		headerSub: { fontSize: 12, color: C.textSecondary, marginTop: 1 },
+		filledBadge: {
+			width: 28,
+			height: 28,
+			borderRadius: 14,
+			backgroundColor: C.primary,
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		filledBadgeText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 
-	content: { padding: 12, gap: 6, paddingBottom: 40 },
+		content: { padding: 12, gap: 6, paddingBottom: 40 },
 
-	row: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-		gap: 10,
-	},
-	rowFilled: { borderColor: 'rgba(52,199,89,0.3)' },
-	iconWrap: {
-		width: 30,
-		height: 30,
-		borderRadius: 8,
-		backgroundColor: '#2C2C2E',
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	iconWrapFilled: { backgroundColor: 'rgba(52,199,89,0.12)' },
-	rowName: { width: 70, fontSize: 14, fontWeight: '500', color: '#8E8E93' },
-	rowNameFilled: { color: '#FFF' },
-	inputWrap: {
-		flex: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'flex-end',
-		gap: 6,
-	},
-	input: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: '#FFF',
-		textAlign: 'right',
-		minWidth: 60,
-		paddingVertical: 0,
-	},
-	unit: { fontSize: 13, color: '#8E8E93', width: 26 },
+		row: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: C.card,
+			borderRadius: 12,
+			paddingHorizontal: 12,
+			paddingVertical: 10,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+			gap: 10,
+		},
+		rowFilled: { borderColor: 'rgba(52,199,89,0.3)' },
+		iconWrap: {
+			width: 30,
+			height: 30,
+			borderRadius: 8,
+			backgroundColor: C.cardLight,
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		iconWrapFilled: { backgroundColor: 'rgba(52,199,89,0.12)' },
+		rowName: { width: 70, fontSize: 14, fontWeight: '500', color: C.textSecondary },
+		rowNameFilled: { color: C.text },
+		inputWrap: {
+			flex: 1,
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'flex-end',
+			gap: 6,
+		},
+		input: {
+			fontSize: 18,
+			fontWeight: '700',
+			color: C.text,
+			textAlign: 'right',
+			minWidth: 60,
+			paddingVertical: 0,
+		},
+		unit: { fontSize: 13, color: C.textSecondary, width: 26 },
 
-	saveBtn: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: '#34C759',
-		borderRadius: 12,
-		paddingVertical: 16,
-		gap: 8,
-		marginTop: 8,
-	},
-	saveBtnDisabled: { backgroundColor: '#2C2C2E' },
-	saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-})
+		saveBtn: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: C.primary,
+			borderRadius: 12,
+			paddingVertical: 16,
+			gap: 8,
+			marginTop: 8,
+		},
+		saveBtnDisabled: { backgroundColor: C.cardLight },
+		saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+	})
+}
