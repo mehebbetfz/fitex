@@ -1,5 +1,6 @@
 import { useLanguage } from '@/contexts/language-context'
 import { DetailPageSkeleton } from '@/components/ui/skeleton'
+import { presetAvatarSource } from '@/constants/preset-avatars'
 import { api } from '@/services/api'
 import {
 	Achievement,
@@ -83,6 +84,7 @@ interface AthleteProfile {
 	firstName: string
 	lastName: string
 	avatarUrl?: string | null
+	avatarPreset?: string | null
 	isPremium: boolean
 	isViewer: boolean
 	monthly: {
@@ -287,6 +289,10 @@ export default function AthleteProfileScreen() {
 		() => (data ? safeRemoteAvatarUri(data.avatarUrl) : null),
 		[data],
 	)
+	const avatarPresetSrc = useMemo(
+		() => (data ? presetAvatarSource(data.avatarPreset) : null),
+		[data],
+	)
 
 	const openLink = async (kind: keyof AthleteProfile['social'], raw: string) => {
 		const url = toOpenUrl(kind, raw)
@@ -348,7 +354,9 @@ export default function AthleteProfileScreen() {
 							]}
 						>
 							<View style={s.avatarWrap}>
-								{avatarHttps ? (
+								{avatarPresetSrc ? (
+									<Image source={avatarPresetSrc} style={s.avatar} />
+								) : avatarHttps ? (
 									<Image source={{ uri: avatarHttps }} style={s.avatar} />
 								) : (
 									<View style={[s.avatar, s.avatarPh]}>

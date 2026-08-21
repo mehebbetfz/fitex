@@ -55,6 +55,11 @@ export class UpdateProfileDto {
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(32)
+	avatarPreset?: string
+
+	@IsOptional()
+	@IsString()
 	@MaxLength(200)
 	socialInstagram?: string
 

@@ -1,23 +1,22 @@
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
-# sharp needs libc/vips bits for native rebuild on alpine
-RUN apk add --no-cache vips-dev build-base python3
-
 WORKDIR /app
 
 COPY package*.json ./
+
+# Prebuilt sharp for Alpine (musl). Do NOT install apk vips-dev here —
+# that makes sharp compile from source and fail without node-gyp.
+ENV SHARP_IGNORE_GLOBAL_LIBVIPS=1
 RUN npm ci --ignore-scripts \
-	&& npm install --os=linux --cpu=x64 --libc=musl sharp \
-	&& npm rebuild sharp --foreground-scripts
+	&& npm install --os=linux --cpu=x64 --libc=musl sharp@0.34.5 --foreground-scripts
 
 COPY . .
 # nest/tsc в Docker часто упираются в лимит кучи (~2GB) → heap out of memory
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # Remove dev dependencies (keep sharp native binary)
-RUN npm prune --production \
-	&& npm rebuild sharp --foreground-scripts
+RUN npm prune --omit=dev
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine
@@ -25,7 +24,8 @@ FROM node:20-alpine
 RUN apk add --no-cache tzdata dumb-init
 
 ENV NODE_ENV=production \
-    TZ=Europe/Moscow
+    TZ=Europe/Moscow \
+    SHARP_IGNORE_GLOBAL_LIBVIPS=1
 
 WORKDIR /app
 

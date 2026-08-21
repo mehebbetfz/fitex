@@ -1,6 +1,7 @@
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
 import { LeaderboardSkeleton } from '@/components/ui/skeleton'
+import { presetAvatarSource } from '@/constants/preset-avatars'
 import { useLanguage } from '@/contexts/language-context'
 import { TIERS, TierName } from '@/services/rating'
 import { api } from '@/services/api'
@@ -30,6 +31,7 @@ interface LeaderboardEntry {
 	firstName: string
 	lastName: string
 	avatarUrl?: string | null
+	avatarPreset?: string | null
 	totalScore: number
 	totalWorkouts: number
 	totalVolume: number
@@ -97,12 +99,14 @@ const PremiumDiamondBadge = ({ diameter = 18 }: { diameter?: number }) => (
 
 const Avatar = ({
 	uri,
+	preset,
 	name,
 	size = 44,
 	isCurrentUser,
 	isPremium,
 }: {
 	uri?: string | null
+	preset?: string | null
 	name: string
 	size?: number
 	isCurrentUser?: boolean
@@ -111,8 +115,15 @@ const Avatar = ({
 	const initials = name.trim().slice(0, 2).toUpperCase() || '?'
 	const ringW = isCurrentUser ? 2.5 : 0
 	const badgeD = Math.max(16, Math.round(size * 0.4))
+	const presetSrc = presetAvatarSource(preset)
 
-	const inner = uri ? (
+	const inner = presetSrc ? (
+		<Image
+			source={presetSrc}
+			style={{ width: size, height: size, borderRadius: size / 2 }}
+			resizeMode='cover'
+		/>
+	) : uri ? (
 		<Image
 			source={{ uri }}
 			style={{ width: size, height: size, borderRadius: size / 2 }}
@@ -197,6 +208,7 @@ const PodiumItem = ({
 						<View style={p.avatarCenter}>
 							<Avatar
 								uri={entry.avatarUrl}
+								preset={entry.avatarPreset}
 								name={name}
 								size={48}
 								isCurrentUser={entry.isCurrentUser}
@@ -307,6 +319,7 @@ const RowItem = ({
 			{/* Avatar */}
 			<Avatar
 				uri={entry.avatarUrl}
+				preset={entry.avatarPreset}
 				name={entry.firstName || '?'}
 				size={40}
 				isCurrentUser={entry.isCurrentUser}
@@ -441,6 +454,7 @@ const MyRankCard = ({
 					<View style={m.left}>
 						<Avatar
 							uri={entry.avatarUrl}
+							preset={entry.avatarPreset}
 							name={entry.firstName || '?'}
 							size={52}
 							isCurrentUser

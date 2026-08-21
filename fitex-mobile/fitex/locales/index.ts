@@ -580,6 +580,11 @@ export interface Translations {
     subtitle: string
     continue: string
   }
+  avatarSelect: {
+    title: string
+    subtitle: string
+    continue: string
+  }
   login: {
     subtitle: string
     signInGoogle: string
@@ -1544,6 +1549,11 @@ export const ru: Translations = {
   languageSelect: {
     title: 'Выберите язык',
     subtitle: 'Выберите язык для работы с приложением',
+    continue: 'Продолжить',
+  },
+  avatarSelect: {
+    title: 'Выберите аватар',
+    subtitle: 'Выбери персонажа — так тебя будут видеть в профиле',
     continue: 'Продолжить',
   },
   login: {
@@ -2520,6 +2530,11 @@ export const en: Translations = {
     subtitle: 'Select the language you want to use in the app',
     continue: 'Continue',
   },
+  avatarSelect: {
+    title: 'Choose an avatar',
+    subtitle: 'Pick a character — this is how you appear in your profile',
+    continue: 'Continue',
+  },
   login: {
     subtitle: 'Sign in to save your progress',
     signInGoogle: 'Sign in with Google',
@@ -3491,6 +3506,11 @@ export const az: Translations = {
   languageSelect: {
     title: 'Dil seçin',
     subtitle: 'Tətbiqdə istifadə etmək istədiyiniz dili seçin',
+    continue: 'Davam et',
+  },
+  avatarSelect: {
+    title: 'Avatar seçin',
+    subtitle: 'Personaj seç — profilində belə görünəcəksən',
     continue: 'Davam et',
   },
   login: {

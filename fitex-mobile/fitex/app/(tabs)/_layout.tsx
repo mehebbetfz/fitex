@@ -6,6 +6,7 @@ import DailyLeadersModal, {
 	type DailyLeaderRow,
 } from '@/components/daily-leaders-modal'
 import { HapticTab } from '@/components/haptic-tab'
+import { isPresetAvatarId } from '@/constants/preset-avatars'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import { api } from '@/services/api'
@@ -36,6 +37,13 @@ export default function TabsLayout() {
 	const hadPremiumRef = useRef<boolean | null>(null)
 	const lastUserIdForLeadersRef = useRef<string | undefined>(undefined)
 	const { t } = useLanguage()
+
+	useEffect(() => {
+		if (authLoading || !user) return
+		if (!isPresetAvatarId(user.avatarPreset)) {
+			router.replace('/(auth)/avatar-select')
+		}
+	}, [authLoading, user, router])
 
 	const dismissDailyLeaders = useCallback(async () => {
 		if (user?.id) {

@@ -17,6 +17,10 @@ export class User {
 	@Prop()
 	avatarUrl?: string
 
+	/** Built-in animal avatar id, e.g. animal-01 */
+	@Prop()
+	avatarPreset?: string
+
 	@Prop({ enum: ['apple', 'google', 'demo', 'email'], required: true })
 	provider: string
 

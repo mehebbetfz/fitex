@@ -384,6 +384,7 @@ export class AuthService {
 			firstName: user.firstName,
 			lastName: user.lastName,
 			avatarUrl: user.avatarUrl,
+			avatarPreset: user.avatarPreset ?? null,
 			isPremium: user.isPremium,
 			premiumExpiresAt: user.premiumExpiresAt ?? null,
 			role: user.role || 'user',
@@ -430,6 +431,7 @@ export class AuthService {
 			'fitnessGoal',
 			'activityLevel',
 			'bodyStatsCompleted',
+			'avatarPreset',
 			'socialInstagram',
 			'socialTelegram',
 			'socialYoutube',
@@ -440,6 +442,17 @@ export class AuthService {
 		for (const k of keys) {
 			if (dto[k] === undefined) continue
 			const v = dto[k]
+			if (k === 'avatarPreset') {
+				const id = String(v ?? '').trim()
+				if (!id) {
+					user.avatarPreset = undefined
+				} else if (!/^animal-(0[1-9]|1\d|2[0-5])$/.test(id)) {
+					throw new BadRequestException('Invalid avatarPreset')
+				} else {
+					user.avatarPreset = id
+				}
+				continue
+			}
 			if (typeof v === 'string' && v.trim() === '') {
 				;(user as any)[k] = undefined
 			} else {

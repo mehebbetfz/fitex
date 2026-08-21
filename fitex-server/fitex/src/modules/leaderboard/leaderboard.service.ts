@@ -71,7 +71,7 @@ export class LeaderboardService implements OnModuleInit {
 		const users = await this.userModel
 			.find({ showOnLeaderboard: { $ne: false }, totalWorkouts: { $gt: 0 } })
 			.select(
-				'firstName lastName avatarUrl totalScore totalWorkouts totalVolume totalSets streakDays prCount isPremium monthlyScore monthlyWorkouts monthlyVolume monthlySets monthlyStreakDays',
+				'firstName lastName avatarUrl avatarPreset totalScore totalWorkouts totalVolume totalSets streakDays prCount isPremium monthlyScore monthlyWorkouts monthlyVolume monthlySets monthlyStreakDays',
 			)
 			.sort({ monthlyScore: -1, totalScore: -1, _id: 1 })
 			.limit(limit)
@@ -90,6 +90,7 @@ export class LeaderboardService implements OnModuleInit {
 				firstName: u.firstName ?? '',
 				lastName: u.lastName ?? '',
 				avatarUrl: u.avatarUrl ?? null,
+				avatarPreset: u.avatarPreset ?? null,
 				totalScore: ms,
 				totalWorkouts: mw,
 				totalVolume: mv,
@@ -106,7 +107,7 @@ export class LeaderboardService implements OnModuleInit {
 			const me = await this.userModel
 				.findById(currentUserId)
 				.select(
-					'firstName lastName avatarUrl totalScore totalWorkouts totalVolume totalSets streakDays prCount isPremium monthlyScore monthlyWorkouts monthlyVolume monthlyStreakDays',
+					'firstName lastName avatarUrl avatarPreset totalScore totalWorkouts totalVolume totalSets streakDays prCount isPremium monthlyScore monthlyWorkouts monthlyVolume monthlyStreakDays',
 				)
 				.lean()
 			if (me && (me.totalWorkouts ?? 0) > 0) {
@@ -121,6 +122,7 @@ export class LeaderboardService implements OnModuleInit {
 					firstName: me.firstName ?? '',
 					lastName: me.lastName ?? '',
 					avatarUrl: me.avatarUrl ?? null,
+					avatarPreset: me.avatarPreset ?? null,
 					totalScore: ms,
 					totalWorkouts: me.monthlyWorkouts ?? 0,
 					totalVolume: me.monthlyVolume ?? 0,
@@ -189,7 +191,7 @@ export class LeaderboardService implements OnModuleInit {
 		const u = await this.userModel
 			.findById(oid)
 			.select(
-				'firstName lastName avatarUrl isPremium showOnLeaderboard totalScore totalWorkouts totalVolume totalSets streakDays prCount monthlyScore monthlyWorkouts monthlyVolume monthlySets monthlyStreakDays podiumFirst podiumSecond podiumThird socialInstagram socialTelegram socialYoutube socialTiktok socialStrava socialWebsite',
+				'firstName lastName avatarUrl avatarPreset isPremium showOnLeaderboard totalScore totalWorkouts totalVolume totalSets streakDays prCount monthlyScore monthlyWorkouts monthlyVolume monthlySets monthlyStreakDays podiumFirst podiumSecond podiumThird socialInstagram socialTelegram socialYoutube socialTiktok socialStrava socialWebsite',
 			)
 			.lean()
 
@@ -245,6 +247,7 @@ export class LeaderboardService implements OnModuleInit {
 			firstName: u.firstName ?? '',
 			lastName: u.lastName ?? '',
 			avatarUrl: u.avatarUrl ?? null,
+			avatarPreset: u.avatarPreset ?? null,
 			isPremium: u.isPremium ?? false,
 			isViewer: viewerId === athleteUserId,
 			monthly: {

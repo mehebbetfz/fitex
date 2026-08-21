@@ -13,6 +13,8 @@ export interface User {
 	firstName?: string
 	lastName?: string
 	avatarUrl?: string
+	/** Built-in animal avatar id, e.g. animal-01 */
+	avatarPreset?: string | null
 	isPremium: boolean
 	/** ISO string from server; App Store / Play subscription end time */
 	premiumExpiresAt?: string

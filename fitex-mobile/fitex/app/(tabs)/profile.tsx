@@ -1,6 +1,7 @@
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import type { AppColors } from '@/constants/app-theme'
+import { presetAvatarSource } from '@/constants/preset-avatars'
 import { Language } from '@/locales'
 import ProfileStatsSections from '@/components/profile-stats-sections'
 import { Ionicons } from '@expo/vector-icons'
@@ -10,6 +11,7 @@ import {
 	ActivityIndicator,
 	Alert,
 	Animated,
+	Image,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -409,6 +411,11 @@ export default function ProfileScreen() {
 	const displayNameLine = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim()
 	const userInitial =
 		user?.firstName?.[0] || user?.lastName?.[0] || user?.email?.[0] || '?'
+	const presetSrc = presetAvatarSource(user?.avatarPreset)
+	const remoteAvatar =
+		user?.avatarUrl && String(user.avatarUrl).startsWith('http')
+			? user.avatarUrl
+			: null
 
 	return (
 		<SafeAreaView style={styles.container} edges={['top']}>
@@ -475,14 +482,40 @@ export default function ProfileScreen() {
 				) : (
 					<FadeIn show={!loading}>
 						<View style={styles.userCard}>
-							<View style={styles.avatarContainer}>
-								<Text style={styles.avatarText}>{userInitial}</Text>
-							</View>
+							<TouchableOpacity
+								style={styles.avatarHit}
+								onPress={() =>
+									router.push({
+										pathname: '/(auth)/avatar-select',
+										params: { mode: 'profile' },
+									})
+								}
+								activeOpacity={0.8}
+							>
+								<View style={styles.avatarContainer}>
+									{presetSrc ? (
+										<Image source={presetSrc} style={styles.avatarImage} />
+									) : remoteAvatar ? (
+										<Image
+											source={{ uri: remoteAvatar }}
+											style={styles.avatarImage}
+										/>
+									) : (
+										<Text style={styles.avatarText}>{userInitial}</Text>
+									)}
+								</View>
+								<View style={styles.avatarEditBadge}>
+									<Ionicons name='camera' size={12} color='#000' />
+								</View>
+							</TouchableOpacity>
 							<View style={styles.userInfo}>
 								<Text style={styles.userName}>
 									{displayNameLine || t('profile', 'defaultUser')}
 								</Text>
 								<Text style={styles.userEmail}>{user?.email || '—'}</Text>
+								<Text style={styles.avatarHint}>
+									{t('profile', 'avatarChangeHint')}
+								</Text>
 							</View>
 						</View>
 					</FadeIn>
@@ -664,16 +697,39 @@ function makeStyles(C: AppColors) {
 		borderColor: C.border,
 		alignItems: 'center',
 	},
+	avatarHit: {
+		width: 70,
+		height: 70,
+		marginRight: 16,
+		position: 'relative',
+	},
 	avatarContainer: {
 		width: 70,
 		height: 70,
 		borderRadius: 35,
-		backgroundColor: C.primary,
+		backgroundColor: C.cardLight,
 		justifyContent: 'center',
 		alignItems: 'center',
-		marginRight: 16,
+		overflow: 'hidden',
+	},
+	avatarImage: { width: '100%', height: '100%' },
+	avatarEditBadge: {
+		position: 'absolute',
+		right: -2,
+		bottom: -2,
+		width: 22,
+		height: 22,
+		borderRadius: 11,
+		backgroundColor: C.primary,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	avatarText: { fontSize: 30, fontWeight: 'bold', color: C.text },
+	avatarHint: {
+		marginTop: 4,
+		fontSize: 12,
+		color: C.textSecondary,
+	},
 	userInfo: { flex: 1 },
 	userName: { fontSize: 20, fontWeight: '600', color: C.text },
 	userEmail: { fontSize: 15, color: C.textSecondary, marginTop: 2 },
