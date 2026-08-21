@@ -26,14 +26,22 @@ export class NutritionVisionService {
 		jpegBuffer: Buffer,
 		note?: string,
 	): Promise<VisionFoodResult> {
+		const started = Date.now()
 		const apiKey = this.config.get<string>('OPENAI_API_KEY')?.trim()
+		const model =
+			this.config.get<string>('OPENAI_VISION_MODEL') || 'gpt-4o-mini'
+
 		if (!apiKey) {
+			this.log.error('OPENAI_API_KEY missing or empty — cannot analyze meal')
 			throw new ServiceUnavailableException(
 				'Food AI is not configured (OPENAI_API_KEY missing on server)',
 			)
 		}
-		const model =
-			this.config.get<string>('OPENAI_VISION_MODEL') || 'gpt-4o-mini'
+
+		this.log.log(
+			`vision request model=${model} jpegBytes=${jpegBuffer.length} ` +
+				`keyPrefix=${apiKey.slice(0, 7)}… note=${note?.trim() ? 'yes' : 'no'}`,
+		)
 
 		const b64 = jpegBuffer.toString('base64')
 		const noteLine = note?.trim()
@@ -83,13 +91,15 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 				],
 			}),
 		}).catch(e => {
-			this.log.error(`OpenAI fetch failed: ${e}`)
+			this.log.error(`OpenAI fetch failed after ${Date.now() - started}ms: ${e}`)
 			throw new ServiceUnavailableException('Food AI unreachable')
 		})
 
 		if (!res.ok) {
 			const errText = await res.text().catch(() => '')
-			this.log.error(`OpenAI error ${res.status}: ${errText.slice(0, 400)}`)
+			this.log.error(
+				`OpenAI error ${res.status} after ${Date.now() - started}ms: ${errText.slice(0, 400)}`,
+			)
 			if (res.status === 401 || res.status === 403) {
 				throw new ServiceUnavailableException(
 					'Food AI key is invalid (check OPENAI_API_KEY)',
@@ -105,9 +115,13 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 
 		const data = (await res.json()) as {
 			choices?: { message?: { content?: string } }[]
+			usage?: { prompt_tokens?: number; completion_tokens?: number }
 		}
 		const content = data.choices?.[0]?.message?.content
-		if (!content) throw new ServiceUnavailableException('Empty analysis')
+		if (!content) {
+			this.log.error('OpenAI returned empty content')
+			throw new ServiceUnavailableException('Empty analysis')
+		}
 
 		let parsed: Record<string, unknown>
 		try {
@@ -132,7 +146,7 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 			if (n >= 0) vitamins[k] = Math.round(n * 10) / 10
 		}
 
-		return {
+		const result: VisionFoodResult = {
 			name: String(parsed.name || 'Meal').slice(0, 120),
 			calories: Math.round(num(parsed.calories)),
 			proteinG: Math.round(num(parsed.proteinG) * 10) / 10,
@@ -142,5 +156,13 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 			confidence: num(parsed.confidence, 0.5),
 			raw: parsed,
 		}
+
+		this.log.log(
+			`vision ok name="${result.name}" kcal=${result.calories} ` +
+				`tokens=${data.usage?.prompt_tokens ?? '?'}/${data.usage?.completion_tokens ?? '?'} ` +
+				`ms=${Date.now() - started}`,
+		)
+
+		return result
 	}
 }

@@ -21,7 +21,9 @@ import {
 	Alert,
 	Animated,
 	Image,
+	KeyboardAvoidingView,
 	Modal,
+	Platform,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -904,75 +906,85 @@ function NutritionTabInner() {
 				animationType='slide'
 				onRequestClose={() => setTargetsOpen(false)}
 			>
-				<View style={styles.sheetBackdrop}>
+				<KeyboardAvoidingView
+					style={styles.sheetBackdrop}
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+				>
 					<TouchableOpacity
 						style={StyleSheet.absoluteFill}
 						activeOpacity={1}
 						onPress={() => setTargetsOpen(false)}
 					/>
-					<View style={styles.sheet}>
-						<Text style={styles.sheetTitle}>{t('nutrition', 'limitsTitle')}</Text>
-						<Text style={styles.limitsHint}>{t('nutrition', 'limitsHint')}</Text>
-						<View style={styles.inputRow}>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={targetCal}
-								onChangeText={setTargetCal}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'kcal')}
-								placeholderTextColor={T.textTertiary}
-							/>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={targetP}
-								onChangeText={setTargetP}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'protein')}
-								placeholderTextColor={T.textTertiary}
-							/>
-						</View>
-						<View style={styles.inputRow}>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={targetC}
-								onChangeText={setTargetC}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'carbs')}
-								placeholderTextColor={T.textTertiary}
-							/>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={targetF}
-								onChangeText={setTargetF}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'fat')}
-								placeholderTextColor={T.textTertiary}
-							/>
-						</View>
-						<TouchableOpacity
-							style={styles.saveBtn}
-							onPress={() => void saveTargets()}
-							disabled={savingTargets}
-						>
-							{savingTargets ? (
-								<ActivityIndicator color='#000' />
-							) : (
-								<Text style={styles.saveBtnText}>{t('nutrition', 'save')}</Text>
-							)}
-						</TouchableOpacity>
-						{view.targets.custom ? (
+					<ScrollView
+						keyboardShouldPersistTaps='handled'
+						bounces={false}
+						contentContainerStyle={styles.sheetScroll}
+					>
+						<View style={styles.sheet}>
+							<Text style={styles.sheetTitle}>{t('nutrition', 'limitsTitle')}</Text>
+							<Text style={styles.limitsHint}>{t('nutrition', 'limitsHint')}</Text>
+							<View style={styles.inputRow}>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={targetCal}
+									onChangeText={setTargetCal}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'kcal')}
+									placeholderTextColor={T.textTertiary}
+								/>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={targetP}
+									onChangeText={setTargetP}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'protein')}
+									placeholderTextColor={T.textTertiary}
+								/>
+							</View>
+							<View style={styles.inputRow}>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={targetC}
+									onChangeText={setTargetC}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'carbs')}
+									placeholderTextColor={T.textTertiary}
+								/>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={targetF}
+									onChangeText={setTargetF}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'fat')}
+									placeholderTextColor={T.textTertiary}
+								/>
+							</View>
 							<TouchableOpacity
-								style={styles.deleteBtn}
-								onPress={() => void resetTargets()}
+								style={styles.saveBtn}
+								onPress={() => void saveTargets()}
 								disabled={savingTargets}
 							>
-								<Text style={styles.resetTargetsText}>
-									{t('nutrition', 'resetLimits')}
-								</Text>
+								{savingTargets ? (
+									<ActivityIndicator color='#000' />
+								) : (
+									<Text style={styles.saveBtnText}>{t('nutrition', 'save')}</Text>
+								)}
 							</TouchableOpacity>
-						) : null}
-					</View>
-				</View>
+							{view.targets.custom ? (
+								<TouchableOpacity
+									style={styles.deleteBtn}
+									onPress={() => void resetTargets()}
+									disabled={savingTargets}
+								>
+									<Text style={styles.resetTargetsText}>
+										{t('nutrition', 'resetLimits')}
+									</Text>
+								</TouchableOpacity>
+							) : null}
+						</View>
+					</ScrollView>
+				</KeyboardAvoidingView>
 			</Modal>
 		</SafeAreaView>
 	)
@@ -1171,6 +1183,10 @@ function makeNutritionStyles(T: AppColors) {
 	sheetBackdrop: {
 		flex: 1,
 		backgroundColor: 'rgba(0,0,0,0.55)',
+		justifyContent: 'flex-end',
+	},
+	sheetScroll: {
+		flexGrow: 1,
 		justifyContent: 'flex-end',
 	},
 	sheet: {

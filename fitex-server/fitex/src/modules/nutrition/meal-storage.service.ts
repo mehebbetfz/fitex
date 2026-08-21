@@ -63,11 +63,14 @@ export class MealStorageService {
 				}),
 			)
 			const region = this.config.get<string>('AWS_REGION') || 'eu-central-1'
-			return `https://${bucket}.s3.${region}.amazonaws.com/${key}`
+			const url = `https://${bucket}.s3.${region}.amazonaws.com/${key}`
+			this.log.log(`meal photo s3 save user=${userId} key=${key}`)
+			return url
 		}
 
 		const publicBase = this.config.get<string>('PUBLIC_BASE_URL')?.replace(/\/$/, '')
 		if (!publicBase) {
+			this.log.error('PUBLIC_BASE_URL and AWS_S3_BUCKET both unset')
 			throw new InternalServerErrorException(
 				'Set PUBLIC_BASE_URL or AWS_S3_BUCKET for meal photos',
 			)
@@ -77,6 +80,8 @@ export class MealStorageService {
 		await mkdir(dir, { recursive: true })
 		const fname = `${id}.jpg`
 		await writeFile(join(dir, fname), out)
-		return `${publicBase}/uploads/meals/${userId}/${fname}`
+		const url = `${publicBase}/uploads/meals/${userId}/${fname}`
+		this.log.log(`meal photo local save user=${userId} bytes=${out.length}`)
+		return url
 	}
 }

@@ -3,6 +3,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	Logger,
 	Param,
 	Patch,
 	Post,
@@ -20,6 +21,8 @@ import { NutritionService } from './nutrition.service'
 @Controller('nutrition')
 @UseGuards(JwtAuthGuard)
 export class NutritionController {
+	private readonly log = new Logger(NutritionController.name)
+
 	constructor(private readonly nutrition: NutritionService) {}
 
 	@Get('targets')
@@ -39,6 +42,9 @@ export class NutritionController {
 			reset?: boolean
 		},
 	) {
+		this.log.log(
+			`PATCH /targets user=${req.user.userId} reset=${Boolean(body.reset)}`,
+		)
 		return this.nutrition.updateTargets(req.user.userId, body)
 	}
 
@@ -65,7 +71,28 @@ export class NutritionController {
 		@Body('note') note?: string,
 	) {
 		const d = date || new Date().toLocaleDateString('en-CA')
-		return this.nutrition.analyzeAndCreate(req.user.userId, file, d, note)
+		this.log.log(
+			`POST /analyze user=${req.user.userId} date=${d} ` +
+				`fileBytes=${file?.size ?? 0} mime=${file?.mimetype ?? 'none'} ` +
+				`note=${note?.trim() ? 'yes' : 'no'}`,
+		)
+		try {
+			const result = await this.nutrition.analyzeAndCreate(
+				req.user.userId,
+				file,
+				d,
+				note,
+			)
+			this.log.log(
+				`POST /analyze ok user=${req.user.userId} entry=${result.entry?.id} ` +
+					`name=${result.entry?.name} kcal=${result.entry?.calories}`,
+			)
+			return result
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e)
+			this.log.error(`POST /analyze failed user=${req.user.userId}: ${msg}`)
+			throw e
+		}
 	}
 
 	@Patch('entries/:id')
@@ -81,6 +108,7 @@ export class NutritionController {
 			fatG?: number
 		},
 	) {
+		this.log.log(`PATCH /entries/${id} user=${req.user.userId}`)
 		return this.nutrition.updateEntry(req.user.userId, id, body)
 	}
 
@@ -89,6 +117,7 @@ export class NutritionController {
 		@Req() req: { user: { userId: string } },
 		@Param('id') id: string,
 	) {
+		this.log.log(`DELETE /entries/${id} user=${req.user.userId}`)
 		return this.nutrition.deleteEntry(req.user.userId, id)
 	}
 }

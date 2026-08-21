@@ -165,8 +165,16 @@ export class NutritionService {
 		date: string,
 		note?: string,
 	) {
+		const started = Date.now()
 		this.assertDate(date)
-		if (!file?.buffer?.length) throw new BadRequestException('Image required')
+		if (!file?.buffer?.length) {
+			this.log.warn(`analyze: empty file user=${userId}`)
+			throw new BadRequestException('Image required')
+		}
+
+		this.log.log(
+			`analyze start user=${userId} date=${date} rawBytes=${file.buffer.length} mime=${file.mimetype}`,
+		)
 
 		let jpeg: Buffer
 		try {
@@ -175,19 +183,30 @@ export class NutritionService {
 				.resize(1280, 1280, { fit: 'inside', withoutEnlargement: true })
 				.jpeg({ quality: 80 })
 				.toBuffer()
-		} catch {
+			this.log.log(
+				`analyze sharp ok user=${userId} jpegBytes=${jpeg.length} ms=${Date.now() - started}`,
+			)
+		} catch (e) {
+			this.log.error(`analyze sharp failed user=${userId}: ${e}`)
 			throw new BadRequestException('Could not process image')
 		}
 
 		// Vision first — storage must not block AI analysis if S3/PUBLIC_BASE_URL missing
+		const visionStarted = Date.now()
 		const analysis = await this.vision.analyzeImage(jpeg, note)
+		this.log.log(
+			`analyze vision ok user=${userId} name="${analysis.name}" ` +
+				`kcal=${analysis.calories} P=${analysis.proteinG} C=${analysis.carbsG} F=${analysis.fatG} ` +
+				`conf=${analysis.confidence} ms=${Date.now() - visionStarted}`,
+		)
 
 		let photoUrl: string | null = null
 		try {
 			photoUrl = await this.meals.saveMealPhoto(userId, jpeg, 'image/jpeg')
+			this.log.log(`analyze photo saved user=${userId} url=${photoUrl}`)
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e)
-			this.log.warn(`Meal photo save skipped: ${msg}`)
+			this.log.warn(`Meal photo save skipped user=${userId}: ${msg}`)
 		}
 
 		const doc = await this.foodModel.create({
@@ -204,6 +223,10 @@ export class NutritionService {
 			rawModelJson: analysis.raw,
 			isDeleted: false,
 		})
+
+		this.log.log(
+			`analyze done user=${userId} entry=${doc._id} totalMs=${Date.now() - started}`,
+		)
 
 		return {
 			entry: this.toPublic(doc.toObject()),
