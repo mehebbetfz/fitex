@@ -26,6 +26,14 @@ export const HEATMAP_LEVEL_COLORS: Record<HeatmapLevel, string> = {
 	4: '#39D353',
 }
 
+export const HEATMAP_LEVEL_COLORS_LIGHT: Record<HeatmapLevel, string> = {
+	0: '#EBEDF0',
+	1: '#9BE9A8',
+	2: '#40C463',
+	3: '#30A14E',
+	4: '#216E39',
+}
+
 export function localDateKey(d: Date): string {
 	const y = d.getFullYear()
 	const m = String(d.getMonth() + 1).padStart(2, '0')

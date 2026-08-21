@@ -2,6 +2,7 @@ import { useDatabase } from '@/app/contexts/database-context'
 import { SyncMeta, SyncHistoryEntry, SYNC_META_KEY } from '@/app/contexts/database-context'
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
+import { DetailPageSkeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/contexts/language-context'
 import { api } from '@/services/api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -313,9 +314,7 @@ export default function SyncStatsScreen() {
 			</View>
 
 			{loading ? (
-				<View style={s.loader}>
-					<ActivityIndicator size='large' color={C.primary} />
-				</View>
+				<DetailPageSkeleton />
 			) : (
 				<ScrollView
 					contentContainerStyle={s.scroll}

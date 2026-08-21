@@ -2,6 +2,7 @@
 import { ExerciseDetailModal } from '@/app/modals/exercise-detail-modal'
 import ExerciseHistoryModal from '@/app/modals/exercise-history-modal'
 import { ExerciseSelectionModal } from '@/app/modals/exercise-selection.modal'
+import type { AppColors } from '@/constants/app-theme'
 import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
@@ -9,6 +10,7 @@ import {
 import { muscle_groups } from '@/constants/muscle-groups'
 import { translateExerciseName, translateGroupName } from '@/constants/exercise-i18n'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -30,22 +32,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 const WORKOUT_START_TIME_KEY = '@workout_start_time'
 const WORKOUT_ACTIVE_KEY = '@workout_active'
-
-const COLORS = {
-	green: '#1cd22eff',
-	primary: '#34C759',
-	primaryDark: '#2CAE4E',
-	background: '#000',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#3A3A3C',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	error: '#FF3B30',
-	warning: '#FF9500',
-	success: '#34C759',
-	info: '#5AC8FA',
-} as const
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
@@ -310,6 +296,8 @@ interface SetRowProps {
 const SetRow: React.FC<SetRowProps> = React.memo(
 	({ set, exerciseId, onComplete, onUpdate, onRemove }) => {
 		const { t } = useLanguage()
+		const { colors: COLORS } = useAppTheme()
+		const styles = useMemo(() => makeStyles(COLORS), [COLORS])
 		const [weightText, setWeightText] = useState(
 			() => (set.weight === 0 ? '' : String(set.weight)),
 		)
@@ -400,7 +388,7 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 					activeOpacity={0.6}
 				>
 					{set.completed && (
-						<Ionicons name='checkmark' size={16} color={COLORS.background} />
+						<Ionicons name='checkmark' size={16} color='#000' />
 					)}
 				</TouchableOpacity>
 
@@ -449,6 +437,8 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 		onShowExerciseDetails,
 	}) => {
 		const { t, language } = useLanguage()
+		const { colors: COLORS } = useAppTheme()
+		const styles = useMemo(() => makeStyles(COLORS), [COLORS])
 		const [showHistoryModal, setShowHistoryModal] = useState(false)
 		const [showDetailsModal, setShowDetailsModal] = useState(false)
 		const [exerciseDetail, setExerciseDetail] = useState<ExerciseDetail | null>(
@@ -631,6 +621,8 @@ export default function CreateWorkoutScreen() {
 	const router = useRouter()
 	const { completeWorkout, getWorkoutTemplate, createWorkoutTemplate } = useDatabase()
 	const { t } = useLanguage()
+	const { colors: COLORS } = useAppTheme()
+	const styles = useMemo(() => makeStyles(COLORS), [COLORS])
 
 	const [exercises, setExercises] = useState<Exercise[]>([])
 	const [workoutName, setWorkoutName] = useState('')
@@ -1256,7 +1248,7 @@ export default function CreateWorkoutScreen() {
 								}}
 								activeOpacity={0.7}
 							>
-								<Ionicons name='add' size={20} color={COLORS.background} />
+								<Ionicons name='add' size={20} color='#000' />
 								<Text style={styles.addFirstExerciseText}>
 									{t('workout', 'addExercise')}
 								</Text>
@@ -1350,63 +1342,66 @@ interface ExerciseDetailModalProps {
 	exerciseDetail: ExerciseDetail | null
 }
 
-const galleryStyles = StyleSheet.create({
-	container: { marginVertical: 16 },
-	imageContainer: {
-		width: SCREEN_WIDTH - 32,
-		height: 200,
-		borderRadius: 12,
-		overflow: 'hidden',
-	},
-	image: { width: '100%', height: '100%' },
-	pagination: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
-	dot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4,
-		backgroundColor: COLORS.textSecondary,
-		marginHorizontal: 4,
-	},
-	activeDot: { backgroundColor: COLORS.primary },
-})
+function makeGalleryStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: { marginVertical: 16 },
+		imageContainer: {
+			width: SCREEN_WIDTH - 32,
+			height: 200,
+			borderRadius: 12,
+			overflow: 'hidden',
+		},
+		image: { width: '100%', height: '100%' },
+		pagination: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
+		dot: {
+			width: 8,
+			height: 8,
+			borderRadius: 4,
+			backgroundColor: C.textSecondary,
+			marginHorizontal: 4,
+		},
+		activeDot: { backgroundColor: C.primary },
+	})
+}
 
-const styles = StyleSheet.create({
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
 	infoButton: { padding: 8 },
 	video: { width: '100%', height: 200, marginVertical: 10, borderRadius: 16 },
-	container: { flex: 1, backgroundColor: '#121212' },
+	container: { flex: 1, backgroundColor: C.background },
 	loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 	loadingSpinner: {
 		width: 80,
 		height: 80,
 		borderRadius: 40,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginBottom: 20,
 	},
-	loadingText: { fontSize: 16, color: COLORS.textSecondary },
+	loadingText: { fontSize: 16, color: C.textSecondary },
 	header: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
 		paddingHorizontal: 8,
 		paddingVertical: 12,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		borderBottomColor: C.border,
 	},
 	headerButton: { padding: 8 },
 	headerCenter: { flex: 1, alignItems: 'center', marginHorizontal: 12 },
 	workoutNameInput: {
 		fontSize: 18,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		textAlign: 'center',
 		padding: 8,
 		minWidth: 200,
 	},
 	finishButton: {
-		backgroundColor: COLORS.error,
+		backgroundColor: C.error,
 		paddingHorizontal: 16,
 		paddingVertical: 8,
 		borderRadius: 8,
@@ -1414,28 +1409,28 @@ const styles = StyleSheet.create({
 	finishButtonText: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.background,
+		color: '#000',
 	},
 	content: { flex: 1 },
 	contentContainer: { paddingBottom: -40 },
 	statsCard: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		margin: 8,
 		marginBottom: 0,
 		borderRadius: 16,
 		padding: 20,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
 	statItem: { alignItems: 'center', flex: 1 },
 	statNumber: {
 		fontSize: 20,
 		fontWeight: 'bold',
-		color: COLORS.primary,
+		color: C.primary,
 		marginBottom: 4,
 	},
-	statLabel: { fontSize: 12, color: COLORS.textSecondary },
+	statLabel: { fontSize: 12, color: C.textSecondary },
 	exercisesSection: { marginTop: 8 },
 	sectionHeader: {
 		flexDirection: 'row',
@@ -1443,23 +1438,23 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		paddingVertical: 12,
 	},
-	sectionTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.text },
-	sectionSubtitle: { fontSize: 14, color: COLORS.textSecondary },
+	sectionTitle: { fontSize: 18, fontWeight: 'bold', color: C.text },
+	sectionSubtitle: { fontSize: 14, color: C.textSecondary },
 	emptyExercises: {
 		alignItems: 'center',
 		padding: 40,
 		marginHorizontal: 8,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		marginTop: 8,
 	},
 	emptyIcon: {
 		width: 80,
 		height: 80,
 		borderRadius: 40,
-		backgroundColor: COLORS.cardLight,
+		backgroundColor: C.cardLight,
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginBottom: 20,
@@ -1467,12 +1462,12 @@ const styles = StyleSheet.create({
 	emptyTitle: {
 		fontSize: 20,
 		fontWeight: 'bold',
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 8,
 	},
 	emptySubtitle: {
 		fontSize: 14,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		textAlign: 'center',
 		marginBottom: 24,
 	},
@@ -1480,7 +1475,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
-		backgroundColor: COLORS.primary,
+		backgroundColor: C.primary,
 		paddingHorizontal: 24,
 		paddingVertical: 14,
 		borderRadius: 12,
@@ -1488,17 +1483,17 @@ const styles = StyleSheet.create({
 	addFirstExerciseText: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.background,
+		color: '#000',
 		marginLeft: 8,
 	},
 	exerciseCard: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		marginHorizontal: 8,
 		marginBottom: 12,
 		borderRadius: 16,
 		padding: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	exerciseHeader: {
 		flexDirection: 'row',
@@ -1511,7 +1506,7 @@ const styles = StyleSheet.create({
 	exerciseName: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 4,
 	},
 	exerciseMeta: {
@@ -1526,9 +1521,9 @@ const styles = StyleSheet.create({
 		paddingVertical: 4,
 		borderRadius: 6,
 	},
-	muscleGroupText: { fontSize: 12, color: COLORS.primary, fontWeight: '500' },
+	muscleGroupText: { fontSize: 12, color: C.primary, fontWeight: '500' },
 	setsIndicator: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-	setsText: { fontSize: 12, color: COLORS.textSecondary },
+	setsText: { fontSize: 12, color: C.textSecondary },
 	exerciseHeaderRight: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -1542,14 +1537,14 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 8,
 		paddingVertical: 8,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		borderBottomColor: C.border,
 		marginBottom: 4,
 		textAlign: 'center',
 	},
 	setHeaderText: {
 		fontSize: 12,
 		fontWeight: '600',
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		width: 40,
 		textAlign: 'center',
 	},
@@ -1559,14 +1554,14 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		paddingVertical: 10,
 		borderBottomWidth: 1,
-		borderBottomColor: 'rgba(255,255,255,0.05)',
+		borderBottomColor: C.track,
 	},
 	setNumberContainer: {
 		width: 40,
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
-	setNumber: { fontSize: 16, fontWeight: '600', color: COLORS.text },
+	setNumber: { fontSize: 16, fontWeight: '600', color: C.text },
 	setInputContainer: {
 		flex: 1,
 		flexDirection: 'row',
@@ -1576,33 +1571,33 @@ const styles = StyleSheet.create({
 	input: {
 		height: 40,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		borderRadius: 8,
 		textAlign: 'center',
 		fontSize: 16,
-		color: COLORS.text,
-		backgroundColor: COLORS.cardLight,
+		color: C.text,
+		backgroundColor: C.cardLight,
 	},
 	weightInput: { width: 80, marginRight: 4 },
 	repsInput: { width: 80, marginRight: 4 },
 	inputCompleted: {
 		backgroundColor: 'rgba(52, 199, 89, 0.1)',
-		borderColor: COLORS.primary,
+		borderColor: C.primary,
 	},
-	inputLabel: { fontSize: 12, color: COLORS.textSecondary, marginLeft: 4 },
+	inputLabel: { fontSize: 12, color: C.textSecondary, marginLeft: 4 },
 	checkbox: {
 		width: 32,
 		height: 32,
 		borderRadius: 16,
 		borderWidth: 2,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		alignItems: 'center',
 		justifyContent: 'center',
-		backgroundColor: COLORS.cardLight,
+		backgroundColor: C.cardLight,
 	},
 	checkboxCompleted: {
-		backgroundColor: COLORS.primary,
-		borderColor: COLORS.primary,
+		backgroundColor: C.primary,
+		borderColor: C.primary,
 	},
 	deleteButton: {
 		width: 40,
@@ -1623,7 +1618,7 @@ const styles = StyleSheet.create({
 	},
 	addSetText: {
 		fontSize: 14,
-		color: COLORS.primary,
+		color: C.primary,
 		fontWeight: '600',
 		marginLeft: 8,
 	},
@@ -1631,14 +1626,14 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		padding: 16,
 		marginHorizontal: 8,
 		marginBottom: 12,
 		borderRadius: 16,
 		borderWidth: 1,
 		borderStyle: 'dashed',
-		borderColor: COLORS.primary,
+		borderColor: C.primary,
 	},
 	addExerciseIcon: {
 		width: 32,
@@ -1651,7 +1646,7 @@ const styles = StyleSheet.create({
 	},
 	addExerciseCardText: {
 		fontSize: 16,
-		color: COLORS.primary,
+		color: C.primary,
 		fontWeight: '600',
 	},
 	saveTemplateCard: {
@@ -1669,29 +1664,30 @@ const styles = StyleSheet.create({
 	},
 	saveTemplateText: {
 		fontSize: 15,
-		color: COLORS.primary,
+		color: C.primary,
 		fontWeight: '700',
 	},
 	notesSection: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		margin: 8,
 		marginTop: 8,
 		borderRadius: 16,
 		padding: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	notesInput: {
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		borderRadius: 12,
 		padding: 16,
 		fontSize: 14,
-		color: COLORS.text,
+		color: C.text,
 		minHeight: 100,
-		backgroundColor: COLORS.cardLight,
+		backgroundColor: C.cardLight,
 		marginTop: 8,
 	},
 	spacer: { height: 20 },
 	historyButton: { padding: 8, marginRight: 8 },
-})
+	})
+}

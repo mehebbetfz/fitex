@@ -7,6 +7,7 @@ import DailyLeadersModal, {
 } from '@/components/daily-leaders-modal'
 import { HapticTab } from '@/components/haptic-tab'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { api } from '@/services/api'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -26,6 +27,7 @@ export default function TabsLayout() {
 	const { bottom } = useSafeAreaInsets()
 	const router = useRouter()
 	const { user, isLoading: authLoading } = useAuth()
+	const { colors } = useAppTheme()
 	const [showTemplateModal, setShowTemplateModal] = useState(false)
 	const [dailyModalVisible, setDailyModalVisible] = useState(false)
 	const [dailyRows, setDailyRows] = useState<DailyLeaderRow[]>([])
@@ -121,8 +123,8 @@ export default function TabsLayout() {
 			<Tabs
 				screenOptions={{
 					headerShown: false,
-					tabBarActiveTintColor: '#34C759',
-					tabBarInactiveTintColor: '#8E8E93',
+					tabBarActiveTintColor: colors.primary,
+					tabBarInactiveTintColor: colors.textSecondary,
 
 					tabBarStyle: {
 						borderTopWidth: 0,
@@ -132,18 +134,19 @@ export default function TabsLayout() {
 						paddingBottom: bottom + 8,
 						paddingHorizontal: 15,
 						position: 'relative',
+						backgroundColor: 'transparent',
 					},
 
 					tabBarBackground: () => (
 						<View style={{ flex: 1 }}>
 							<LinearGradient
-								colors={['rgba(0, 0, 0, 0.91)', 'rgba(0, 0, 0, 0.89)']}
+								colors={[colors.tabBarTop, colors.tabBarBottom]}
 								start={{ x: 0, y: 0 }}
 								end={{ x: 0, y: 1 }}
 								style={{
 									flex: 1,
 									borderTopWidth: 1,
-									borderTopColor: 'rgba(255, 255, 255, 0.08)',
+									borderTopColor: colors.tabBarBorder,
 								}}
 							/>
 						</View>
@@ -211,7 +214,7 @@ export default function TabsLayout() {
 										width: 70,
 										height: 70,
 										borderRadius: 55,
-										backgroundColor: '#1b1c1cff',
+										backgroundColor: colors.card,
 										alignItems: 'center',
 										justifyContent: 'center',
 										shadowOffset: { width: 0, height: 4 },
@@ -219,10 +222,10 @@ export default function TabsLayout() {
 										shadowRadius: 8,
 										elevation: 8,
 										borderWidth: 2,
-										borderColor: 'rgba(255,255,255,0.1)',
+										borderColor: colors.tabBarBorder,
 									}}
 								>
-									<Ionicons name='flag' size={30} color='white' />
+									<Ionicons name='flag' size={30} color={colors.text} />
 								</TouchableOpacity>
 							</View>
 						),

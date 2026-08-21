@@ -785,6 +785,10 @@ export interface Translations {
     exportAllSubtitle: string
     exportWorkouts: string
     language: string
+    appearance: string
+    themeDark: string
+    themeLight: string
+    themeSystem: string
     permissionsTitle: string
     notifPermission: string
     notifError: string
@@ -796,6 +800,10 @@ export interface Translations {
 		today: string
 		left: string
 		over: string
+		leftKcal: string
+		overKcal: string
+		leftProtein: string
+		overProtein: string
 		kcal: string
 		g: string
 		protein: string
@@ -821,6 +829,11 @@ export interface Translations {
 		delete: string
 		deleteTitle: string
 		incompleteProfile: string
+		editLimits: string
+		editLimitsCustom: string
+		limitsTitle: string
+		limitsHint: string
+		resetLimits: string
 		updateRequiredTitle: string
 		updateRequiredBody: string
 	}
@@ -1739,6 +1752,10 @@ export const ru: Translations = {
     exportAllSubtitle: 'Тренировки, замеры, рекорды в CSV',
     exportWorkouts: 'Только тренировки',
     language: 'Язык',
+    appearance: 'Оформление',
+    themeDark: 'Тёмная',
+    themeLight: 'Светлая',
+    themeSystem: 'Как в системе',
     permissionsTitle: 'Нужен доступ',
     notifPermission:
       'Разрешите уведомления в настройках устройства, чтобы получать напоминания.',
@@ -1752,6 +1769,10 @@ export const ru: Translations = {
 		today: 'Сегодня',
 		left: 'осталось',
 		over: 'сверх цели',
+		leftKcal: 'осталось ккал',
+		overKcal: 'сверх ккал',
+		leftProtein: 'осталось белков',
+		overProtein: 'сверх белков',
 		kcal: 'ккал',
 		g: 'г',
 		protein: 'Белки',
@@ -1778,6 +1799,12 @@ export const ru: Translations = {
 		deleteTitle: 'Удалить запись?',
 		incompleteProfile:
 			'Заполните рост, вес, возраст и пол в профиле для точных целей',
+		editLimits: 'Задать лимиты',
+		editLimitsCustom: 'Мои лимиты',
+		limitsTitle: 'Дневные лимиты',
+		limitsHint:
+			'Укажите свои цели по калориям и БЖУ. Они заменят автоматический расчёт.',
+		resetLimits: 'Вернуть авторасчёт',
 		updateRequiredTitle: 'Нужно обновить приложение',
 		updateRequiredBody:
 			'Фото еды работает только в новой версии Fitex. Обновите приложение в App Store или Google Play.',
@@ -2699,6 +2726,10 @@ export const en: Translations = {
     exportAllSubtitle: 'Workouts, measurements, records to CSV',
     exportWorkouts: 'Workouts only',
     language: 'Language',
+    appearance: 'Appearance',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    themeSystem: 'System',
     permissionsTitle: 'Permission needed',
     notifPermission:
       'Allow notifications in device settings to receive reminders.',
@@ -2711,6 +2742,10 @@ export const en: Translations = {
 		today: 'Today',
 		left: 'left',
 		over: 'over',
+		leftKcal: 'kcal left',
+		overKcal: 'kcal over',
+		leftProtein: 'protein left',
+		overProtein: 'protein over',
 		kcal: 'kcal',
 		g: 'g',
 		protein: 'Protein',
@@ -2737,6 +2772,12 @@ export const en: Translations = {
 		deleteTitle: 'Delete this meal?',
 		incompleteProfile:
 			'Add height, weight, age and sex in your profile for accurate targets',
+		editLimits: 'Set limits',
+		editLimitsCustom: 'My limits',
+		limitsTitle: 'Daily limits',
+		limitsHint:
+			'Set your own calorie and macro goals. These override the automatic calculation.',
+		resetLimits: 'Use automatic targets',
 		updateRequiredTitle: 'App update required',
 		updateRequiredBody:
 			'Meal photos need the latest Fitex version. Please update the app in the App Store or Google Play.',
@@ -3658,6 +3699,10 @@ export const az: Translations = {
     exportAllSubtitle: 'Məşqlər, ölçülər, rekordlar CSV-yə',
     exportWorkouts: 'Yalnız məşqlər',
     language: 'Dil',
+    appearance: 'Görünüş',
+    themeDark: 'Tünd',
+    themeLight: 'Açıq',
+    themeSystem: 'Sistem kimi',
     permissionsTitle: 'İcazə lazımdır',
     notifPermission:
       'Xatırlatmalar üçün cihaz ayarlarında bildirişlərə icazə verin.',
@@ -3670,6 +3715,10 @@ export const az: Translations = {
 		today: 'Bu gün',
 		left: 'qalıb',
 		over: 'artıq',
+		leftKcal: 'kkal qalıb',
+		overKcal: 'kkal artıq',
+		leftProtein: 'zülal qalıb',
+		overProtein: 'zülal artıq',
 		kcal: 'kkal',
 		g: 'q',
 		protein: 'Zülal',
@@ -3696,6 +3745,12 @@ export const az: Translations = {
 		deleteTitle: 'Yazını silək?',
 		incompleteProfile:
 			'Dəqiq hədəflər üçün profildə boy, çəki, yaş və cinsi doldurun',
+		editLimits: 'Limitləri təyin et',
+		editLimitsCustom: 'Mənim limitlərim',
+		limitsTitle: 'Gündəlik limitlər',
+		limitsHint:
+			'Kalori və BJU hədəflərinizi özünüz yazın. Bu, avtomatik hesabı əvəz edir.',
+		resetLimits: 'Avtomatik hesaba qayıt',
 		updateRequiredTitle: 'Tətbiqi yeniləmək lazımdır',
 		updateRequiredBody:
 			'Yemək fotoları yalnız yeni Fitex versiyasında işləyir. App Store və ya Google Play-də tətbiqi yeniləyin.',

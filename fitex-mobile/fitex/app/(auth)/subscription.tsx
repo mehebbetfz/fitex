@@ -15,6 +15,7 @@ import {
 import type { Purchase, ProductSubscription } from 'react-native-iap'
 
 import { useLanguage } from '@/contexts/language-context'
+import { PlansSkeleton } from '@/components/ui/skeleton'
 import { fetchPremiumSubscriptions } from '@/services/iap-products'
 import { getReactNativeIap } from '@/services/iap-runtime'
 import { getStorefrontPrice } from '@/services/iap-price'
@@ -400,8 +401,7 @@ export default function SubscriptionScreen() {
 		log('Rendering loading state (initializing)')
 		return (
 			<SafeAreaView style={styles.loadingContainer}>
-				<ActivityIndicator size='large' color={COLORS.primary} />
-				<Text style={styles.loadingText}>{t('subscription', 'loading')}</Text>
+				<PlansSkeleton />
 			</SafeAreaView>
 		)
 	}

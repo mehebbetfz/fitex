@@ -1,6 +1,7 @@
 import {
 	BadRequestException,
 	Injectable,
+	Logger,
 	NotFoundException,
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
@@ -14,6 +15,8 @@ import sharp from 'sharp'
 
 @Injectable()
 export class NutritionService {
+	private readonly log = new Logger(NutritionService.name)
+
 	constructor(
 		@InjectModel(FoodEntry.name)
 		private readonly foodModel: Model<FoodEntryDocument>,
@@ -25,7 +28,7 @@ export class NutritionService {
 	async getTargets(userId: string) {
 		const user = await this.userModel.findById(userId).lean()
 		if (!user) throw new NotFoundException('User not found')
-		return computeNutritionTargets({
+		const auto = computeNutritionTargets({
 			heightCm: user.heightCm,
 			weightKg: user.weightKg,
 			age: user.age,
@@ -33,6 +36,94 @@ export class NutritionService {
 			fitnessGoal: user.fitnessGoal,
 			activityLevel: user.activityLevel,
 		})
+
+		const hasCustom =
+			user.nutritionCalories != null ||
+			user.nutritionProteinG != null ||
+			user.nutritionCarbsG != null ||
+			user.nutritionFatG != null
+
+		if (!hasCustom) return auto
+
+		return {
+			...auto,
+			calories:
+				user.nutritionCalories != null
+					? Math.round(Math.max(800, Number(user.nutritionCalories)))
+					: auto.calories,
+			proteinG:
+				user.nutritionProteinG != null
+					? Math.round(Math.max(0, Number(user.nutritionProteinG)))
+					: auto.proteinG,
+			carbsG:
+				user.nutritionCarbsG != null
+					? Math.round(Math.max(0, Number(user.nutritionCarbsG)))
+					: auto.carbsG,
+			fatG:
+				user.nutritionFatG != null
+					? Math.round(Math.max(0, Number(user.nutritionFatG)))
+					: auto.fatG,
+			custom: true,
+			complete: true,
+		}
+	}
+
+	async updateTargets(
+		userId: string,
+		patch: {
+			calories?: number | null
+			proteinG?: number | null
+			carbsG?: number | null
+			fatG?: number | null
+			reset?: boolean
+		},
+	) {
+		const user = await this.userModel.findById(userId)
+		if (!user) throw new NotFoundException('User not found')
+
+		if (patch.reset) {
+			await this.userModel.findByIdAndUpdate(userId, {
+				$unset: {
+					nutritionCalories: 1,
+					nutritionProteinG: 1,
+					nutritionCarbsG: 1,
+					nutritionFatG: 1,
+				},
+			})
+			return this.getTargets(userId)
+		}
+
+		if (patch.calories != null) {
+			const v = Number(patch.calories)
+			if (!Number.isFinite(v) || v < 800 || v > 10000) {
+				throw new BadRequestException('calories must be between 800 and 10000')
+			}
+			user.nutritionCalories = Math.round(v)
+		}
+		if (patch.proteinG != null) {
+			const v = Number(patch.proteinG)
+			if (!Number.isFinite(v) || v < 0 || v > 500) {
+				throw new BadRequestException('proteinG must be between 0 and 500')
+			}
+			user.nutritionProteinG = Math.round(v)
+		}
+		if (patch.carbsG != null) {
+			const v = Number(patch.carbsG)
+			if (!Number.isFinite(v) || v < 0 || v > 1000) {
+				throw new BadRequestException('carbsG must be between 0 and 1000')
+			}
+			user.nutritionCarbsG = Math.round(v)
+		}
+		if (patch.fatG != null) {
+			const v = Number(patch.fatG)
+			if (!Number.isFinite(v) || v < 0 || v > 400) {
+				throw new BadRequestException('fatG must be between 0 and 400')
+			}
+			user.nutritionFatG = Math.round(v)
+		}
+
+		await user.save()
+		return this.getTargets(userId)
 	}
 
 	async getDay(userId: string, date: string) {
@@ -77,22 +168,33 @@ export class NutritionService {
 		this.assertDate(date)
 		if (!file?.buffer?.length) throw new BadRequestException('Image required')
 
-		const jpeg = await sharp(file.buffer)
-			.rotate()
-			.resize(1280, 1280, { fit: 'inside', withoutEnlargement: true })
-			.jpeg({ quality: 80 })
-			.toBuffer()
+		let jpeg: Buffer
+		try {
+			jpeg = await sharp(file.buffer)
+				.rotate()
+				.resize(1280, 1280, { fit: 'inside', withoutEnlargement: true })
+				.jpeg({ quality: 80 })
+				.toBuffer()
+		} catch {
+			throw new BadRequestException('Could not process image')
+		}
 
-		const [analysis, photoUrl] = await Promise.all([
-			this.vision.analyzeImage(jpeg, note),
-			this.meals.saveMealPhoto(userId, jpeg, 'image/jpeg'),
-		])
+		// Vision first — storage must not block AI analysis if S3/PUBLIC_BASE_URL missing
+		const analysis = await this.vision.analyzeImage(jpeg, note)
+
+		let photoUrl: string | null = null
+		try {
+			photoUrl = await this.meals.saveMealPhoto(userId, jpeg, 'image/jpeg')
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e)
+			this.log.warn(`Meal photo save skipped: ${msg}`)
+		}
 
 		const doc = await this.foodModel.create({
 			userId: new Types.ObjectId(userId),
 			date,
 			name: analysis.name,
-			photoUrl,
+			photoUrl: photoUrl ?? undefined,
 			calories: analysis.calories,
 			proteinG: analysis.proteinG,
 			carbsG: analysis.carbsG,

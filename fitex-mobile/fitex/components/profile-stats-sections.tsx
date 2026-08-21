@@ -1,4 +1,6 @@
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
+import type { AppColors } from '@/constants/app-theme'
 import {
 	translateExerciseName,
 	translateUnit,
@@ -7,7 +9,7 @@ import * as db from '@/scripts/database'
 import type { BodyMeasurement, PersonalRecord } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
 	StyleSheet,
@@ -16,16 +18,8 @@ import {
 	View,
 } from 'react-native'
 
-const COLORS = {
-	primary: '#34C759',
-	card: '#1C1C1E',
-	border: '#2C2C2E',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	up: '#34C759',
-	down: '#FF3B30',
-	stable: '#8E8E93',
-} as const
+const TREND_UP = '#34C759'
+const TREND_DOWN = '#FF3B30'
 
 const MEASUREMENT_LABEL_KEY: Record<string, string> = {
 	Вес: 'weightLabel',
@@ -49,10 +43,10 @@ type MeasurementRow = {
 	id?: number
 }
 
-function trendColor(trend: string) {
-	if (trend === 'up') return COLORS.up
-	if (trend === 'down') return COLORS.down
-	return COLORS.stable
+function trendColor(trend: string, colors: AppColors) {
+	if (trend === 'up') return TREND_UP
+	if (trend === 'down') return TREND_DOWN
+	return colors.textSecondary
 }
 
 function trendIcon(trend: string): keyof typeof Ionicons.glyphMap {
@@ -93,7 +87,87 @@ function buildMeasurementRows(all: BodyMeasurement[]): MeasurementRow[] {
 	return rows.sort((a, b) => a.name.localeCompare(b.name, 'ru'))
 }
 
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		section: {
+			marginHorizontal: 10,
+			marginBottom: 16,
+		},
+		sectionHead: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			marginBottom: 10,
+			paddingHorizontal: 4,
+		},
+		sectionTitle: {
+			fontSize: 18,
+			fontWeight: '600',
+			color: C.text,
+		},
+		headActions: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 14,
+		},
+		link: {
+			fontSize: 13,
+			fontWeight: '600',
+			color: C.primary,
+		},
+		card: {
+			backgroundColor: C.card,
+			borderRadius: 20,
+			borderWidth: 1,
+			borderColor: C.border,
+			paddingVertical: 4,
+			overflow: 'hidden',
+		},
+		row: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingHorizontal: 14,
+			paddingVertical: 12,
+			borderBottomWidth: StyleSheet.hairlineWidth,
+			borderBottomColor: C.border,
+		},
+		rowIcon: {
+			width: 34,
+			height: 34,
+			borderRadius: 10,
+			backgroundColor: 'rgba(52,199,89,0.12)',
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginRight: 12,
+		},
+		rowMeta: { flex: 1, marginRight: 8 },
+		rowTitle: { fontSize: 15, fontWeight: '600', color: C.text },
+		rowSub: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
+		rowValue: { fontSize: 15, fontWeight: '700', color: C.text },
+		empty: {
+			alignItems: 'center',
+			paddingVertical: 28,
+			paddingHorizontal: 20,
+			gap: 6,
+		},
+		emptyTitle: {
+			fontSize: 15,
+			fontWeight: '600',
+			color: C.text,
+			marginTop: 6,
+		},
+		emptyHint: {
+			fontSize: 13,
+			color: C.textSecondary,
+			textAlign: 'center',
+			lineHeight: 18,
+		},
+	})
+}
+
 export default function ProfileStatsSections() {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
 	const { t, language } = useLanguage()
 	const router = useRouter()
 	const [loading, setLoading] = useState(true)
@@ -162,7 +236,7 @@ export default function ProfileStatsSections() {
 							}
 							hitSlop={8}
 						>
-							<Ionicons name='add-circle-outline' size={22} color={COLORS.primary} />
+							<Ionicons name='add-circle-outline' size={22} color={colors.primary} />
 						</TouchableOpacity>
 						<TouchableOpacity
 							onPress={() =>
@@ -177,7 +251,7 @@ export default function ProfileStatsSections() {
 
 				<View style={styles.card}>
 					{loading ? (
-						<ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
+						<ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
 					) : measurements.length === 0 ? (
 						<TouchableOpacity
 							style={styles.empty}
@@ -185,7 +259,7 @@ export default function ProfileStatsSections() {
 								router.push('/(auth)/(routes)/quick-measurements')
 							}
 						>
-							<Ionicons name='body-outline' size={28} color={COLORS.textSecondary} />
+							<Ionicons name='body-outline' size={28} color={colors.textSecondary} />
 							<Text style={styles.emptyTitle}>
 								{t('progress', 'noMeasurements')}
 							</Text>
@@ -214,12 +288,12 @@ export default function ProfileStatsSections() {
 									}}
 								>
 									<View style={styles.rowIcon}>
-										<Ionicons name='body-outline' size={18} color={COLORS.primary} />
+										<Ionicons name='body-outline' size={18} color={colors.primary} />
 									</View>
 									<View style={styles.rowMeta}>
 										<Text style={styles.rowTitle}>{displayName(row.name)}</Text>
 										{delta != null ? (
-											<Text style={[styles.rowSub, { color: trendColor(row.trend) }]}>
+											<Text style={[styles.rowSub, { color: trendColor(row.trend, colors) }]}>
 												{delta > 0 ? '+' : ''}
 												{delta} {unit}
 											</Text>
@@ -233,7 +307,7 @@ export default function ProfileStatsSections() {
 									<Ionicons
 										name={trendIcon(row.trend)}
 										size={18}
-										color={trendColor(row.trend)}
+										color={trendColor(row.trend, colors)}
 										style={{ marginLeft: 8 }}
 									/>
 								</TouchableOpacity>
@@ -254,7 +328,7 @@ export default function ProfileStatsSections() {
 							onPress={() => router.push('/(auth)/(routes)/add-record')}
 							hitSlop={8}
 						>
-							<Ionicons name='add-circle-outline' size={22} color={COLORS.primary} />
+							<Ionicons name='add-circle-outline' size={22} color={colors.primary} />
 						</TouchableOpacity>
 						<TouchableOpacity
 							onPress={() => router.push('/(auth)/(routes)/records-history')}
@@ -267,13 +341,13 @@ export default function ProfileStatsSections() {
 
 				<View style={styles.card}>
 					{loading ? (
-						<ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
+						<ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
 					) : shownRecords.length === 0 ? (
 						<TouchableOpacity
 							style={styles.empty}
 							onPress={() => router.push('/(auth)/(routes)/add-record')}
 						>
-							<Ionicons name='trophy-outline' size={28} color={COLORS.textSecondary} />
+							<Ionicons name='trophy-outline' size={28} color={colors.textSecondary} />
 							<Text style={styles.emptyTitle}>{t('progress', 'noRecords')}</Text>
 							<Text style={styles.emptyHint}>{t('records', 'autoUpdate')}</Text>
 						</TouchableOpacity>
@@ -304,7 +378,7 @@ export default function ProfileStatsSections() {
 								<Ionicons
 									name={trendIcon(rec.trend)}
 									size={18}
-									color={trendColor(rec.trend)}
+									color={trendColor(rec.trend, colors)}
 									style={{ marginLeft: 8 }}
 								/>
 							</TouchableOpacity>
@@ -315,79 +389,3 @@ export default function ProfileStatsSections() {
 		</>
 	)
 }
-
-const styles = StyleSheet.create({
-	section: {
-		marginHorizontal: 10,
-		marginBottom: 16,
-	},
-	sectionHead: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		marginBottom: 10,
-		paddingHorizontal: 4,
-	},
-	sectionTitle: {
-		fontSize: 18,
-		fontWeight: '600',
-		color: COLORS.text,
-	},
-	headActions: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 14,
-	},
-	link: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: COLORS.primary,
-	},
-	card: {
-		backgroundColor: COLORS.card,
-		borderRadius: 20,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		paddingVertical: 4,
-		overflow: 'hidden',
-	},
-	row: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: COLORS.border,
-	},
-	rowIcon: {
-		width: 34,
-		height: 34,
-		borderRadius: 10,
-		backgroundColor: 'rgba(52,199,89,0.12)',
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: 12,
-	},
-	rowMeta: { flex: 1, marginRight: 8 },
-	rowTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text },
-	rowSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-	rowValue: { fontSize: 15, fontWeight: '700', color: COLORS.text },
-	empty: {
-		alignItems: 'center',
-		paddingVertical: 28,
-		paddingHorizontal: 20,
-		gap: 6,
-	},
-	emptyTitle: {
-		fontSize: 15,
-		fontWeight: '600',
-		color: COLORS.text,
-		marginTop: 6,
-	},
-	emptyHint: {
-		fontSize: 13,
-		color: COLORS.textSecondary,
-		textAlign: 'center',
-		lineHeight: 18,
-	},
-})

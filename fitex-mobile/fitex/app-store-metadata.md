@@ -25,9 +25,9 @@
 
 ### App Name
 ```
-Fitex — Workout & Fitness Tracker
+Fitex - AI Progress Tracker
 ```
-*(максимум 30 символов — если не влезает, сократи до `Fitex — Fitness Tracker`)*
+*(максимум 30 символов — текущее имя: 28)*
 
 ### Subtitle
 ```
@@ -133,7 +133,7 @@ Available in English, Russian, and Azerbaijani.
 
 ### App Name
 ```
-Fitex — Трекер тренировок
+Fitex - AI трекер прогресса
 ```
 
 ### Subtitle
@@ -235,7 +235,7 @@ Fitex Premium доступен по ежемесячной или годовой
 
 ### App Name
 ```
-Fitex — Məşq İzləyicisi
+Fitex - AI Progress Tracker
 ```
 
 ### Subtitle

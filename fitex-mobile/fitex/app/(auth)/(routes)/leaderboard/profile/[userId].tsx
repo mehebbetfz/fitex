@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { DetailPageSkeleton } from '@/components/ui/skeleton'
 import { api } from '@/services/api'
 import {
 	Achievement,
@@ -13,7 +14,6 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-	ActivityIndicator,
 	Alert,
 	Animated,
 	Dimensions,
@@ -328,9 +328,7 @@ export default function AthleteProfileScreen() {
 			</View>
 
 			{loading ? (
-				<View style={s.centered}>
-					<ActivityIndicator size='large' color={C.primary} />
-				</View>
+				<DetailPageSkeleton />
 			) : error || !data || !rating ? (
 				<View style={s.centered}>
 					<Ionicons name='alert-circle-outline' size={40} color={C.sub} />

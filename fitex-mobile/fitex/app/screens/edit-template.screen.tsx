@@ -1,11 +1,13 @@
 import { ExerciseSelectionModal } from '@/app/modals/exercise-selection.modal'
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
+import { DetailPageSkeleton } from '@/components/ui/skeleton'
 import { translateExerciseName, translateGroupName } from '@/constants/exercise-i18n'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
-	ActivityIndicator,
 	Alert,
 	ScrollView,
 	StyleSheet,
@@ -16,18 +18,6 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDatabase } from '../contexts/database-context'
-
-const COLORS = {
-	primary: '#34C759',
-	background: '#121212',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#3A3A3C',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	error: '#FF3B30',
-	blue: '#0A84FF',
-}
 
 interface ExerciseItem {
 	id: string
@@ -45,6 +35,8 @@ export default function EditTemplateScreen() {
 	const { getWorkoutTemplate, editWorkoutTemplate, removeTemplate } =
 		useDatabase()
 	const { t, language } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const s = useMemo(() => makeStyles(C), [C])
 
 	const [name, setName] = useState('')
 	const [description, setDescription] = useState('')
@@ -196,10 +188,7 @@ export default function EditTemplateScreen() {
 	if (loading) {
 		return (
 			<SafeAreaView style={s.container}>
-				<View style={s.loadingContainer}>
-					<ActivityIndicator size='large' color={COLORS.primary} />
-					<Text style={s.loadingText}>{t('common', 'loading')}</Text>
-				</View>
+				<DetailPageSkeleton />
 			</SafeAreaView>
 		)
 	}
@@ -209,7 +198,7 @@ export default function EditTemplateScreen() {
 			{/* Заголовок */}
 			<View style={s.header}>
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-					<Ionicons name='arrow-back' size={22} color='#FFF' />
+					<Ionicons name='arrow-back' size={22} color={C.text} />
 				</TouchableOpacity>
 				<Text style={s.headerTitle}>{t('templates', 'editBtn')}</Text>
 				<View style={{ width: 30 }} />
@@ -226,7 +215,7 @@ export default function EditTemplateScreen() {
 				value={name}
 				onChangeText={setName}
 				placeholder={t('templates', 'durationPlaceholder')}
-				placeholderTextColor='#8E8E93'
+				placeholderTextColor={C.textSecondary}
 			/>
 
 				{/* Описание */}
@@ -238,7 +227,7 @@ export default function EditTemplateScreen() {
 				value={description}
 				onChangeText={setDescription}
 				placeholder={t('templates', 'descPlaceholder')}
-				placeholderTextColor='#8E8E93'
+				placeholderTextColor={C.textSecondary}
 				multiline
 				numberOfLines={3}
 				textAlignVertical='top'
@@ -253,7 +242,7 @@ export default function EditTemplateScreen() {
 					value={duration}
 					onChangeText={v => setDuration(v.replace(/[^0-9]/g, ''))}
 					placeholder='60'
-					placeholderTextColor='#8E8E93'
+					placeholderTextColor={C.textSecondary}
 					keyboardType='number-pad'
 					maxLength={3}
 				/>
@@ -267,14 +256,14 @@ export default function EditTemplateScreen() {
 					style={s.addExerciseBtn}
 					onPress={() => setShowExercisePicker(true)}
 				>
-					<Ionicons name='add-circle' size={22} color={COLORS.primary} />
+					<Ionicons name='add-circle' size={22} color={C.primary} />
 					<Text style={s.addExerciseBtnText}>{t('common', 'add')}</Text>
 				</TouchableOpacity>
 				</View>
 
 				{exercises.length === 0 ? (
 					<View style={s.emptyExercises}>
-						<Ionicons name='barbell-outline' size={40} color='#3A3A3C' />
+						<Ionicons name='barbell-outline' size={40} color={C.border} />
 					<Text style={s.emptyExercisesText}>
 						{t('templates', 'addExerciseHint' as any)}
 					</Text>
@@ -297,7 +286,7 @@ export default function EditTemplateScreen() {
 									<Ionicons
 										name='close-circle'
 										size={20}
-										color={COLORS.error}
+										color={C.error}
 									/>
 								</TouchableOpacity>
 							</View>
@@ -316,7 +305,7 @@ export default function EditTemplateScreen() {
 												)
 											}
 										>
-											<Ionicons name='remove' size={16} color='#FFF' />
+											<Ionicons name='remove' size={16} color={C.text} />
 										</TouchableOpacity>
 										<Text style={s.stepperValue}>{ex.sets}</Text>
 										<TouchableOpacity
@@ -329,7 +318,7 @@ export default function EditTemplateScreen() {
 												)
 											}
 										>
-											<Ionicons name='add' size={16} color='#FFF' />
+											<Ionicons name='add' size={16} color={C.text} />
 										</TouchableOpacity>
 									</View>
 								</View>
@@ -347,7 +336,7 @@ export default function EditTemplateScreen() {
 												)
 											}
 										>
-											<Ionicons name='remove' size={16} color='#FFF' />
+											<Ionicons name='remove' size={16} color={C.text} />
 										</TouchableOpacity>
 										<Text style={s.stepperValue}>{ex.reps}</Text>
 										<TouchableOpacity
@@ -360,7 +349,7 @@ export default function EditTemplateScreen() {
 												)
 											}
 										>
-											<Ionicons name='add' size={16} color='#FFF' />
+											<Ionicons name='add' size={16} color={C.text} />
 										</TouchableOpacity>
 									</View>
 								</View>
@@ -396,7 +385,7 @@ export default function EditTemplateScreen() {
 					</TouchableOpacity>
 
 					<TouchableOpacity style={s.deleteButton} onPress={handleDelete}>
-						<Ionicons name='trash' size={20} color={COLORS.error} />
+						<Ionicons name='trash' size={20} color={C.error} />
 						<Text style={s.deleteButtonText}>{t('templates', 'deleteTemplate')}</Text>
 					</TouchableOpacity>
 				</View>
@@ -414,244 +403,246 @@ export default function EditTemplateScreen() {
 	)
 }
 
-const s = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212' },
-	loadingContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	loadingText: {
-		marginTop: 12,
-		color: '#FFFFFF',
-		fontSize: 16,
-	},
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 12,
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	backBtn: { padding: 4 },
-	headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
-	content: { padding: 16, paddingBottom: 48 },
-	label: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: '#8E8E93',
-		marginBottom: 8,
-		marginTop: 20,
-		textTransform: 'uppercase',
-		letterSpacing: 0.6,
-	},
-	optional: { fontWeight: '400', textTransform: 'none', letterSpacing: 0 },
-	input: {
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		padding: 14,
-		fontSize: 15,
-		color: '#FFF',
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-	},
-	notesInput: { minHeight: 80 },
-	durationInput: { width: 100 },
-	exercisesHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		marginBottom: 12,
-	},
-	addExerciseBtn: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4,
-	},
-	addExerciseBtnText: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: COLORS.primary,
-	},
-	emptyExercises: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		padding: 24,
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-		borderStyle: 'dashed',
-		gap: 8,
-	},
-	emptyExercisesText: {
-		fontSize: 13,
-		color: '#8E8E93',
-		textAlign: 'center',
-	},
-	exerciseCard: {
-		backgroundColor: '#1C1C1E',
-		borderRadius: 12,
-		padding: 12,
-		marginBottom: 8,
-		borderWidth: 1,
-		borderColor: '#2C2C2E',
-	},
-	exerciseHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 12,
-	},
-	exerciseNumber: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		backgroundColor: '#2C2C2E',
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: 10,
-	},
-	exerciseNumberText: {
-		fontSize: 12,
-		fontWeight: '600',
-		color: '#FFF',
-	},
-	exerciseInfo: { flex: 1 },
-	exerciseName: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: '#FFF',
-		marginBottom: 2,
-	},
-	exerciseMuscle: {
-		fontSize: 11,
-		color: '#8E8E93',
-	},
-	removeBtn: { padding: 4 },
-	exerciseParams: {
-		flexDirection: 'row',
-		gap: 12,
-	},
-	paramItem: { alignItems: 'center', flex: 1 },
-	paramLabel: {
-		fontSize: 10,
-		color: '#8E8E93',
-		marginBottom: 4,
-	},
-	stepper: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#2C2C2E',
-		borderRadius: 8,
-		overflow: 'hidden',
-	},
-	stepperBtn: {
-		width: 28,
-		height: 28,
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	stepperValue: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: '#FFF',
-		minWidth: 30,
-		textAlign: 'center',
-	},
-	weightInput: {
-		backgroundColor: '#2C2C2E',
-		borderRadius: 8,
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		fontSize: 13,
-		fontWeight: '600',
-		color: '#FFF',
-		width: 60,
-		textAlign: 'center',
-		height: 28,
-	},
-	buttonsContainer: {
-		marginTop: 32,
-		gap: 12,
-	},
-	updateButton: {
-		backgroundColor: COLORS.primary,
-		borderRadius: 12,
-		paddingVertical: 16,
-		alignItems: 'center',
-	},
-	updateButtonText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-	buttonDisabled: { opacity: 0.5 },
-	deleteButton: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: 'transparent',
-		borderWidth: 1,
-		borderColor: COLORS.error,
-		borderRadius: 12,
-		paddingVertical: 16,
-		gap: 8,
-	},
-	deleteButtonText: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: COLORS.error,
-	},
-	// Picker styles
-	pickerOverlay: {
-		position: 'absolute',
-		top: 0,
-		left: 0,
-		right: 0,
-		bottom: 0,
-		backgroundColor: 'rgba(0,0,0,0.6)',
-		justifyContent: 'flex-end',
-	},
-	pickerContent: {
-		backgroundColor: '#1C1C1E',
-		borderTopLeftRadius: 20,
-		borderTopRightRadius: 20,
-		maxHeight: '80%',
-	},
-	pickerHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingHorizontal: 16,
-		paddingVertical: 14,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	pickerTitle: { fontSize: 16, fontWeight: '600', color: '#FFF' },
-	searchContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#2C2C2E',
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		margin: 16,
-		gap: 8,
-	},
-	searchInput: { flex: 1, fontSize: 14, color: '#FFF' },
-	exercisesList: { paddingHorizontal: 16, maxHeight: 400 },
-	exercisePickerItem: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	exercisePickerDot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4,
-		backgroundColor: COLORS.primary,
-	},
-	exercisePickerName: { fontSize: 14, fontWeight: '500', color: '#FFF' },
-	exercisePickerGroup: { fontSize: 11, color: '#8E8E93', marginTop: 2 },
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: { flex: 1, backgroundColor: C.background },
+		loadingContainer: {
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+		},
+		loadingText: {
+			marginTop: 12,
+			color: C.text,
+			fontSize: 16,
+		},
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 12,
+			paddingVertical: 12,
+			borderBottomWidth: 1,
+			borderBottomColor: C.cardLight,
+		},
+		backBtn: { padding: 4 },
+		headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
+		content: { padding: 16, paddingBottom: 48 },
+		label: {
+			fontSize: 13,
+			fontWeight: '600',
+			color: C.textSecondary,
+			marginBottom: 8,
+			marginTop: 20,
+			textTransform: 'uppercase',
+			letterSpacing: 0.6,
+		},
+		optional: { fontWeight: '400', textTransform: 'none', letterSpacing: 0 },
+		input: {
+			backgroundColor: C.card,
+			borderRadius: 12,
+			padding: 14,
+			fontSize: 15,
+			color: C.text,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+		},
+		notesInput: { minHeight: 80 },
+		durationInput: { width: 100 },
+		exercisesHeader: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			marginBottom: 12,
+		},
+		addExerciseBtn: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+		},
+		addExerciseBtnText: {
+			fontSize: 14,
+			fontWeight: '600',
+			color: C.primary,
+		},
+		emptyExercises: {
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: C.card,
+			borderRadius: 12,
+			padding: 24,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+			borderStyle: 'dashed',
+			gap: 8,
+		},
+		emptyExercisesText: {
+			fontSize: 13,
+			color: C.textSecondary,
+			textAlign: 'center',
+		},
+		exerciseCard: {
+			backgroundColor: C.card,
+			borderRadius: 12,
+			padding: 12,
+			marginBottom: 8,
+			borderWidth: 1,
+			borderColor: C.cardLight,
+		},
+		exerciseHeader: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			marginBottom: 12,
+		},
+		exerciseNumber: {
+			width: 24,
+			height: 24,
+			borderRadius: 12,
+			backgroundColor: C.cardLight,
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginRight: 10,
+		},
+		exerciseNumberText: {
+			fontSize: 12,
+			fontWeight: '600',
+			color: C.text,
+		},
+		exerciseInfo: { flex: 1 },
+		exerciseName: {
+			fontSize: 14,
+			fontWeight: '600',
+			color: C.text,
+			marginBottom: 2,
+		},
+		exerciseMuscle: {
+			fontSize: 11,
+			color: C.textSecondary,
+		},
+		removeBtn: { padding: 4 },
+		exerciseParams: {
+			flexDirection: 'row',
+			gap: 12,
+		},
+		paramItem: { alignItems: 'center', flex: 1 },
+		paramLabel: {
+			fontSize: 10,
+			color: C.textSecondary,
+			marginBottom: 4,
+		},
+		stepper: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: C.cardLight,
+			borderRadius: 8,
+			overflow: 'hidden',
+		},
+		stepperBtn: {
+			width: 28,
+			height: 28,
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		stepperValue: {
+			fontSize: 13,
+			fontWeight: '600',
+			color: C.text,
+			minWidth: 30,
+			textAlign: 'center',
+		},
+		weightInput: {
+			backgroundColor: C.cardLight,
+			borderRadius: 8,
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+			fontSize: 13,
+			fontWeight: '600',
+			color: C.text,
+			width: 60,
+			textAlign: 'center',
+			height: 28,
+		},
+		buttonsContainer: {
+			marginTop: 32,
+			gap: 12,
+		},
+		updateButton: {
+			backgroundColor: C.primary,
+			borderRadius: 12,
+			paddingVertical: 16,
+			alignItems: 'center',
+		},
+		updateButtonText: { fontSize: 16, fontWeight: '700', color: C.text },
+		buttonDisabled: { opacity: 0.5 },
+		deleteButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: 'transparent',
+			borderWidth: 1,
+			borderColor: C.error,
+			borderRadius: 12,
+			paddingVertical: 16,
+			gap: 8,
+		},
+		deleteButtonText: {
+			fontSize: 16,
+			fontWeight: '600',
+			color: C.error,
+		},
+		// Picker styles
+		pickerOverlay: {
+			position: 'absolute',
+			top: 0,
+			left: 0,
+			right: 0,
+			bottom: 0,
+			backgroundColor: C.overlay,
+			justifyContent: 'flex-end',
+		},
+		pickerContent: {
+			backgroundColor: C.card,
+			borderTopLeftRadius: 20,
+			borderTopRightRadius: 20,
+			maxHeight: '80%',
+		},
+		pickerHeader: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			paddingHorizontal: 16,
+			paddingVertical: 14,
+			borderBottomWidth: 1,
+			borderBottomColor: C.cardLight,
+		},
+		pickerTitle: { fontSize: 16, fontWeight: '600', color: C.text },
+		searchContainer: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: C.cardLight,
+			borderRadius: 10,
+			paddingHorizontal: 12,
+			paddingVertical: 8,
+			margin: 16,
+			gap: 8,
+		},
+		searchInput: { flex: 1, fontSize: 14, color: C.text },
+		exercisesList: { paddingHorizontal: 16, maxHeight: 400 },
+		exercisePickerItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 12,
+			paddingVertical: 12,
+			borderBottomWidth: 1,
+			borderBottomColor: C.cardLight,
+		},
+		exercisePickerDot: {
+			width: 8,
+			height: 8,
+			borderRadius: 4,
+			backgroundColor: C.primary,
+		},
+		exercisePickerName: { fontSize: 14, fontWeight: '500', color: C.text },
+		exercisePickerGroup: { fontSize: 11, color: C.textSecondary, marginTop: 2 },
+	})
+}

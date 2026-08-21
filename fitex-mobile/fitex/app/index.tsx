@@ -30,5 +30,5 @@ export default function Index() {
 		return <Redirect href='/(auth)/trial-paywall' />
 	}
 
-	return <Redirect href='/(tabs)/profile' />
+	return <Redirect href='/(tabs)/nutrition' />
 }

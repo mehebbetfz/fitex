@@ -1,11 +1,13 @@
 import {
 	HEATMAP_LEVEL_COLORS,
+	HEATMAP_LEVEL_COLORS_LIGHT,
 	type HeatmapCell,
 	type HeatmapLevel,
 	type HeatmapWeek,
 	buildMonthLabels,
 } from '@/scripts/activity-heatmap'
-import { STATS_HISTORY_COLORS as COLORS, STATS_HISTORY_THEME as T } from '@/constants/stats-history-theme'
+import { useAppTheme } from '@/contexts/theme-context'
+import type { AppColors } from '@/constants/app-theme'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
 	Alert,
@@ -40,6 +42,9 @@ export default function ActivityHeatmap({
 	daySetsTemplate,
 	formatDate,
 }: Props) {
+	const { colors, isDark } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	const levelColors = isDark ? HEATMAP_LEVEL_COLORS : HEATMAP_LEVEL_COLORS_LIGHT
 	const scrollRef = useRef<ScrollView>(null)
 	const monthLabels = useMemo(
 		() => buildMonthLabels(weeks, locale),
@@ -99,7 +104,7 @@ export default function ActivityHeatmap({
 											{
 												backgroundColor: cell.empty
 													? 'transparent'
-													: HEATMAP_LEVEL_COLORS[cell.level],
+													: levelColors[cell.level],
 												opacity: cell.empty ? 0 : 1,
 											},
 										]}
@@ -117,7 +122,7 @@ export default function ActivityHeatmap({
 						key={level}
 						style={[
 							styles.legendCell,
-							{ backgroundColor: HEATMAP_LEVEL_COLORS[level] },
+							{ backgroundColor: levelColors[level] },
 						]}
 					/>
 				))}
@@ -127,68 +132,66 @@ export default function ActivityHeatmap({
 	)
 }
 
-const styles = StyleSheet.create({
-	wrap: {
-		marginHorizontal: 10,
-		marginTop: 8,
-		marginBottom: 4,
-		backgroundColor: COLORS.card,
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		paddingHorizontal: 12,
-		paddingTop: 12,
-		paddingBottom: 10,
-	},
-	title: {
-		fontSize: 14,
-		fontWeight: '700',
-		color: COLORS.text,
-		marginBottom: 10,
-	},
-	scrollContent: {
-		paddingBottom: 4,
-	},
-	monthsRow: {
-		height: 16,
-		marginBottom: 4,
-		position: 'relative',
-	},
-	monthLabel: {
-		position: 'absolute',
-		top: 0,
-		fontSize: 10,
-		color: T.textSecondary,
-		fontWeight: '600',
-	},
-	gridRow: {
-		flexDirection: 'row',
-		gap: GAP,
-	},
-	weekCol: {
-		width: CELL,
-		gap: GAP,
-	},
-	cell: {
-		width: CELL,
-		height: CELL,
-		borderRadius: 2,
-	},
-	legend: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'flex-end',
-		gap: 4,
-		marginTop: 10,
-	},
-	legendText: {
-		fontSize: 10,
-		color: T.textSecondary,
-		marginHorizontal: 2,
-	},
-	legendCell: {
-		width: 10,
-		height: 10,
-		borderRadius: 2,
-	},
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		wrap: {
+			marginHorizontal: 10,
+			marginTop: 8,
+			marginBottom: 4,
+			paddingHorizontal: 12,
+			paddingTop: 12,
+			paddingBottom: 10,
+		},
+		title: {
+			fontSize: 14,
+			fontWeight: '700',
+			color: C.text,
+			marginBottom: 10,
+		},
+		scrollContent: {
+			paddingBottom: 4,
+		},
+		monthsRow: {
+			height: 16,
+			marginBottom: 4,
+			position: 'relative',
+		},
+		monthLabel: {
+			position: 'absolute',
+			top: 0,
+			fontSize: 10,
+			color: C.textSecondary,
+			fontWeight: '600',
+		},
+		gridRow: {
+			flexDirection: 'row',
+			gap: GAP,
+		},
+		weekCol: {
+			width: CELL,
+			gap: GAP,
+		},
+		cell: {
+			width: CELL,
+			height: CELL,
+			borderRadius: 2,
+		},
+		legend: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'flex-end',
+			gap: 4,
+			marginTop: 10,
+		},
+		legendText: {
+			fontSize: 10,
+			color: C.textSecondary,
+			marginHorizontal: 2,
+		},
+		legendCell: {
+			width: 10,
+			height: 10,
+			borderRadius: 2,
+		},
+	})
+}

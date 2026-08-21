@@ -1,6 +1,8 @@
 import ManBackSvg from '@/components/man-back-svg'
 import ManFrontSvg from '@/components/man-front-svg'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
+import type { AppColors } from '@/constants/app-theme'
 import { translateGroupName } from '@/constants/exercise-i18n'
 import {
 	manBackMuscleGroupParts,
@@ -24,33 +26,31 @@ import { useDatabase } from '../contexts/database-context'
 
 const { width } = Dimensions.get('window')
 
-const COLORS = {
-	primary: '#34C759',
-	primaryDark: '#2CAE4E',
-	background: '#000',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#3A3A3C',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	error: '#FF3B30',
-	warning: '#FF9500',
-	success: '#34C759',
-} as const
-
-const STATUS_COLORS = {
+const STATUS_COLORS_FIXED = {
 	recovered: '#34C759',
 	recovering: '#FF9500',
 	needs_rest: '#FF3B30',
-	not_trained: '#3A3A3C',
 } as const
 
-const STATUS_BG = {
+const STATUS_BG_FIXED = {
 	recovered: 'rgba(52, 199, 89, 0.1)',
 	recovering: 'rgba(255, 149, 0, 0.1)',
 	needs_rest: 'rgba(255, 59, 48, 0.1)',
-	not_trained: 'rgba(58, 58, 60, 0.3)',
 } as const
+
+function statusColors(colors: AppColors) {
+	return {
+		...STATUS_COLORS_FIXED,
+		not_trained: colors.border,
+	}
+}
+
+function statusBg(colors: AppColors) {
+	return {
+		...STATUS_BG_FIXED,
+		not_trained: colors.track,
+	}
+}
 
 const DATE_LOCALES: Record<Language, string> = {
 	ru: 'ru-RU',
@@ -420,141 +420,166 @@ const FadeIn = ({
 // ─────────────────────────────────────────────
 // Скелетоны
 // ─────────────────────────────────────────────
-const StatCardSkeleton = () => (
-	<View
-		style={[
-			styles.statCard,
-			{
-				flex: 1,
-				backgroundColor: COLORS.cardLight + '44',
-				borderColor: COLORS.border,
-			},
-		]}
-	>
-		<ShimmerBlock
-			style={{
-				height: 28,
-				width: 36,
-				borderRadius: 6,
-				backgroundColor: COLORS.cardLight,
-				marginBottom: 6,
-			}}
-		/>
-		<ShimmerBlock
-			style={{
-				height: 12,
-				width: 44,
-				borderRadius: 4,
-				backgroundColor: COLORS.cardLight,
-			}}
-		/>
-	</View>
-)
-
-const DiagramSkeleton = () => (
-	<View style={[styles.diagramCard, { gap: 16 }]}>
-		<ShimmerBlock
-			style={{
-				height: 20,
-				width: 120,
-				borderRadius: 6,
-				backgroundColor: COLORS.cardLight,
-				alignSelf: 'flex-start',
-			}}
-		/>
-		<View style={styles.svgRow}>
-			<View style={styles.svgHalf}>
-				<ShimmerBlock
-					style={{
-						width: '75%',
-						height: 380,
-						borderRadius: 16,
-						backgroundColor: COLORS.cardLight,
-					}}
-				/>
-			</View>
-			<View style={styles.svgDivider} />
-			<View style={styles.svgHalf}>
-				<ShimmerBlock
-					style={{
-						width: '75%',
-						height: 380,
-						borderRadius: 16,
-						backgroundColor: COLORS.cardLight,
-					}}
-				/>
-			</View>
-		</View>
-		<View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
-			{[100, 130, 80].map((w, i) => (
-				<ShimmerBlock
-					key={i}
-					style={{
-						height: 28,
-						width: w,
-						borderRadius: 20,
-						backgroundColor: COLORS.cardLight,
-					}}
-				/>
-			))}
-		</View>
-	</View>
-)
-
-const MuscleCardSkeleton = () => (
-	<View style={[styles.muscleCard, { marginBottom: 6 }]}>
+const StatCardSkeleton = () => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
 		<View
-			style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 12 }}
+			style={[
+				styles.statCard,
+				{
+					flex: 1,
+					backgroundColor: colors.cardLight + '44',
+					borderColor: colors.border,
+				},
+			]}
 		>
 			<ShimmerBlock
-				style={[styles.cardIconWrap, { backgroundColor: COLORS.cardLight }]}
-			/>
-		</View>
-		<View style={styles.cardBody}>
-			<ShimmerBlock
 				style={{
-					height: 15,
-					width: 80,
-					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
+					height: 28,
+					width: 36,
+					borderRadius: 6,
+					backgroundColor: colors.cardLight,
 					marginBottom: 6,
 				}}
 			/>
 			<ShimmerBlock
 				style={{
 					height: 12,
-					width: 110,
+					width: 44,
 					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
+					backgroundColor: colors.cardLight,
 				}}
 			/>
 		</View>
-		<ShimmerBlock
-			style={{
-				height: 32,
-				width: 58,
-				borderRadius: 10,
-				backgroundColor: COLORS.cardLight,
-			}}
-		/>
-	</View>
-)
+	)
+}
+
+const DiagramSkeleton = () => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={[styles.diagramCard, { gap: 16 }]}>
+			<ShimmerBlock
+				style={{
+					height: 20,
+					width: 120,
+					borderRadius: 6,
+					backgroundColor: colors.cardLight,
+					alignSelf: 'flex-start',
+				}}
+			/>
+			<View style={styles.svgRow}>
+				<View style={styles.svgHalf}>
+					<ShimmerBlock
+						style={{
+							width: '75%',
+							height: 380,
+							borderRadius: 16,
+							backgroundColor: colors.cardLight,
+						}}
+					/>
+				</View>
+				<View style={styles.svgDivider} />
+				<View style={styles.svgHalf}>
+					<ShimmerBlock
+						style={{
+							width: '75%',
+							height: 380,
+							borderRadius: 16,
+							backgroundColor: colors.cardLight,
+						}}
+					/>
+				</View>
+			</View>
+			<View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
+				{[100, 130, 80].map((w, i) => (
+					<ShimmerBlock
+						key={i}
+						style={{
+							height: 28,
+							width: w,
+							borderRadius: 20,
+							backgroundColor: colors.cardLight,
+						}}
+					/>
+				))}
+			</View>
+		</View>
+	)
+}
+
+const MuscleCardSkeleton = () => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={[styles.muscleCard, { marginBottom: 6 }]}>
+			<View
+				style={{
+					borderWidth: 1,
+					borderColor: colors.border,
+					borderRadius: 12,
+				}}
+			>
+				<ShimmerBlock
+					style={[
+						styles.cardIconWrap,
+						{ backgroundColor: colors.cardLight },
+					]}
+				/>
+			</View>
+			<View style={styles.cardBody}>
+				<ShimmerBlock
+					style={{
+						height: 15,
+						width: 80,
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+						marginBottom: 6,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 12,
+						width: 110,
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+			</View>
+			<ShimmerBlock
+				style={{
+					height: 32,
+					width: 58,
+					borderRadius: 10,
+					backgroundColor: colors.cardLight,
+				}}
+			/>
+		</View>
+	)
+}
 
 // ─────────────────────────────────────────────
 // Разделитель секций
 // ─────────────────────────────────────────────
-const SectionLabel = ({ label }: { label: string }) => (
-	<View style={styles.sectionLabelRow}>
-		<View style={styles.sectionLabelLine} />
-		<Text style={styles.sectionLabelText}>{label}</Text>
-		<View style={styles.sectionLabelLine} />
-	</View>
-)
+const SectionLabel = ({ label }: { label: string }) => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={styles.sectionLabelRow}>
+			<View style={styles.sectionLabelLine} />
+			<Text style={styles.sectionLabelText}>{label}</Text>
+			<View style={styles.sectionLabelLine} />
+		</View>
+	)
+}
 
 // ─────────────────────────────────────────────
 // Дата последней тренировки (с переводом)
 // ─────────────────────────────────────────────
 const MuscleCardDate = ({ lastTrained }: { lastTrained: string }) => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
 	const { t } = useLanguage()
 	const noDataLabel = t('recovery', 'noData')
 	const isEmpty =
@@ -595,6 +620,10 @@ const MuscleCard = ({
 	allBackImages,
 	onPress,
 }: MuscleCardProps) => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	const STATUS_COLORS = statusColors(colors)
+	const STATUS_BG = statusBg(colors)
 	const liveColor =
 		STATUS_COLORS[liveStats.status as keyof typeof STATUS_COLORS] ??
 		STATUS_COLORS.not_trained
@@ -605,7 +634,7 @@ const MuscleCard = ({
 	const allImages = side === 'front' ? allFrontImages : allBackImages
 	const svgColors: { [key: string]: string } = {}
 	allImages.forEach(key => {
-		svgColors[key] = 'rgba(58,58,60,0.25)'
+		svgColors[key] = colors.track
 	})
 	muscle.muscleImages.forEach(key => {
 		svgColors[key] = liveColor
@@ -645,9 +674,13 @@ const MuscleCard = ({
 			onPress={onPress}
 		>
 			<View
-				style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 12 }}
+				style={{
+					borderWidth: 1,
+					borderColor: colors.border,
+					borderRadius: 12,
+				}}
 			>
-				<View style={[styles.cardIconWrap, { backgroundColor: COLORS.card }]}>
+				<View style={[styles.cardIconWrap, { backgroundColor: colors.card }]}>
 					<View
 						style={{
 							...styles.cardSvgContainer,
@@ -666,15 +699,18 @@ const MuscleCard = ({
 				</View>
 			</View>
 
-		<View style={styles.cardBody}>
-			<Text style={styles.cardName}>{muscleName}</Text>
-			<MuscleCardDate lastTrained={liveStats.lastTrained} />
-			<Text style={[styles.cardTimeLeft, { color: liveColor }]} numberOfLines={1}>
-				{liveStats.recovery < 100
-					? `${t('recovery', 'timeLeft')}: ${getTimeLeft()}`
-					: t('recovery', 'fullyRecovered')}
-			</Text>
-		</View>
+			<View style={styles.cardBody}>
+				<Text style={styles.cardName}>{muscleName}</Text>
+				<MuscleCardDate lastTrained={liveStats.lastTrained} />
+				<Text
+					style={[styles.cardTimeLeft, { color: liveColor }]}
+					numberOfLines={1}
+				>
+					{liveStats.recovery < 100
+						? `${t('recovery', 'timeLeft')}: ${getTimeLeft()}`
+						: t('recovery', 'fullyRecovered')}
+				</Text>
+			</View>
 
 			<View style={[styles.cardBadge, { backgroundColor: liveBg }]}>
 				<View style={[styles.cardBadgeDot, { backgroundColor: liveColor }]} />
@@ -690,6 +726,10 @@ const MuscleCard = ({
 // Основной компонент
 // ─────────────────────────────────────────────
 export default function RecoveryTab() {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	const STATUS_COLORS = useMemo(() => statusColors(colors), [colors])
+	const STATUS_BG = useMemo(() => statusBg(colors), [colors])
 	const [muscleSide, setMuscleSide] = useState<string | null>(null)
 	const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -841,12 +881,13 @@ export default function RecoveryTab() {
 			})()
 			if (opacity >= 1) return baseColor
 			const hex = baseColor.replace('#', '')
+			if (hex.length !== 6) return baseColor
 			const r = parseInt(hex.substring(0, 2), 16)
 			const g = parseInt(hex.substring(2, 4), 16)
 			const b = parseInt(hex.substring(4, 6), 16)
 			return `rgba(${r}, ${g}, ${b}, ${opacity})`
 		},
-		[],
+		[STATUS_COLORS],
 	)
 
 	const getFrontMuscleColors = useCallback(() => {
@@ -887,10 +928,10 @@ export default function RecoveryTab() {
 	}
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<SafeAreaView style={styles.container} edges={['top']}>
 			<ScrollView
 				showsVerticalScrollIndicator={false}
-				contentContainerStyle={{ paddingBottom: 16 }}
+				contentContainerStyle={{ paddingBottom: 120 }}
 			>
 				{/* Header — всегда виден, пилюля меняется на скелетон во время загрузки */}
 				<View style={styles.header}>
@@ -904,7 +945,7 @@ export default function RecoveryTab() {
 								height: 34,
 								width: 80,
 								borderRadius: 20,
-								backgroundColor: COLORS.cardLight,
+								backgroundColor: colors.cardLight,
 							}}
 						/>
 					) : (
@@ -1106,8 +1147,9 @@ export default function RecoveryTab() {
 	)
 }
 
-const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: COLORS.background },
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+	container: { flex: 1, backgroundColor: C.background },
 	cardSvgContainer: { width: 180, height: 480 },
 	header: {
 		width: '100%',
@@ -1118,8 +1160,8 @@ const styles = StyleSheet.create({
 		paddingTop: 20,
 		paddingBottom: 8,
 	},
-	title: { fontSize: 24, fontWeight: 'bold', color: COLORS.text },
-	subtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 4 },
+	title: { fontSize: 24, fontWeight: 'bold', color: C.text },
+	subtitle: { fontSize: 14, color: C.textSecondary, marginTop: 4 },
 	headerPill: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -1132,7 +1174,7 @@ const styles = StyleSheet.create({
 		gap: 6,
 	},
 	pillDot: { width: 7, height: 7, borderRadius: 3.5 },
-	pillText: { fontSize: 13, fontWeight: '600', color: COLORS.primary },
+	pillText: { fontSize: 13, fontWeight: '600', color: C.primary },
 
 	bodyStatsCard: {
 		flexDirection: 'row',
@@ -1140,19 +1182,19 @@ const styles = StyleSheet.create({
 		marginHorizontal: 8,
 		marginTop: 12,
 		padding: 14,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 14,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		gap: 12,
 	},
-	bodyStatsTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+	bodyStatsTitle: { fontSize: 15, fontWeight: '600', color: C.text },
 	bodyStatsSubtitle: {
 		fontSize: 13,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		marginTop: 4,
 	},
-	bodyStatsEdit: { fontSize: 14, fontWeight: '600', color: COLORS.primary },
+	bodyStatsEdit: { fontSize: 14, fontWeight: '600', color: C.primary },
 
 	// Stats row
 	statsRow: {
@@ -1171,7 +1213,7 @@ const styles = StyleSheet.create({
 	statCount: { fontSize: 24, fontWeight: 'bold' },
 	statLabel: {
 		fontSize: 12,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		marginTop: 2,
 		fontWeight: '500',
 	},
@@ -1181,17 +1223,17 @@ const styles = StyleSheet.create({
 
 	// Diagram card
 	diagramCard: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 16,
 		padding: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		alignItems: 'center',
 	},
 	diagramTitle: {
 		fontSize: 18,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		alignSelf: 'flex-start',
 		marginBottom: 16,
 	},
@@ -1204,13 +1246,13 @@ const styles = StyleSheet.create({
 	},
 	svgLabel: {
 		fontSize: 11,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		fontWeight: '600',
 		letterSpacing: 0.8,
 		textTransform: 'uppercase',
 		marginBottom: 8,
 	},
-	svgDivider: { width: 1, backgroundColor: COLORS.border, marginVertical: 20 },
+	svgDivider: { width: 1, backgroundColor: C.border, marginVertical: 20 },
 
 	// Legend
 	legendRow: {
@@ -1225,25 +1267,25 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 6,
-		backgroundColor: COLORS.cardLight,
+		backgroundColor: C.cardLight,
 		borderRadius: 20,
 		paddingHorizontal: 10,
 		paddingVertical: 5,
 	},
 	legendDot: { width: 8, height: 8, borderRadius: 4 },
-	legendText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '500' },
+	legendText: { fontSize: 11, color: C.textSecondary, fontWeight: '500' },
 
 	// Reset button
 	resetBtn: {
 		marginTop: 10,
 		paddingVertical: 10,
 		paddingHorizontal: 20,
-		backgroundColor: COLORS.cardLight,
+		backgroundColor: C.cardLight,
 		borderRadius: 12,
 		borderWidth: 1,
 		borderColor: 'rgba(52, 199, 89, 0.3)',
 	},
-	resetBtnText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
+	resetBtnText: { color: C.primary, fontSize: 14, fontWeight: '600' },
 
 	// Lists card
 	listsCard: { gap: 4 },
@@ -1255,10 +1297,10 @@ const styles = StyleSheet.create({
 		gap: 10,
 		marginVertical: 12,
 	},
-	sectionLabelLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+	sectionLabelLine: { flex: 1, height: 1, backgroundColor: C.border },
 	sectionLabelText: {
 		fontSize: 11,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		fontWeight: '700',
 		letterSpacing: 1.2,
 		textTransform: 'uppercase',
@@ -1268,11 +1310,11 @@ const styles = StyleSheet.create({
 	muscleCard: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 14,
 		padding: 12,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		marginBottom: 6,
 		gap: 18,
 	},
@@ -1286,8 +1328,8 @@ const styles = StyleSheet.create({
 	},
 	cardIcon: { width: '160%', height: '160%' },
 	cardBody: { flex: 1, gap: 3 },
-	cardName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
-	cardDate: { fontSize: 12, color: COLORS.textSecondary },
+	cardName: { fontSize: 15, fontWeight: '600', color: C.text },
+	cardDate: { fontSize: 12, color: C.textSecondary },
 	cardTimeLeft: { fontSize: 11, fontWeight: '500' },
 	cardBadge: {
 		flexDirection: 'row',
@@ -1305,18 +1347,20 @@ const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: '#121212',
+		backgroundColor: C.background,
 	},
 	loadingSpinner: {
 		width: 80,
 		height: 80,
 		borderRadius: 40,
-		backgroundColor: '#121212',
+		backgroundColor: C.background,
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginBottom: 20,
 	},
-	loadingText: { fontSize: 16, color: COLORS.textSecondary },
-	skeletonText: { backgroundColor: COLORS.cardLight, borderRadius: 4 },
-	skeletonModel: { backgroundColor: COLORS.cardLight, borderRadius: 12 },
+	loadingText: { fontSize: 16, color: C.textSecondary },
+	skeletonText: { backgroundColor: C.cardLight, borderRadius: 4 },
+	skeletonModel: { backgroundColor: C.cardLight, borderRadius: 12 },
 })
+}
+

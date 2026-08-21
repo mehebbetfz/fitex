@@ -1,4 +1,5 @@
 import { STATS_HISTORY_COLORS as ThemeColors, STATS_HISTORY_THEME as Theme } from '@/constants/stats-history-theme'
+import { DetailPageSkeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/contexts/language-context'
 import { translateExerciseName, translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
 import { useDatabase } from '@/app/contexts/database-context'
@@ -13,7 +14,6 @@ import {
 	Text,
 	TouchableOpacity,
 	View,
-	ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Exercise, ExerciseSet, Workout } from '@/scripts/database'
@@ -97,9 +97,7 @@ export default function WorkoutDetailScreen() {
 	if (loading) {
 		return (
 			<SafeAreaView style={s.container}>
-				<View style={s.center}>
-					<ActivityIndicator size='large' color={C.primary} />
-				</View>
+				<DetailPageSkeleton />
 			</SafeAreaView>
 		)
 	}

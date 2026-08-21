@@ -127,6 +127,19 @@ export class User {
 	@Prop()
 	activityLevel?: string
 
+	/** Ручные дневные лимиты (если заданы — перекрывают авторасчёт) */
+	@Prop()
+	nutritionCalories?: number
+
+	@Prop()
+	nutritionProteinG?: number
+
+	@Prop()
+	nutritionCarbsG?: number
+
+	@Prop()
+	nutritionFatG?: number
+
 	/** Пользователь прошёл экран первичного ввода данных (или нажал «Пропустить») */
 	@Prop({ default: false })
 	bodyStatsCompleted?: boolean

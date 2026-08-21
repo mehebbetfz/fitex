@@ -21,6 +21,8 @@ export interface NutritionTargets {
 	bmr: number
 	tdee: number
 	complete: boolean
+	/** true, если пользователь задал лимиты вручную */
+	custom: boolean
 }
 
 const ACTIVITY_MULT: Record<string, number> = {
@@ -63,6 +65,7 @@ export function computeNutritionTargets(input: {
 			bmr: 0,
 			tdee: 0,
 			complete: false,
+			custom: false,
 		}
 	}
 
@@ -100,5 +103,6 @@ export function computeNutritionTargets(input: {
 		bmr: Math.round(bmr),
 		tdee: Math.round(tdee),
 		complete: true,
+		custom: false,
 	}
 }

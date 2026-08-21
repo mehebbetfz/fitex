@@ -1,8 +1,10 @@
 // app/modals/exercise-history-modal.tsx
 import { useDatabase } from '@/app/contexts/database-context'
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { Ionicons } from '@expo/vector-icons'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Animated,
 	Dimensions,
@@ -15,19 +17,6 @@ import {
 } from 'react-native'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
-
-const C = {
-	bg: '#121212',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#3A3A3C',
-	text: '#FFFFFF',
-	textSec: '#8E8E93',
-	primary: '#34C759',
-	warning: '#FF9500',
-	error: '#FF3B30',
-	info: '#5AC8FA',
-} as const
 
 // ─── Shimmer ─────────────────────────────────────────────────────────────────
 
@@ -59,79 +48,59 @@ const Shimmer = ({ style }: { style: any }) => {
 	return <Animated.View style={[style, { opacity }]} />
 }
 
-const SkeletonContent = () => (
-	<View style={{ gap: 14 }}>
-		{/* comparison skeleton */}
-		<View style={sk.section}>
-			<Shimmer
-				style={[sk.line, { width: 140, height: 14, marginBottom: 14 }]}
-			/>
-			{[1, 2, 3].map(i => (
-				<View key={i} style={sk.compRow}>
-					<Shimmer style={sk.circle} />
-					<View style={{ flex: 1, gap: 8 }}>
-						<Shimmer style={[sk.line, { width: '70%', height: 12 }]} />
-						<Shimmer style={[sk.line, { width: '50%', height: 12 }]} />
-					</View>
-					<Shimmer
-						style={[sk.line, { width: 60, height: 22, borderRadius: 8 }]}
-					/>
-				</View>
-			))}
-		</View>
-		{/* history skeleton */}
-		<View style={sk.section}>
-			<Shimmer
-				style={[sk.line, { width: 120, height: 14, marginBottom: 14 }]}
-			/>
-			{[1, 2].map(i => (
-				<View key={i} style={[sk.section, { marginBottom: 10 }]}>
-					<View
-						style={{
-							flexDirection: 'row',
-							justifyContent: 'space-between',
-							marginBottom: 10,
-						}}
-					>
-						<Shimmer style={[sk.line, { width: 80, height: 13 }]} />
-						<Shimmer style={[sk.line, { width: 50, height: 13 }]} />
-					</View>
-					{[1, 2, 3].map(j => (
-						<View key={j} style={sk.setRow}>
-							<Shimmer style={[sk.line, { width: 20, height: 11 }]} />
-							<Shimmer style={[sk.line, { width: 70, height: 11 }]} />
-							<Shimmer style={[sk.line, { width: 50, height: 11 }]} />
+const SkeletonContent = () => {
+	const { colors: C } = useAppTheme()
+	const sk = useMemo(() => makeSkStyles(C), [C])
+	return (
+		<View style={{ gap: 14 }}>
+			{/* comparison skeleton */}
+			<View style={sk.section}>
+				<Shimmer
+					style={[sk.line, { width: 140, height: 14, marginBottom: 14 }]}
+				/>
+				{[1, 2, 3].map(i => (
+					<View key={i} style={sk.compRow}>
+						<Shimmer style={sk.circle} />
+						<View style={{ flex: 1, gap: 8 }}>
+							<Shimmer style={[sk.line, { width: '70%', height: 12 }]} />
+							<Shimmer style={[sk.line, { width: '50%', height: 12 }]} />
 						</View>
-					))}
-				</View>
-			))}
+						<Shimmer
+							style={[sk.line, { width: 60, height: 22, borderRadius: 8 }]}
+						/>
+					</View>
+				))}
+			</View>
+			{/* history skeleton */}
+			<View style={sk.section}>
+				<Shimmer
+					style={[sk.line, { width: 120, height: 14, marginBottom: 14 }]}
+				/>
+				{[1, 2].map(i => (
+					<View key={i} style={[sk.section, { marginBottom: 10 }]}>
+						<View
+							style={{
+								flexDirection: 'row',
+								justifyContent: 'space-between',
+								marginBottom: 10,
+							}}
+						>
+							<Shimmer style={[sk.line, { width: 80, height: 13 }]} />
+							<Shimmer style={[sk.line, { width: 50, height: 13 }]} />
+						</View>
+						{[1, 2, 3].map(j => (
+							<View key={j} style={sk.setRow}>
+								<Shimmer style={[sk.line, { width: 20, height: 11 }]} />
+								<Shimmer style={[sk.line, { width: 70, height: 11 }]} />
+								<Shimmer style={[sk.line, { width: 50, height: 11 }]} />
+							</View>
+						))}
+					</View>
+				))}
+			</View>
 		</View>
-	</View>
-)
-
-const sk = StyleSheet.create({
-	section: {
-		backgroundColor: C.card,
-		borderRadius: 14,
-		padding: 14,
-		borderWidth: 1,
-		borderColor: C.border,
-	},
-	line: { borderRadius: 4, backgroundColor: C.cardLight },
-	circle: {
-		width: 30,
-		height: 30,
-		borderRadius: 15,
-		backgroundColor: C.cardLight,
-		marginRight: 12,
-	},
-	compRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-	setRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		paddingVertical: 3,
-	},
-})
+	)
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -170,6 +139,8 @@ const fmtDate = (d: string, todayStr: string, yesterdayStr: string, lang = 'ru')
 // ─── Diff pill ────────────────────────────────────────────────────────────────
 
 const DiffPill = ({ value, unit = 'кг' }: { value: number; unit?: string }) => {
+	const { colors: C } = useAppTheme()
+	const dp = useMemo(() => makeDpStyles(), [])
 	if (value === 0) return null
 	const up = value > 0
 	return (
@@ -194,18 +165,6 @@ const DiffPill = ({ value, unit = 'кг' }: { value: number; unit?: string }) =>
 		</View>
 	)
 }
-const dp = StyleSheet.create({
-	pill: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 3,
-		paddingHorizontal: 7,
-		paddingVertical: 3,
-		borderRadius: 7,
-		borderWidth: 1,
-	},
-	text: { fontSize: 11, fontWeight: '700' },
-})
 
 // ─── Set comparison row ───────────────────────────────────────────────────────
 
@@ -219,6 +178,9 @@ const SetCompareRow = ({
 	previous: { weight: number; reps: number } | null
 }) => {
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const cmp = useMemo(() => makeCmpStyles(C), [C])
+	const dp = useMemo(() => makeDpStyles(), [])
 	const wDiff = previous ? current.weight - previous.weight : null
 	const rDiff = previous ? current.reps - previous.reps : null
 	const vDiff = previous
@@ -242,7 +204,7 @@ const SetCompareRow = ({
 				<Text
 					style={[
 						cmp.badgeText,
-						{ color: current.completed ? C.bg : C.textSec },
+						{ color: current.completed ? '#000' : C.textSecondary },
 					]}
 				>
 					{index + 1}
@@ -305,35 +267,6 @@ const SetCompareRow = ({
 	)
 }
 
-const cmp = StyleSheet.create({
-	row: {
-		flexDirection: 'row',
-		alignItems: 'flex-start',
-		paddingVertical: 12,
-		gap: 10,
-	},
-	badge: {
-		width: 30,
-		height: 30,
-		borderRadius: 15,
-		alignItems: 'center',
-		justifyContent: 'center',
-		flexShrink: 0,
-		marginTop: 2,
-	},
-	badgeText: { fontSize: 13, fontWeight: '700' },
-	vals: { flex: 1, gap: 5 },
-	valLine: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-	},
-	label: { fontSize: 12, color: C.textSec },
-	prev: { fontSize: 12, color: C.textSec },
-	curr: { fontSize: 13, fontWeight: '600', color: C.text },
-	pills: { gap: 4, alignItems: 'flex-end', flexShrink: 0 },
-})
-
 // ─── History card ─────────────────────────────────────────────────────────────
 
 const HistoryCard = ({
@@ -344,6 +277,8 @@ const HistoryCard = ({
 	isLatest: boolean
 }) => {
 	const { t, language } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const hc = useMemo(() => makeHcStyles(C), [C])
 	const lang = language ?? 'ru'
 	const sets: Array<{ weight: number; reps: number; set_number?: number }> =
 		entry.sets ?? []
@@ -362,11 +297,11 @@ const HistoryCard = ({
 				</View>
 			<View style={{ flexDirection: 'row', gap: 8 }}>
 				<View style={hc.pill}>
-					<Ionicons name='barbell-outline' size={11} color={C.textSec} />
+					<Ionicons name='barbell-outline' size={11} color={C.textSecondary} />
 					<Text style={hc.pillTxt}>{maxW} {t('workout', 'kg')} {t('exercises', 'maxLabel')}</Text>
 				</View>
 				<View style={hc.pill}>
-					<Ionicons name='layers-outline' size={11} color={C.textSec} />
+					<Ionicons name='layers-outline' size={11} color={C.textSecondary} />
 					<Text style={hc.pillTxt}>{vol.toFixed(0)} {t('workout', 'kg')}</Text>
 				</View>
 			</View>
@@ -387,74 +322,19 @@ const HistoryCard = ({
 	)
 }
 
-const hc = StyleSheet.create({
-	card: {
-		backgroundColor: C.card,
-		borderRadius: 14,
-		padding: 14,
-		borderWidth: 1,
-		borderColor: C.border,
-		marginBottom: 10,
-	},
-	header: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 12,
-	},
-	dot: { width: 7, height: 7, borderRadius: 3.5 },
-	date: { fontSize: 14, fontWeight: '600', color: C.text },
-	time: { fontSize: 12, color: C.textSec },
-	pill: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4,
-		backgroundColor: C.cardLight,
-		borderRadius: 8,
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-	},
-	pillTxt: { fontSize: 11, color: C.textSec, fontWeight: '500' },
-	chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-	chip: {
-		backgroundColor: C.cardLight,
-		borderRadius: 8,
-		paddingHorizontal: 10,
-		paddingVertical: 7,
-		alignItems: 'center',
-		minWidth: 70,
-	},
-	chipNum: { fontSize: 10, color: C.textSec, marginBottom: 2 },
-	chipVal: { fontSize: 12, fontWeight: '600', color: C.text },
-	chipVol: { fontSize: 10, color: C.primary, marginTop: 1 },
-})
-
 // ─── Section label ────────────────────────────────────────────────────────────
 
-const SectionLabel = ({ label }: { label: string }) => (
-	<View style={sl.row}>
-		<View style={sl.line} />
-		<Text style={sl.text}>{label}</Text>
-		<View style={sl.line} />
-	</View>
-)
-const sl = StyleSheet.create({
-	row: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-		marginBottom: 12,
-		marginTop: 4,
-	},
-	line: { flex: 1, height: 1, backgroundColor: C.border },
-	text: {
-		fontSize: 11,
-		color: C.textSec,
-		fontWeight: '700',
-		letterSpacing: 1,
-		textTransform: 'uppercase',
-	},
-})
+const SectionLabel = ({ label }: { label: string }) => {
+	const { colors: C } = useAppTheme()
+	const sl = useMemo(() => makeSlStyles(C), [C])
+	return (
+		<View style={sl.row}>
+			<View style={sl.line} />
+			<Text style={sl.text}>{label}</Text>
+			<View style={sl.line} />
+		</View>
+	)
+}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -466,6 +346,8 @@ export default function ExerciseHistoryModal({
 }: Props) {
 	const { fetchExerciseHistory, getExerciseRecords } = useDatabase()
 	const { t, language } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const ms = useMemo(() => makeMsStyles(C), [C])
 	const lang = language ?? 'ru'
 
 	const [history, setHistory] = useState<any[]>([])
@@ -584,7 +466,7 @@ export default function ExerciseHistoryModal({
 						onPress={onClose}
 						activeOpacity={0.7}
 					>
-						<Ionicons name='close' size={22} color={C.textSec} />
+						<Ionicons name='close' size={22} color={C.textSecondary} />
 					</TouchableOpacity>
 				</View>
 
@@ -694,7 +576,7 @@ export default function ExerciseHistoryModal({
 
 							{history.length === 0 && currentSets.length === 0 && (
 								<View style={ms.empty}>
-									<Ionicons name='time-outline' size={44} color={C.textSec} />
+									<Ionicons name='time-outline' size={44} color={C.textSecondary} />
 								<Text style={ms.emptyTitle}>{t('exercises', 'noHistory')}</Text>
 								<Text style={ms.emptyTxt}>
 										{t('exercises', 'noHistorySubtitle')}
@@ -709,105 +591,243 @@ export default function ExerciseHistoryModal({
 	)
 }
 
-// ─── Sheet styles ─────────────────────────────────────────────────────────────
+// ─── Style factories ──────────────────────────────────────────────────────────
 
-const ms = StyleSheet.create({
-	backdrop: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: 'rgba(0,0,0,0.55)',
-	},
-	sheet: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
-		maxHeight: SCREEN_HEIGHT * 0.85,
-		backgroundColor: C.bg,
-		borderTopLeftRadius: 24,
-		borderTopRightRadius: 24,
-		borderTopWidth: 1,
-		borderTopColor: C.border,
-		overflow: 'hidden',
-	},
-	handle: {
-		width: 40,
-		height: 4,
-		borderRadius: 2,
-		backgroundColor: C.border,
-		alignSelf: 'center',
-		marginTop: 12,
-		marginBottom: 4,
-	},
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-		paddingHorizontal: 16,
-		paddingVertical: 14,
-		borderBottomWidth: 1,
-		borderBottomColor: C.border,
-	},
-	headerIcon: {
-		width: 34,
-		height: 34,
-		borderRadius: 17,
-		backgroundColor: C.primary + '22',
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	title: { flex: 1, fontSize: 17, fontWeight: '700', color: C.text },
-	volBadge: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4,
-		borderWidth: 1,
-		borderRadius: 10,
-		paddingHorizontal: 9,
-		paddingVertical: 5,
-	},
-	volBadgeTxt: { fontSize: 12, fontWeight: '700' },
-	closeBtn: { padding: 4 },
-	scroll: { paddingHorizontal: 16, paddingBottom: 36, paddingTop: 14, gap: 0 },
+function makeSkStyles(C: AppColors) {
+	return StyleSheet.create({
+		section: {
+			backgroundColor: C.card,
+			borderRadius: 14,
+			padding: 14,
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		line: { borderRadius: 4, backgroundColor: C.skeleton },
+		circle: {
+			width: 30,
+			height: 30,
+			borderRadius: 15,
+			backgroundColor: C.skeleton,
+			marginRight: 12,
+		},
+		compRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+		setRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			paddingVertical: 3,
+		},
+	})
+}
 
-	bestCard: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-		backgroundColor: C.warning + '18',
-		borderRadius: 12,
-		padding: 12,
-		borderWidth: 1,
-		borderColor: C.warning + '44',
-		marginBottom: 14,
-	},
-	bestTxt: { flex: 1, fontSize: 13, color: C.textSec },
-	bestDate: { fontSize: 12, color: C.textSec },
+function makeDpStyles() {
+	return StyleSheet.create({
+		pill: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 3,
+			paddingHorizontal: 7,
+			paddingVertical: 3,
+			borderRadius: 7,
+			borderWidth: 1,
+		},
+		text: { fontSize: 11, fontWeight: '700' },
+	})
+}
 
-	card: {
-		backgroundColor: C.card,
-		borderRadius: 14,
-		paddingHorizontal: 14,
-		borderWidth: 1,
-		borderColor: C.border,
-		marginBottom: 14,
-	},
+function makeCmpStyles(C: AppColors) {
+	return StyleSheet.create({
+		row: {
+			flexDirection: 'row',
+			alignItems: 'flex-start',
+			paddingVertical: 12,
+			gap: 10,
+		},
+		badge: {
+			width: 30,
+			height: 30,
+			borderRadius: 15,
+			alignItems: 'center',
+			justifyContent: 'center',
+			flexShrink: 0,
+			marginTop: 2,
+		},
+		badgeText: { fontSize: 13, fontWeight: '700' },
+		vals: { flex: 1, gap: 5 },
+		valLine: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+		},
+		label: { fontSize: 12, color: C.textSecondary },
+		prev: { fontSize: 12, color: C.textSecondary },
+		curr: { fontSize: 13, fontWeight: '600', color: C.text },
+		pills: { gap: 4, alignItems: 'flex-end', flexShrink: 0 },
+	})
+}
 
-	volRow: {
-		borderTopWidth: 1,
-		borderTopColor: C.border,
-		paddingTop: 12,
-		paddingBottom: 4,
-		gap: 8,
-	},
-	volLine: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-	},
-	volLabel: { fontSize: 13, color: C.textSec },
-	volVal: { fontSize: 14, fontWeight: '600', color: C.text },
+function makeHcStyles(C: AppColors) {
+	return StyleSheet.create({
+		card: {
+			backgroundColor: C.card,
+			borderRadius: 14,
+			padding: 14,
+			borderWidth: 1,
+			borderColor: C.border,
+			marginBottom: 10,
+		},
+		header: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			marginBottom: 12,
+		},
+		dot: { width: 7, height: 7, borderRadius: 3.5 },
+		date: { fontSize: 14, fontWeight: '600', color: C.text },
+		time: { fontSize: 12, color: C.textSecondary },
+		pill: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			backgroundColor: C.cardLight,
+			borderRadius: 8,
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+		},
+		pillTxt: { fontSize: 11, color: C.textSecondary, fontWeight: '500' },
+		chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+		chip: {
+			backgroundColor: C.cardLight,
+			borderRadius: 8,
+			paddingHorizontal: 10,
+			paddingVertical: 7,
+			alignItems: 'center',
+			minWidth: 70,
+		},
+		chipNum: { fontSize: 10, color: C.textSecondary, marginBottom: 2 },
+		chipVal: { fontSize: 12, fontWeight: '600', color: C.text },
+		chipVol: { fontSize: 10, color: C.primary, marginTop: 1 },
+	})
+}
 
-	empty: { alignItems: 'center', paddingVertical: 48, gap: 10 },
-	emptyTitle: { fontSize: 16, fontWeight: '600', color: C.text },
-	emptyTxt: { fontSize: 13, color: C.textSec, textAlign: 'center' },
-})
+function makeSlStyles(C: AppColors) {
+	return StyleSheet.create({
+		row: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 10,
+			marginBottom: 12,
+			marginTop: 4,
+		},
+		line: { flex: 1, height: 1, backgroundColor: C.border },
+		text: {
+			fontSize: 11,
+			color: C.textSecondary,
+			fontWeight: '700',
+			letterSpacing: 1,
+			textTransform: 'uppercase',
+		},
+	})
+}
+
+function makeMsStyles(C: AppColors) {
+	return StyleSheet.create({
+		backdrop: {
+			...StyleSheet.absoluteFillObject,
+			backgroundColor: C.overlay,
+		},
+		sheet: {
+			position: 'absolute',
+			bottom: 0,
+			left: 0,
+			right: 0,
+			maxHeight: SCREEN_HEIGHT * 0.85,
+			backgroundColor: C.background,
+			borderTopLeftRadius: 24,
+			borderTopRightRadius: 24,
+			borderTopWidth: 1,
+			borderTopColor: C.border,
+			overflow: 'hidden',
+		},
+		handle: {
+			width: 40,
+			height: 4,
+			borderRadius: 2,
+			backgroundColor: C.border,
+			alignSelf: 'center',
+			marginTop: 12,
+			marginBottom: 4,
+		},
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 10,
+			paddingHorizontal: 16,
+			paddingVertical: 14,
+			borderBottomWidth: 1,
+			borderBottomColor: C.border,
+		},
+		headerIcon: {
+			width: 34,
+			height: 34,
+			borderRadius: 17,
+			backgroundColor: C.primary + '22',
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		title: { flex: 1, fontSize: 17, fontWeight: '700', color: C.text },
+		volBadge: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			borderWidth: 1,
+			borderRadius: 10,
+			paddingHorizontal: 9,
+			paddingVertical: 5,
+		},
+		volBadgeTxt: { fontSize: 12, fontWeight: '700' },
+		closeBtn: { padding: 4 },
+		scroll: { paddingHorizontal: 16, paddingBottom: 36, paddingTop: 14, gap: 0 },
+
+		bestCard: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8,
+			backgroundColor: C.warning + '18',
+			borderRadius: 12,
+			padding: 12,
+			borderWidth: 1,
+			borderColor: C.warning + '44',
+			marginBottom: 14,
+		},
+		bestTxt: { flex: 1, fontSize: 13, color: C.textSecondary },
+		bestDate: { fontSize: 12, color: C.textSecondary },
+
+		card: {
+			backgroundColor: C.card,
+			borderRadius: 14,
+			paddingHorizontal: 14,
+			borderWidth: 1,
+			borderColor: C.border,
+			marginBottom: 14,
+		},
+
+		volRow: {
+			borderTopWidth: 1,
+			borderTopColor: C.border,
+			paddingTop: 12,
+			paddingBottom: 4,
+			gap: 8,
+		},
+		volLine: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+		},
+		volLabel: { fontSize: 13, color: C.textSecondary },
+		volVal: { fontSize: 14, fontWeight: '600', color: C.text },
+
+		empty: { alignItems: 'center', paddingVertical: 48, gap: 10 },
+		emptyTitle: { fontSize: 16, fontWeight: '600', color: C.text },
+		emptyTxt: { fontSize: 13, color: C.textSecondary, textAlign: 'center' },
+	})
+}

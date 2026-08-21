@@ -26,10 +26,10 @@ export class NutritionVisionService {
 		jpegBuffer: Buffer,
 		note?: string,
 	): Promise<VisionFoodResult> {
-		const apiKey = this.config.get<string>('OPENAI_API_KEY')
+		const apiKey = this.config.get<string>('OPENAI_API_KEY')?.trim()
 		if (!apiKey) {
 			throw new ServiceUnavailableException(
-				'OPENAI_API_KEY is not configured on the server',
+				'Food AI is not configured (OPENAI_API_KEY missing on server)',
 			)
 		}
 		const model =
@@ -82,11 +82,24 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 					},
 				],
 			}),
+		}).catch(e => {
+			this.log.error(`OpenAI fetch failed: ${e}`)
+			throw new ServiceUnavailableException('Food AI unreachable')
 		})
 
 		if (!res.ok) {
 			const errText = await res.text().catch(() => '')
 			this.log.error(`OpenAI error ${res.status}: ${errText.slice(0, 400)}`)
+			if (res.status === 401 || res.status === 403) {
+				throw new ServiceUnavailableException(
+					'Food AI key is invalid (check OPENAI_API_KEY)',
+				)
+			}
+			if (res.status === 429) {
+				throw new ServiceUnavailableException(
+					'Food AI rate limit — try again in a moment',
+				)
+			}
 			throw new ServiceUnavailableException('Food analysis failed')
 		}
 

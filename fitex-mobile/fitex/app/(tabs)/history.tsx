@@ -1,5 +1,10 @@
-import { STATS_HISTORY_COLORS as COLORS, STATS_HISTORY_THEME as T } from '@/constants/stats-history-theme'
+import {
+	statsHistoryColorsFromTheme,
+	statsHistoryThemeFromApp,
+	type StatsHistoryTheme,
+} from '@/constants/stats-history-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
 import ActivityHeatmap from '@/components/activity-heatmap'
 import {
@@ -96,79 +101,95 @@ const ShimmerBlock = ({ style }: { style: any }) => {
 }
 
 // ── Скелетон карточки тренировки ──
-const WorkoutCardSkeleton = () => (
-	<View style={styles.workoutCard}>
-		<View style={styles.workoutHeader}>
-			<View>
+const WorkoutCardSkeleton = () => {
+	const { colors, resolved } = useAppTheme()
+	const T = useMemo(
+		() => statsHistoryThemeFromApp(colors, resolved),
+		[colors, resolved],
+	)
+	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
+	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
+	return (
+		<View style={styles.workoutCard}>
+			<View style={styles.workoutHeader}>
+				<View>
+					<ShimmerBlock
+						style={[
+							styles.workoutDate,
+							{ width: 120, height: 20, backgroundColor: COLORS.cardLight },
+						]}
+					/>
+					<ShimmerBlock
+						style={[
+							styles.workoutSubDate,
+							{
+								width: 100,
+								height: 14,
+								marginTop: 2,
+								backgroundColor: COLORS.cardLight,
+							},
+						]}
+					/>
+				</View>
 				<ShimmerBlock
 					style={[
-						styles.workoutDate,
-						{ width: 120, height: 20, backgroundColor: COLORS.cardLight },
-					]}
-				/>
-				<ShimmerBlock
-					style={[
-						styles.workoutSubDate,
-						{
-							width: 100,
-							height: 14,
-							marginTop: 2,
-							backgroundColor: COLORS.cardLight,
-						},
+						styles.workoutTypeBadge,
+						{ width: 72, height: 26, backgroundColor: COLORS.cardLight },
 					]}
 				/>
 			</View>
-			<ShimmerBlock
-				style={[
-					styles.workoutTypeBadge,
-					{ width: 72, height: 26, backgroundColor: COLORS.cardLight },
-				]}
-			/>
-		</View>
 
-		<View style={styles.muscleGroups}>
-			{[1, 2, 3].map(i => (
-				<ShimmerBlock
-					key={i}
-					style={[
-						styles.muscleTag,
-						{
-							width: i === 1 ? 56 : i === 2 ? 46 : 64,
-							height: 22,
-							backgroundColor: COLORS.cardLight,
-						},
-					]}
-				/>
-			))}
-		</View>
+			<View style={styles.muscleGroups}>
+				{[1, 2, 3].map(i => (
+					<ShimmerBlock
+						key={i}
+						style={[
+							styles.muscleTag,
+							{
+								width: i === 1 ? 56 : i === 2 ? 46 : 64,
+								height: 22,
+								backgroundColor: COLORS.cardLight,
+							},
+						]}
+					/>
+				))}
+			</View>
 
-		<View style={styles.statGrid}>
-			{[1, 2, 3, 4].map(i => (
-				<View key={i} style={styles.statCell}>
-					<ShimmerBlock
-						style={{
-							width: 14,
-							height: 14,
-							borderRadius: 4,
-							backgroundColor: COLORS.cardLight,
-						}}
-					/>
-					<ShimmerBlock
-						style={{
-							flex: 1,
-							height: 14,
-							borderRadius: 4,
-							backgroundColor: COLORS.cardLight,
-						}}
-					/>
-				</View>
-			))}
+			<View style={styles.statGrid}>
+				{[1, 2, 3, 4].map(i => (
+					<View key={i} style={styles.statCell}>
+						<ShimmerBlock
+							style={{
+								width: 14,
+								height: 14,
+								borderRadius: 4,
+								backgroundColor: COLORS.cardLight,
+							}}
+						/>
+						<ShimmerBlock
+							style={{
+								flex: 1,
+								height: 14,
+								borderRadius: 4,
+								backgroundColor: COLORS.cardLight,
+							}}
+						/>
+					</View>
+				))}
+			</View>
 		</View>
-	</View>
-)
+	)
+}
 
 // ── Скелетон для подгрузки ──
 const LoadingFooter = () => {
+	const { colors, resolved } = useAppTheme()
+	const T = useMemo(
+		() => statsHistoryThemeFromApp(colors, resolved),
+		[colors, resolved],
+	)
+	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
+	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
 	const { t } = useLanguage()
 	return (
 		<View style={styles.loadingFooter}>
@@ -179,62 +200,78 @@ const LoadingFooter = () => {
 }
 
 // ── Скелетон для первой загрузки ──
-const InitialLoadingSkeleton = () => (
-	<SafeAreaView style={styles.container} edges={['top']}>
-		<View style={styles.header}>
-			<View>
-				<ShimmerBlock
-					style={[
-						styles.title,
-						{ width: 180, height: 30, backgroundColor: COLORS.cardLight },
-					]}
-				/>
-				<ShimmerBlock
-					style={[
-						styles.countPill,
-						{
-							width: 120,
-							height: 30,
-							marginTop: 10,
-							backgroundColor: COLORS.cardLight,
-						},
-					]}
-				/>
-			</View>
-		</View>
-
-		<View style={styles.filtersSection}>
-			<ShimmerBlock
-				style={[
-					styles.filtersTitle,
-					{ width: 150, height: 20, backgroundColor: COLORS.cardLight },
-				]}
-			/>
-			<View style={styles.filtersContainer}>
-				{[1, 2, 3, 4, 5].map(i => (
+const InitialLoadingSkeleton = () => {
+	const { colors, resolved } = useAppTheme()
+	const T = useMemo(
+		() => statsHistoryThemeFromApp(colors, resolved),
+		[colors, resolved],
+	)
+	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
+	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
+	return (
+		<SafeAreaView style={styles.container} edges={['top']}>
+			<View style={styles.header}>
+				<View>
 					<ShimmerBlock
-						key={i}
 						style={[
-							styles.filterButton,
-							{ width: i === 2 ? 100 : i === 4 ? 80 : 70, paddingVertical: 12 },
+							styles.title,
+							{ width: 180, height: 30, backgroundColor: COLORS.cardLight },
 						]}
 					/>
-				))}
+					<ShimmerBlock
+						style={[
+							styles.countPill,
+							{
+								width: 120,
+								height: 30,
+								marginTop: 10,
+								backgroundColor: COLORS.cardLight,
+							},
+						]}
+					/>
+				</View>
 			</View>
-		</View>
 
-		<FlatList
-			style={styles.listFlex}
-			data={[1, 2, 3]}
-			renderItem={() => <WorkoutCardSkeleton />}
-			keyExtractor={item => item.toString()}
-			contentContainerStyle={styles.listContent}
-			showsVerticalScrollIndicator={false}
-		/>
-	</SafeAreaView>
-)
+			<View style={styles.filtersSection}>
+				<ShimmerBlock
+					style={[
+						styles.filtersTitle,
+						{ width: 150, height: 20, backgroundColor: COLORS.cardLight },
+					]}
+				/>
+				<View style={styles.filtersContainer}>
+					{[1, 2, 3, 4, 5].map(i => (
+						<ShimmerBlock
+							key={i}
+							style={[
+								styles.filterButton,
+								{ width: i === 2 ? 100 : i === 4 ? 80 : 70, paddingVertical: 12 },
+							]}
+						/>
+					))}
+				</View>
+			</View>
+
+			<FlatList
+				style={styles.listFlex}
+				data={[1, 2, 3]}
+				renderItem={() => <WorkoutCardSkeleton />}
+				keyExtractor={item => item.toString()}
+				contentContainerStyle={styles.listContent}
+				showsVerticalScrollIndicator={false}
+			/>
+		</SafeAreaView>
+	)
+}
 
 export default function FullHistoryScreen() {
+	const { colors, resolved } = useAppTheme()
+	const T = useMemo(
+		() => statsHistoryThemeFromApp(colors, resolved),
+		[colors, resolved],
+	)
+	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
+	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
 	const router = useRouter()
 	const params = useLocalSearchParams<{ muscleGroup?: string | string[] }>()
 	const { t, language } = useLanguage()
@@ -609,7 +646,11 @@ export default function FullHistoryScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+	T: StatsHistoryTheme,
+	COLORS: ReturnType<typeof statsHistoryColorsFromTheme>,
+) {
+	return StyleSheet.create({
 	container: {
 		flex: 1,
 		backgroundColor: T.background,
@@ -632,6 +673,9 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		color: COLORS.textSecondary,
 		marginTop: 2,
+	},
+	countPill: {
+		alignSelf: 'flex-start',
 	},
 	filtersSection: {
 		paddingTop: 8,
@@ -758,7 +802,7 @@ const styles = StyleSheet.create({
 	statCellText: {
 		fontSize: 11,
 		fontWeight: '600',
-		color: '#E5E5EA',
+		color: T.text,
 		flex: 1,
 	},
 	loadingFooter: {
@@ -819,3 +863,4 @@ const styles = StyleSheet.create({
 		color: '#fff',
 	},
 })
+}

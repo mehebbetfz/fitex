@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { CardGridSkeleton } from '@/components/ui/skeleton'
 import { formatPrice, getGyms, GymPartner, purchaseMembership } from '@/services/gym-pass'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
@@ -260,9 +261,7 @@ export default function GymsScreen() {
 			</View>
 
 			{loading ? (
-				<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-					<ActivityIndicator color={COLORS.primary} />
-				</View>
+				<CardGridSkeleton cards={5} />
 			) : (
 				<ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 					<Animated.View style={{ opacity: fadeAnim }}>

@@ -1,10 +1,10 @@
 import { useLanguage } from '@/contexts/language-context'
+import { DetailPageSkeleton } from '@/components/ui/skeleton'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
-	ActivityIndicator,
 	Alert,
 	ScrollView,
 	StyleSheet,
@@ -116,9 +116,7 @@ export default function EditMeasurementScreen() {
 	if (loading) {
 		return (
 			<SafeAreaView style={s.container}>
-				<View style={s.center}>
-					<ActivityIndicator size='large' color='#34C759' />
-				</View>
+				<DetailPageSkeleton />
 			</SafeAreaView>
 		)
 	}

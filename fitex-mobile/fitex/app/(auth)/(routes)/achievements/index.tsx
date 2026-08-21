@@ -1,5 +1,6 @@
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
+import { AchievementsSkeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/contexts/language-context'
 import { getMilestoneAchievementCopy } from '@/services/achievement-milestones-extra'
 import { Achievement, computeRating } from '@/services/rating'
@@ -311,10 +312,7 @@ export default function AchievementsScreen() {
 			</View>
 
 			{loading ? (
-				<View style={s.loadingWrap}>
-					<Ionicons name='trophy-outline' size={40} color={C.sub} />
-					<Text style={s.loadingText}>{t('common', 'loading')}</Text>
-				</View>
+				<AchievementsSkeleton />
 			) : (
 				<Animated.View style={{ flex: 1, opacity: fadeAnim }}>
 					{/* Stats */}

@@ -1,10 +1,10 @@
 import { useLanguage } from '@/contexts/language-context'
+import { DetailPageSkeleton } from '@/components/ui/skeleton'
 import * as db from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
-	ActivityIndicator,
 	Alert,
 	ScrollView,
 	StyleSheet,
@@ -174,10 +174,7 @@ export default function EditRecordScreen() {
 	if (loading) {
 		return (
 			<SafeAreaView style={styles.container}>
-				<View style={styles.loadingContainer}>
-					<ActivityIndicator size='large' color='#34C759' />
-					<Text style={styles.loadingText}>{t('common', 'loading')}</Text>
-				</View>
+				<DetailPageSkeleton />
 			</SafeAreaView>
 		)
 	}

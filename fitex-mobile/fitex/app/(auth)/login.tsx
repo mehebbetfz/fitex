@@ -78,22 +78,24 @@ export default function LoginScreen() {
 
 			{/* Карточка с кнопками входа */}
 			<View style={styles.card}>
-				{/* Кнопка Google */}
-				<TouchableOpacity
-					style={[styles.button, styles.googleButton]}
-					onPress={handleGoogle}
-					disabled={loading !== null}
-					activeOpacity={0.8}
-				>
-					{loading === 'google' ? (
-						<ActivityIndicator color={COLORS.text} />
-					) : (
-						<>
-							<Ionicons name='logo-google' size={20} color={COLORS.text} />
-							<Text style={styles.buttonText}>{t('login', 'signInGoogle')}</Text>
-						</>
-					)}
-				</TouchableOpacity>
+				{/* Google — скрыт на iOS (Guideline 4.8 / Sign in with Apple) */}
+				{Platform.OS !== 'ios' && (
+					<TouchableOpacity
+						style={[styles.button, styles.googleButton]}
+						onPress={handleGoogle}
+						disabled={loading !== null}
+						activeOpacity={0.8}
+					>
+						{loading === 'google' ? (
+							<ActivityIndicator color={COLORS.text} />
+						) : (
+							<>
+								<Ionicons name='logo-google' size={20} color={COLORS.text} />
+								<Text style={styles.buttonText}>{t('login', 'signInGoogle')}</Text>
+							</>
+						)}
+					</TouchableOpacity>
+				)}
 
 				{/* Кнопка Apple (только iOS) */}
 				{Platform.OS === 'ios' && (

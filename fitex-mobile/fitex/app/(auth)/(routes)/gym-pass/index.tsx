@@ -1,5 +1,6 @@
 import { useAuth } from '@/app/contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
+import { PassCardSkeleton } from '@/components/ui/skeleton'
 import {
 	formatPrice,
 	getActiveMembership,
@@ -12,7 +13,6 @@ import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-	ActivityIndicator,
 	Animated,
 	ScrollView,
 	StyleSheet,
@@ -231,9 +231,7 @@ export default function GymPassScreen() {
 			</View>
 
 			{loading ? (
-				<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-					<ActivityIndicator color={COLORS.primary} />
-				</View>
+				<PassCardSkeleton />
 			) : (
 				<ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 					<Animated.View style={{ opacity: fadeAnim }}>

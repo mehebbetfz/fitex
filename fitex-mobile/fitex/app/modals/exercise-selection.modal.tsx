@@ -14,12 +14,14 @@ import {
 	translateMuscleName,
 	translateTips,
 } from '@/constants/exercise-i18n'
+import type { AppColors } from '@/constants/app-theme'
 import { muscle_groups } from '@/constants/muscle-groups'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { Image } from 'expo-image'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Animated,
 	Dimensions,
@@ -35,21 +37,8 @@ import {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
-const COLORS = {
-	green: '#1cd22eff',
-	primary: '#34C759',
-	primaryDark: '#2CAE4E',
-	background: '#000',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#3A3A3C',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	error: '#FF3B30',
-	warning: '#FF9500',
-	success: '#34C759',
-	info: '#5AC8FA',
-} as const
+/** Muscle highlight accent (not theme-dependent) */
+const MUSCLE_GREEN = '#1cd22eff'
 
 const MUSCLE_FRONT_DATA = [
 	{
@@ -317,15 +306,19 @@ const useShimmer = () => {
 
 const ShimmerBlock = ({ style }: { style: any }) => {
 	const opacity = useShimmer()
+	const { colors: C } = useAppTheme()
 	return (
 		<Animated.View
-			style={[style, { opacity, backgroundColor: COLORS.cardLight }]}
+			style={[style, { opacity, backgroundColor: C.skeleton }]}
 		/>
 	)
 }
 
 // Single skeleton card — matches real exercise card layout exactly
-const ExerciseCardSkeleton = () => (
+const ExerciseCardSkeleton = () => {
+	const { colors: C } = useAppTheme()
+	const modalStyles = useMemo(() => makeModalStyles(C), [C])
+	return (
 	<View style={modalStyles.exerciseListItem}>
 		<ShimmerBlock
 			style={[modalStyles.exerciseListImage, { width: 80, height: 100 }]}
@@ -347,7 +340,8 @@ const ExerciseCardSkeleton = () => (
 			</View>
 		</View>
 	</View>
-)
+	)
+}
 
 // Fixed count skeleton — renders exactly EXERCISES_PAGE_SIZE items, no more
 const ExercisesListSkeleton = () => (
@@ -360,11 +354,15 @@ const ExercisesListSkeleton = () => (
 
 // ─── Load-more footer — only shown when paginating, never during initial load ──
 
-const LoadMoreFooter = () => (
+const LoadMoreFooter = () => {
+	const { colors: C } = useAppTheme()
+	const modalStyles = useMemo(() => makeModalStyles(C), [C])
+	return (
 	<View style={modalStyles.loadingFooter}>
 		<ShimmerBlock style={{ width: 200, height: 14, borderRadius: 4 }} />
 	</View>
-)
+	)
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -374,6 +372,10 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	onSelectExercise,
 }) => {
 	const { t, language } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const modalStyles = useMemo(() => makeModalStyles(C), [C])
+	const detailModalStyles = useMemo(() => makeDetailModalStyles(), [])
+	const styles = useMemo(() => makeStyles(), [])
 	const [selectedMuscleGroup, setSelectedMuscleGroup] =
 		useState<MuscleGroup | null>(null)
 	const [selectedExercise, setSelectedExercise] =
@@ -410,7 +412,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 		if (back) {
 			const colors: Record<string, string> = {}
 			back.muscleImages.forEach(k => {
-				colors[k] = COLORS.green
+				colors[k] = MUSCLE_GREEN
 			})
 			return { side: 'back' as const, colors }
 		}
@@ -418,7 +420,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 		if (front) {
 			const colors: Record<string, string> = {}
 			front.muscleImages.forEach(k => {
-				colors[k] = COLORS.green
+				colors[k] = MUSCLE_GREEN
 			})
 			return { side: 'front' as const, colors }
 		}
@@ -642,7 +644,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 				<Ionicons
 					name={selectedExercise ? 'arrow-back' : 'close'}
 					size={24}
-					color={COLORS.text}
+					color={C.text}
 				/>
 			</TouchableOpacity>
 		<Text style={modalStyles.headerTitle} numberOfLines={1}>
@@ -718,11 +720,11 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	const renderSearch = () => (
 		<View style={modalStyles.searchContainer}>
 			<View style={modalStyles.searchInner}>
-				<Ionicons name='search' size={20} color={COLORS.textSecondary} />
+				<Ionicons name='search' size={20} color={C.textSecondary} />
 				<TextInput
 					style={modalStyles.searchInput}
 					placeholder={t('exercises', 'searchPlaceholder')}
-					placeholderTextColor={COLORS.textSecondary}
+					placeholderTextColor={C.textSecondary}
 					value={searchQuery}
 					onChangeText={setSearchQuery}
 				/>
@@ -731,7 +733,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 						<Ionicons
 							name='close-circle'
 							size={20}
-							color={COLORS.textSecondary}
+							color={C.textSecondary}
 						/>
 					</TouchableOpacity>
 				)}
@@ -781,8 +783,8 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 							size={22}
 							color={
 								favorites.includes(item.id)
-									? COLORS.primary
-									: COLORS.textSecondary
+									? C.primary
+									: C.textSecondary
 							}
 						/>
 					</TouchableOpacity>
@@ -805,7 +807,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 				</View>
 			</View>
 			</View>
-			<Ionicons name='chevron-forward' size={20} color={COLORS.textSecondary} />
+			<Ionicons name='chevron-forward' size={20} color={C.textSecondary} />
 		</TouchableOpacity>
 	)
 
@@ -821,7 +823,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 					<Ionicons
 						name='body-outline'
 						size={64}
-						color={COLORS.textSecondary}
+						color={C.textSecondary}
 					/>
 				<Text style={modalStyles.emptyStateTitle}>{t('exercises', 'selectMuscle')}</Text>
 				<Text style={modalStyles.emptyStateText}>
@@ -837,7 +839,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 					<Ionicons
 						name='search-outline'
 						size={64}
-						color={COLORS.textSecondary}
+						color={C.textSecondary}
 					/>
 					<Text style={modalStyles.emptyStateTitle}>{t('exercises', 'notFound')}</Text>
 				</View>
@@ -909,7 +911,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	const renderExerciseDetail = () => {
 		if (!selectedExercise) return null
 		return (
-			<View style={{ flex: 1, backgroundColor: COLORS.background }}>
+			<View style={{ flex: 1, backgroundColor: C.background }}>
 				<ScrollView
 					style={modalStyles.exerciseDetailContainer}
 					showsVerticalScrollIndicator={false}
@@ -969,7 +971,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 							<View style={modalStyles.detailStats}>
 								<View style={modalStyles.detailStat}>
 									<View style={modalStyles.detailStatIcon}>
-										<Ionicons name='barbell' size={18} color={COLORS.primary} />
+										<Ionicons name='barbell' size={18} color={C.primary} />
 									</View>
 									<View>
 										<Text style={modalStyles.detailStatLabel}>{t('exercises', 'difficulty')}</Text>
@@ -983,7 +985,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 										<Ionicons
 											name='construct'
 											size={18}
-											color={COLORS.primary}
+											color={C.primary}
 										/>
 									</View>
 									<View>
@@ -1005,7 +1007,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 							<View style={modalStyles.muscleGroupsGridDetail}>
 								<View style={modalStyles.muscleGroupItem}>
 									<View style={modalStyles.muscleGroupHeader}>
-										<Ionicons name='star' size={16} color={COLORS.primary} />
+										<Ionicons name='star' size={16} color={C.primary} />
 										<Text style={modalStyles.muscleGroupLabel}>{t('exercises', 'primaryMuscles')}</Text>
 									</View>
 								{selectedExercise.primaryMuscles.map((m, i) => (
@@ -1021,7 +1023,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 											<Ionicons
 												name='star-outline'
 												size={16}
-												color={COLORS.textSecondary}
+												color={C.textSecondary}
 											/>
 											<Text style={modalStyles.muscleGroupLabel}>
 												{t('exercises', 'secondaryMuscles')}
@@ -1059,7 +1061,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 									style={{
 										...modalStyles.tipItem,
 										borderBottomWidth: i !== arr.length - 1 ? 1 : 0,
-										borderBottomColor: COLORS.border,
+										borderBottomColor: C.border,
 									}}
 								>
 									<View style={modalStyles.tipNumber}>
@@ -1099,8 +1101,8 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 								size={24}
 								color={
 									favorites.includes(selectedExercise.id)
-										? COLORS.primary
-										: COLORS.textSecondary
+										? C.primary
+										: C.textSecondary
 								}
 							/>
 						</TouchableOpacity>
@@ -1155,6 +1157,8 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 // ─── Image gallery ────────────────────────────────────────────────────────────
 
 const ImageGallery = ({ images }: { images: any[] }) => {
+	const { colors: C } = useAppTheme()
+	const galleryStyles = useMemo(() => makeGalleryStyles(C), [C])
 	const [activeIndex, setActiveIndex] = useState(0)
 	const onScroll = (e: any) => {
 		const w = e.nativeEvent.layoutMeasurement.width
@@ -1200,7 +1204,8 @@ const ImageGallery = ({ images }: { images: any[] }) => {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const galleryStyles = StyleSheet.create({
+function makeGalleryStyles(C: AppColors) {
+	return StyleSheet.create({
 	container: { marginVertical: 16 },
 	imageContainer: {
 		width: SCREEN_WIDTH - 32,
@@ -1214,13 +1219,15 @@ const galleryStyles = StyleSheet.create({
 		width: 8,
 		height: 8,
 		borderRadius: 4,
-		backgroundColor: COLORS.textSecondary,
+		backgroundColor: C.textSecondary,
 		marginHorizontal: 4,
 	},
-	activeDot: { backgroundColor: COLORS.primary },
+	activeDot: { backgroundColor: C.primary },
 })
+}
 
-const detailModalStyles = StyleSheet.create({
+function makeDetailModalStyles() {
+	return StyleSheet.create({
 	exerciseImageContainer: {
 		width: '100%',
 		height: 240,
@@ -1229,16 +1236,18 @@ const detailModalStyles = StyleSheet.create({
 	},
 	exerciseMainImage: { width: '100%', height: '100%', borderRadius: 12 },
 })
+}
 
-const modalStyles = StyleSheet.create({
+function makeModalStyles(C: AppColors) {
+	return StyleSheet.create({
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: '#121212',
+		backgroundColor: C.background,
 		justifyContent: 'flex-end',
 	},
 	modalBackdrop: { ...StyleSheet.absoluteFillObject },
 	modalContainer: {
-		backgroundColor: '#121212',
+		backgroundColor: C.background,
 		borderTopLeftRadius: 24,
 		borderTopRightRadius: 24,
 		height: '95%',
@@ -1249,16 +1258,16 @@ const modalStyles = StyleSheet.create({
 		justifyContent: 'space-between',
 		paddingHorizontal: 8,
 		paddingVertical: 12,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		borderBottomColor: C.border,
 	},
 	backButton: { padding: 8 },
 	headerTitle: {
 		flex: 1,
 		fontSize: 18,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		textAlign: 'center',
 		marginHorizontal: 8,
 	},
@@ -1266,21 +1275,21 @@ const modalStyles = StyleSheet.create({
 	groupsContainer: {
 		maxHeight: 120,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
-		backgroundColor: COLORS.card,
+		borderBottomColor: C.border,
+		backgroundColor: C.card,
 	},
 	groupsList: { paddingHorizontal: 8, paddingVertical: 12, gap: 8 },
 	groupCard: {
 		width: 90,
 		alignItems: 'center',
-		backgroundColor: COLORS.cardLight,
+		backgroundColor: C.cardLight,
 		borderRadius: 12,
 		padding: 8,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	groupCardActive: {
-		borderColor: COLORS.primary,
+		borderColor: C.primary,
 		backgroundColor: 'rgba(52, 199, 89, 0.1)',
 	},
 	groupImageContainer: {
@@ -1290,29 +1299,29 @@ const modalStyles = StyleSheet.create({
 		position: 'relative',
 		overflow: 'hidden',
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		borderRadius: 10,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 	},
 	groupName: {
 		fontSize: 11,
 		fontWeight: '600',
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		textAlign: 'center',
 	},
-	groupNameActive: { color: COLORS.primary },
-	groupCount: { fontSize: 9, color: COLORS.textSecondary, marginTop: 2 },
+	groupNameActive: { color: C.primary },
+	groupCount: { fontSize: 9, color: C.textSecondary, marginTop: 2 },
 	searchContainer: {
 		paddingHorizontal: 8,
 		paddingVertical: 12,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		borderBottomColor: C.border,
 	},
 	searchInner: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: COLORS.cardLight,
+		backgroundColor: C.inputBg,
 		borderRadius: 12,
 		paddingHorizontal: 8,
 		paddingVertical: 12,
@@ -1320,7 +1329,7 @@ const modalStyles = StyleSheet.create({
 	searchInput: {
 		flex: 1,
 		fontSize: 16,
-		color: COLORS.text,
+		color: C.text,
 		marginLeft: 12,
 		marginRight: 8,
 	},
@@ -1328,12 +1337,12 @@ const modalStyles = StyleSheet.create({
 	exerciseListItem: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 14,
 		padding: 12,
 		marginBottom: 8,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	exerciseListImage: {
 		width: 80,
@@ -1353,13 +1362,13 @@ const modalStyles = StyleSheet.create({
 	exerciseListName: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		flex: 1,
 		marginRight: 8,
 	},
 	exerciseListDescription: {
 		fontSize: 12,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		marginBottom: 8,
 		lineHeight: 16,
 	},
@@ -1374,7 +1383,7 @@ const modalStyles = StyleSheet.create({
 	},
 	difficultyText: {
 		fontSize: 10,
-		color: COLORS.text,
+		color: C.text,
 		fontWeight: '600',
 		marginLeft: 4,
 	},
@@ -1388,14 +1397,14 @@ const modalStyles = StyleSheet.create({
 	},
 	equipmentText: {
 		fontSize: 10,
-		color: COLORS.text,
+		color: C.text,
 		fontWeight: '600',
 		marginLeft: 4,
 	},
 	exerciseDetailContainer: {
 		flex: 1,
 		marginBottom: -80,
-		backgroundColor: '#121212',
+		backgroundColor: C.background,
 	},
 	exerciseDetailContent: { padding: 16 },
 	exerciseHeader: { marginBottom: 24 },
@@ -1408,13 +1417,13 @@ const modalStyles = StyleSheet.create({
 	exerciseDetailTitle: {
 		fontSize: 24,
 		fontWeight: 'bold',
-		color: COLORS.text,
+		color: C.text,
 		flex: 1,
 		marginRight: 8,
 	},
 	exerciseDetailDescriptionFull: {
 		fontSize: 15,
-		color: COLORS.text,
+		color: C.text,
 		lineHeight: 22,
 		marginBottom: 20,
 	},
@@ -1423,12 +1432,12 @@ const modalStyles = StyleSheet.create({
 		flex: 1,
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		padding: 12,
 		borderRadius: 12,
 		marginVertical: 4,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	detailStatIcon: {
 		width: 32,
@@ -1441,35 +1450,35 @@ const modalStyles = StyleSheet.create({
 	},
 	detailStatLabel: {
 		fontSize: 11,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		marginBottom: 2,
 	},
-	detailStatValue: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+	detailStatValue: { fontSize: 13, fontWeight: '600', color: C.text },
 	section: { marginBottom: 24 },
 	sectionTitle: {
 		fontSize: 18,
 		fontWeight: 'bold',
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 16,
 	},
 	sectionHeader: {
 		paddingHorizontal: 8,
 		paddingVertical: 12,
-		backgroundColor: COLORS.background,
+		backgroundColor: C.background,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		borderBottomColor: C.border,
 	},
 	sectionHeaderText: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.primary,
+		color: C.primary,
 	},
 	muscleGroupsGridDetail: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 12,
 		overflow: 'hidden',
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	muscleGroupItem: { padding: 16 },
 	muscleGroupHeader: {
@@ -1481,7 +1490,7 @@ const modalStyles = StyleSheet.create({
 	muscleGroupLabel: {
 		fontSize: 14,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		marginLeft: 8,
 	},
 	muscleItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
@@ -1489,43 +1498,43 @@ const modalStyles = StyleSheet.create({
 		width: 8,
 		height: 8,
 		borderRadius: 4,
-		backgroundColor: COLORS.primary,
+		backgroundColor: C.primary,
 		marginRight: 12,
 	},
-	muscleText: { fontSize: 14, color: COLORS.text, flex: 1 },
+	muscleText: { fontSize: 14, color: C.text, flex: 1 },
 	muscleDotSecondary: {
 		width: 8,
 		height: 8,
 		borderRadius: 4,
-		backgroundColor: COLORS.textSecondary,
+		backgroundColor: C.textSecondary,
 		marginRight: 12,
 	},
-	muscleTextSecondary: { fontSize: 14, color: COLORS.textSecondary, flex: 1 },
+	muscleTextSecondary: { fontSize: 14, color: C.textSecondary, flex: 1 },
 	tipsList: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 12,
 		overflow: 'hidden',
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	tipItem: { flexDirection: 'row', alignItems: 'flex-start', padding: 16 },
 	tipNumber: {
 		width: 24,
 		height: 24,
 		borderRadius: 12,
-		backgroundColor: COLORS.primary,
+		backgroundColor: C.primary,
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginRight: 12,
 		flexShrink: 0,
 	},
-	tipNumberText: { fontSize: 12, fontWeight: 'bold', color: COLORS.background },
-	tipText: { fontSize: 14, color: COLORS.text, flex: 1, lineHeight: 20 },
+	tipNumberText: { fontSize: 12, fontWeight: 'bold', color: '#000' },
+	tipText: { fontSize: 14, color: C.text, flex: 1, lineHeight: 20 },
 	confirmButton: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
-		backgroundColor: COLORS.primary,
+		backgroundColor: C.primary,
 		paddingHorizontal: 32,
 		paddingVertical: 18,
 		borderRadius: 14,
@@ -1547,7 +1556,7 @@ const modalStyles = StyleSheet.create({
 	confirmButtonText: {
 		fontSize: 16,
 		fontWeight: 'bold',
-		color: COLORS.card,
+		color: '#000',
 		marginLeft: 8,
 	},
 	spacer: { height: 32 },
@@ -1559,14 +1568,14 @@ const modalStyles = StyleSheet.create({
 	},
 	emptyStateTitle: {
 		fontSize: 16,
-		color: COLORS.text,
+		color: C.text,
 		marginTop: 16,
 		textAlign: 'center',
 		fontWeight: '600',
 	},
 	emptyStateText: {
 		fontSize: 14,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		marginTop: 8,
 		textAlign: 'center',
 	},
@@ -1578,9 +1587,9 @@ const modalStyles = StyleSheet.create({
 		flexDirection: 'row',
 		paddingHorizontal: 8,
 		paddingVertical: 8,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderTopWidth: 1,
-		borderTopColor: COLORS.border,
+		borderTopColor: C.border,
 		zIndex: 10,
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: -3 },
@@ -1594,8 +1603,10 @@ const modalStyles = StyleSheet.create({
 		justifyContent: 'center',
 	},
 })
+}
 
-const styles = StyleSheet.create({
+function makeStyles() {
+	return StyleSheet.create({
 	bodyImageContainer: {
 		width: '50%',
 		height: 450,
@@ -1614,3 +1625,4 @@ const styles = StyleSheet.create({
 	},
 	cardSvgContainer: { width: 180, height: 480 },
 })
+}

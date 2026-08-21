@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { PageListSkeleton } from '@/components/ui/skeleton'
 import {
 	adminGrantPremium,
 	adminSearchUsers,
@@ -205,17 +206,21 @@ export default function AdminScreen() {
 				</TouchableOpacity>
 			</View>
 
-			<FlatList
-				data={users}
-				keyExtractor={u => u.id}
-				renderItem={renderUser}
-				contentContainerStyle={styles.list}
-				ListEmptyComponent={
-					!loading ? (
-						<Text style={styles.empty}>{t('admin', 'empty')}</Text>
-					) : null
-				}
-			/>
+			{loading && users.length === 0 ? (
+				<PageListSkeleton rows={5} />
+			) : (
+				<FlatList
+					data={users}
+					keyExtractor={u => u.id}
+					renderItem={renderUser}
+					contentContainerStyle={styles.list}
+					ListEmptyComponent={
+						!loading ? (
+							<Text style={styles.empty}>{t('admin', 'empty')}</Text>
+						) : null
+					}
+				/>
+			)}
 		</SafeAreaView>
 	)
 }

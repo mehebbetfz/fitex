@@ -10,6 +10,7 @@ export type NutritionTargets = {
 	bmr: number
 	tdee: number
 	complete: boolean
+	custom?: boolean
 }
 
 export type FoodEntry = {
@@ -98,6 +99,11 @@ export async function analyzeMealPhoto(
 			entry: FoodEntry
 			analysis: { confidence: number }
 		}
+	} catch (e) {
+		if (e instanceof Error && e.name === 'AbortError') {
+			throw new Error('Analysis timed out — try again')
+		}
+		throw e
 	} finally {
 		clearTimeout(timer)
 	}
@@ -115,4 +121,15 @@ export async function updateFoodEntry(
 
 export async function deleteFoodEntry(id: string): Promise<void> {
 	await api.delete(`/nutrition/entries/${id}`)
+}
+
+export async function updateNutritionTargets(patch: {
+	calories?: number
+	proteinG?: number
+	carbsG?: number
+	fatG?: number
+	reset?: boolean
+}): Promise<NutritionTargets> {
+	const { data } = await api.patch<NutritionTargets>('/nutrition/targets', patch)
+	return data
 }

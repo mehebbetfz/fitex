@@ -27,6 +27,21 @@ export class NutritionController {
 		return this.nutrition.getTargets(req.user.userId)
 	}
 
+	@Patch('targets')
+	async updateTargets(
+		@Req() req: { user: { userId: string } },
+		@Body()
+		body: {
+			calories?: number | null
+			proteinG?: number | null
+			carbsG?: number | null
+			fatG?: number | null
+			reset?: boolean
+		},
+	) {
+		return this.nutrition.updateTargets(req.user.userId, body)
+	}
+
 	@Get('day')
 	async day(
 		@Req() req: { user: { userId: string } },

@@ -1,7 +1,9 @@
 import { useDatabase } from '@/app/contexts/database-context'
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
-import { Language, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '@/locales'
+import { useAppTheme } from '@/contexts/theme-context'
+import type { AppColors, ThemePreference } from '@/constants/app-theme'
+import { Language, LANGUAGE_NAMES } from '@/locales'
 import {
 	exportAllDataToCsv,
 	exportWorkoutsToCsv,
@@ -19,7 +21,7 @@ import {
 } from '@/services/notifications'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
@@ -33,16 +35,184 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-const COLORS = {
-	primary: '#34C759',
-	background: '#121212',
-	card: '#1C1C1E',
-	border: '#2C2C2E',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	accent: '#FF9500',
-	error: '#FF3B30',
-} as const
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		safe: { flex: 1, backgroundColor: C.background },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingHorizontal: 8,
+			paddingTop: 8,
+			paddingBottom: 12,
+			gap: 4,
+		},
+		backBtn: {
+			width: 40,
+			height: 40,
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		title: { fontSize: 22, fontWeight: '800', color: C.text },
+		subtitle: { fontSize: 13, color: C.textSecondary, marginTop: 2 },
+		scroll: { paddingBottom: 40 },
+		section: { marginTop: 20, paddingHorizontal: 12 },
+		sectionTitle: {
+			fontSize: 13,
+			fontWeight: '700',
+			color: C.textSecondary,
+			textTransform: 'uppercase',
+			letterSpacing: 0.6,
+			marginBottom: 10,
+			marginLeft: 4,
+		},
+		settingsItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: C.card,
+			borderRadius: 14,
+			padding: 14,
+			marginBottom: 8,
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		settingsIcon: {
+			width: 44,
+			height: 44,
+			borderRadius: 22,
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginRight: 12,
+		},
+		settingsContent: { flex: 1, marginRight: 8 },
+		settingsTitle: { fontSize: 16, fontWeight: '600', color: C.text },
+		settingsSubtitle: {
+			fontSize: 12,
+			color: C.textSecondary,
+			marginTop: 2,
+		},
+		langCheckBox: {
+			width: 24,
+			height: 24,
+			borderRadius: 12,
+			borderWidth: 2,
+			borderColor: C.border,
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		langCheckBoxSelected: {
+			backgroundColor: C.primary,
+			borderColor: C.primary,
+		},
+		langSheetBackdrop: {
+			flex: 1,
+			backgroundColor: C.overlay,
+			justifyContent: 'flex-end',
+		},
+		langSheet: {
+			backgroundColor: C.modalSurface,
+			borderTopLeftRadius: 20,
+			borderTopRightRadius: 20,
+			paddingHorizontal: 20,
+			paddingTop: 12,
+			paddingBottom: 28,
+		},
+		langSheetHandle: {
+			alignSelf: 'center',
+			width: 36,
+			height: 4,
+			borderRadius: 2,
+			backgroundColor: C.border,
+			marginBottom: 14,
+		},
+		langSheetTitle: {
+			fontSize: 18,
+			fontWeight: '700',
+			color: C.text,
+			marginBottom: 12,
+		},
+		langOption: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingVertical: 16,
+			paddingHorizontal: 4,
+			borderBottomWidth: StyleSheet.hairlineWidth,
+			borderBottomColor: C.border,
+		},
+		langOptionLast: {
+			borderBottomWidth: 0,
+		},
+		langOptionText: {
+			fontSize: 17,
+			fontWeight: '500',
+			color: C.text,
+		},
+		langOptionTextSelected: {
+			color: C.primary,
+			fontWeight: '600',
+		},
+	})
+}
+
+function makePickerStyles(C: AppColors) {
+	return StyleSheet.create({
+		overlay: {
+			flex: 1,
+			backgroundColor: C.overlay,
+			justifyContent: 'center',
+			alignItems: 'center',
+			padding: 24,
+		},
+		container: {
+			backgroundColor: C.card,
+			borderRadius: 20,
+			padding: 20,
+			width: 300,
+		},
+		title: {
+			fontSize: 18,
+			fontWeight: '700',
+			color: C.text,
+			textAlign: 'center',
+			marginBottom: 16,
+		},
+		pickers: { flexDirection: 'row', gap: 16, height: 180 },
+		pickerCol: { flex: 1 },
+		pickerLabel: {
+			fontSize: 12,
+			color: C.textSecondary,
+			textAlign: 'center',
+			marginBottom: 8,
+		},
+		scroll: { flex: 1 },
+		option: {
+			paddingVertical: 8,
+			borderRadius: 8,
+			alignItems: 'center',
+		},
+		optionSelected: { backgroundColor: 'rgba(52,199,89,0.2)' },
+		optionText: { fontSize: 18, color: C.textSecondary },
+		optionTextSelected: { color: C.primary, fontWeight: '700' },
+		actions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+		cancelBtn: {
+			flex: 1,
+			paddingVertical: 12,
+			borderRadius: 12,
+			borderWidth: 1,
+			borderColor: C.border,
+			alignItems: 'center',
+		},
+		saveBtn: {
+			flex: 1,
+			paddingVertical: 12,
+			borderRadius: 12,
+			backgroundColor: C.primary,
+			alignItems: 'center',
+		},
+		cancelText: { color: C.textSecondary, fontWeight: '600' },
+		saveText: { color: '#fff', fontWeight: '700' },
+	})
+}
 
 interface SettingsItemProps {
 	icon: keyof typeof Ionicons.glyphMap
@@ -52,6 +222,8 @@ interface SettingsItemProps {
 	showChevron?: boolean
 	rightElement?: React.ReactNode
 	iconColor?: string
+	colors: AppColors
+	styles: ReturnType<typeof makeStyles>
 }
 
 function SettingsItem({
@@ -61,8 +233,11 @@ function SettingsItem({
 	onPress,
 	showChevron = true,
 	rightElement,
-	iconColor = COLORS.primary,
+	iconColor,
+	colors,
+	styles,
 }: SettingsItemProps) {
+	const tint = iconColor ?? colors.primary
 	return (
 		<TouchableOpacity
 			style={styles.settingsItem}
@@ -70,8 +245,8 @@ function SettingsItem({
 			disabled={!onPress}
 			activeOpacity={0.7}
 		>
-			<View style={[styles.settingsIcon, { backgroundColor: `${iconColor}20` }]}>
-				<Ionicons name={icon} size={24} color={iconColor} />
+			<View style={[styles.settingsIcon, { backgroundColor: `${tint}20` }]}>
+				<Ionicons name={icon} size={24} color={tint} />
 			</View>
 			<View style={styles.settingsContent}>
 				<Text style={styles.settingsTitle}>{title}</Text>
@@ -81,11 +256,7 @@ function SettingsItem({
 			</View>
 			{rightElement}
 			{showChevron && !rightElement ? (
-				<Ionicons
-					name='chevron-forward'
-					size={20}
-					color={COLORS.textSecondary}
-				/>
+				<Ionicons name='chevron-forward' size={20} color={colors.textSecondary} />
 			) : null}
 		</TouchableOpacity>
 	)
@@ -93,6 +264,16 @@ function SettingsItem({
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const MINUTES = [0, 15, 30, 45]
+
+const THEME_OPTIONS: {
+	id: ThemePreference
+	icon: keyof typeof Ionicons.glyphMap
+	titleKey: 'themeDark' | 'themeLight' | 'themeSystem'
+}[] = [
+	{ id: 'dark', icon: 'moon-outline', titleKey: 'themeDark' },
+	{ id: 'light', icon: 'sunny-outline', titleKey: 'themeLight' },
+	{ id: 'system', icon: 'phone-portrait-outline', titleKey: 'themeSystem' },
+]
 
 function TimePickerModal({
 	visible,
@@ -110,6 +291,8 @@ function TimePickerModal({
 	const [selectedHour, setSelectedHour] = useState(hour)
 	const [selectedMinute, setSelectedMinute] = useState(minute)
 	const { t } = useLanguage()
+	const { colors } = useAppTheme()
+	const pickerStyles = useMemo(() => makePickerStyles(colors), [colors])
 
 	useEffect(() => {
 		if (visible) {
@@ -119,31 +302,15 @@ function TimePickerModal({
 	}, [visible, hour, minute])
 
 	return (
-		<Modal
-			transparent
-			animationType='fade'
-			visible={visible}
-			onRequestClose={onClose}
-		>
-			<TouchableOpacity
-				style={pickerStyles.overlay}
-				activeOpacity={1}
-				onPress={onClose}
-			>
-				<TouchableOpacity activeOpacity={1} onPress={() => {}}>
+		<Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
+			<TouchableOpacity style={pickerStyles.overlay} activeOpacity={1} onPress={onClose}>
+				<TouchableOpacity activeOpacity={1}>
 					<View style={pickerStyles.container}>
-						<Text style={pickerStyles.title}>
-							{t('settings', 'notifTimeLabel')}
-						</Text>
+						<Text style={pickerStyles.title}>{t('settings', 'notifTimeLabel')}</Text>
 						<View style={pickerStyles.pickers}>
 							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>
-									{t('profile', 'hours')}
-								</Text>
-								<ScrollView
-									style={pickerStyles.scroll}
-									showsVerticalScrollIndicator={false}
-								>
+								<Text style={pickerStyles.pickerLabel}>{t('profile', 'hours')}</Text>
+								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
 									{HOURS.map(h => (
 										<TouchableOpacity
 											key={h}
@@ -156,8 +323,7 @@ function TimePickerModal({
 											<Text
 												style={[
 													pickerStyles.optionText,
-													selectedHour === h &&
-														pickerStyles.optionTextSelected,
+													selectedHour === h && pickerStyles.optionTextSelected,
 												]}
 											>
 												{String(h).padStart(2, '0')}
@@ -167,13 +333,8 @@ function TimePickerModal({
 								</ScrollView>
 							</View>
 							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>
-									{t('profile', 'minutes')}
-								</Text>
-								<ScrollView
-									style={pickerStyles.scroll}
-									showsVerticalScrollIndicator={false}
-								>
+								<Text style={pickerStyles.pickerLabel}>{t('profile', 'minutes')}</Text>
+								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
 									{MINUTES.map(m => (
 										<TouchableOpacity
 											key={m}
@@ -186,11 +347,10 @@ function TimePickerModal({
 											<Text
 												style={[
 													pickerStyles.optionText,
-													selectedMinute === m &&
-														pickerStyles.optionTextSelected,
+													selectedMinute === m && pickerStyles.optionTextSelected,
 												]}
 											>
-												{String(m).padStart(2, '0')}
+												{m.toString().padStart(2, '0')}
 											</Text>
 										</TouchableOpacity>
 									))}
@@ -198,13 +358,8 @@ function TimePickerModal({
 							</View>
 						</View>
 						<View style={pickerStyles.actions}>
-							<TouchableOpacity
-								style={pickerStyles.cancelBtn}
-								onPress={onClose}
-							>
-								<Text style={pickerStyles.cancelText}>
-									{t('common', 'cancel')}
-								</Text>
+							<TouchableOpacity style={pickerStyles.cancelBtn} onPress={onClose}>
+								<Text style={pickerStyles.cancelText}>{t('common', 'cancel')}</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
 								style={pickerStyles.saveBtn}
@@ -222,6 +377,8 @@ function TimePickerModal({
 
 export default function SettingsScreen() {
 	const { t, language, setLanguage } = useLanguage()
+	const { colors, preference, setPreference } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
 	const { user } = useAuth()
 	const {
 		syncWithServer,
@@ -236,6 +393,7 @@ export default function SettingsScreen() {
 	const [togglingWorkout, setTogglingWorkout] = useState(false)
 	const [togglingRecovery, setTogglingRecovery] = useState(false)
 	const [showTimePicker, setShowTimePicker] = useState(false)
+	const [showLanguageModal, setShowLanguageModal] = useState(false)
 	const [syncing, setSyncing] = useState(false)
 	const [exporting, setExporting] = useState(false)
 
@@ -341,25 +499,23 @@ export default function SettingsScreen() {
 	}
 
 	const handleLanguageChange = async (lang: Language) => {
+		setShowLanguageModal(false)
 		await setLanguage(lang)
 		const settings = await loadAppNotificationSettings()
 		if (settings.workoutReminders) {
-			await scheduleWorkoutReminders(
-				settings.hour,
-				settings.minute,
-				{
-					title: t('settings', 'workoutReminderTitle'),
-					body: t('settings', 'workoutReminderBody'),
-				},
-			)
+			await scheduleWorkoutReminders(settings.hour, settings.minute, {
+				title: t('settings', 'workoutReminderTitle'),
+				body: t('settings', 'workoutReminderBody'),
+			})
 		}
 		if (settings.recoveryReady) {
-			// next tick so t() uses new language after setState
 			setTimeout(() => {
 				void syncRecoveryReadyNotifications()
 			}, 100)
 		}
 	}
+
+	const itemProps = { colors, styles }
 
 	return (
 		<SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -376,7 +532,7 @@ export default function SettingsScreen() {
 					style={styles.backBtn}
 					hitSlop={12}
 				>
-					<Ionicons name='chevron-back' size={26} color={COLORS.text} />
+					<Ionicons name='chevron-back' size={26} color={colors.text} />
 				</TouchableOpacity>
 				<View style={{ flex: 1 }}>
 					<Text style={styles.title}>{t('settings', 'title')}</Text>
@@ -389,10 +545,39 @@ export default function SettingsScreen() {
 				contentContainerStyle={styles.scroll}
 			>
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>
-						{t('settings', 'notifications')}
-					</Text>
+					<Text style={styles.sectionTitle}>{t('settings', 'appearance')}</Text>
+					{THEME_OPTIONS.map(opt => {
+						const selected = preference === opt.id
+						return (
+							<SettingsItem
+								key={opt.id}
+								{...itemProps}
+								icon={opt.icon}
+								title={t('settings', opt.titleKey)}
+								onPress={() => void setPreference(opt.id)}
+								showChevron={false}
+								iconColor={selected ? colors.primary : colors.textSecondary}
+								rightElement={
+									<View
+										style={[
+											styles.langCheckBox,
+											selected && styles.langCheckBoxSelected,
+										]}
+									>
+										{selected ? (
+											<Ionicons name='checkmark' size={16} color='#fff' />
+										) : null}
+									</View>
+								}
+							/>
+						)
+					})}
+				</View>
+
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>{t('settings', 'notifications')}</Text>
 					<SettingsItem
+						{...itemProps}
 						icon='notifications-outline'
 						title={t('settings', 'workoutReminder')}
 						subtitle={
@@ -404,19 +589,19 @@ export default function SettingsScreen() {
 						showChevron={false}
 						rightElement={
 							togglingWorkout ? (
-								<ActivityIndicator size='small' color={COLORS.primary} />
+								<ActivityIndicator size='small' color={colors.primary} />
 							) : (
 								<Switch
 									value={notif.workoutReminders}
 									onValueChange={handleToggleWorkout}
 									trackColor={{
-										false: COLORS.border,
-										true: `${COLORS.primary}80`,
+										false: colors.border,
+										true: `${colors.primary}80`,
 									}}
 									thumbColor={
 										notif.workoutReminders
-											? COLORS.primary
-											: COLORS.textSecondary
+											? colors.primary
+											: colors.textSecondary
 									}
 								/>
 							)
@@ -424,35 +609,37 @@ export default function SettingsScreen() {
 					/>
 					{notif.workoutReminders ? (
 						<SettingsItem
+							{...itemProps}
 							icon='time-outline'
 							title={t('settings', 'notifTimeLabel')}
 							subtitle={formatTime(notif.hour, notif.minute)}
 							onPress={() => setShowTimePicker(true)}
-							iconColor={COLORS.accent}
+							iconColor={colors.accent}
 						/>
 					) : null}
 					<SettingsItem
+						{...itemProps}
 						icon='body-outline'
 						title={t('settings', 'recoveryReady')}
 						subtitle={t('settings', 'recoveryReadySubtitle')}
 						onPress={() => {}}
 						showChevron={false}
-						iconColor='#5AC8FA'
+						iconColor={colors.info}
 						rightElement={
 							togglingRecovery ? (
-								<ActivityIndicator size='small' color={COLORS.primary} />
+								<ActivityIndicator size='small' color={colors.primary} />
 							) : (
 								<Switch
 									value={notif.recoveryReady}
 									onValueChange={handleToggleRecovery}
 									trackColor={{
-										false: COLORS.border,
-										true: `${COLORS.primary}80`,
+										false: colors.border,
+										true: `${colors.primary}80`,
 									}}
 									thumbColor={
 										notif.recoveryReady
-											? COLORS.primary
-											: COLORS.textSecondary
+											? colors.primary
+											: colors.textSecondary
 									}
 								/>
 							)
@@ -464,6 +651,7 @@ export default function SettingsScreen() {
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>{t('settings', 'cloud')}</Text>
 						<SettingsItem
+							{...itemProps}
 							icon='cloud-upload-outline'
 							title={t('settings', 'syncData')}
 							subtitle={t('settings', 'syncSubtitle')}
@@ -471,11 +659,12 @@ export default function SettingsScreen() {
 							showChevron={false}
 							rightElement={
 								syncing || dbLoading ? (
-									<ActivityIndicator size='small' color={COLORS.primary} />
+									<ActivityIndicator size='small' color={colors.primary} />
 								) : null
 							}
 						/>
 						<SettingsItem
+							{...itemProps}
 							icon='stats-chart-outline'
 							title={t('sync', 'statsTitle')}
 							subtitle={t('sync', 'lastSync')}
@@ -487,190 +676,86 @@ export default function SettingsScreen() {
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>{t('settings', 'export')}</Text>
 					<SettingsItem
+						{...itemProps}
 						icon='download-outline'
 						title={t('settings', 'exportAll')}
 						subtitle={t('settings', 'exportAllSubtitle')}
 						onPress={handleExportAll}
 						showChevron={false}
-						iconColor='#5AC8FA'
+						iconColor={colors.info}
 						rightElement={
 							exporting ? (
-								<ActivityIndicator size='small' color='#5AC8FA' />
+								<ActivityIndicator size='small' color={colors.info} />
 							) : null
 						}
 					/>
 					<SettingsItem
+						{...itemProps}
 						icon='barbell-outline'
 						title={t('settings', 'exportWorkouts')}
 						subtitle={`${workouts.length} ${t('profile', 'recordsLabel')}`}
 						onPress={handleExportWorkouts}
 						showChevron={false}
-						iconColor='#5AC8FA'
+						iconColor={colors.info}
 					/>
 				</View>
 
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>{t('settings', 'language')}</Text>
-					{(['ru', 'en', 'az'] as Language[]).map(lang => {
-						const selected = lang === language
-						return (
-							<SettingsItem
-								key={lang}
-								icon='language-outline'
-								title={`${LANGUAGE_FLAGS[lang]} ${LANGUAGE_NAMES[lang]}`}
-								onPress={() => handleLanguageChange(lang)}
-								showChevron={false}
-								iconColor={
-									selected ? COLORS.primary : COLORS.textSecondary
-								}
-								rightElement={
-									<View
-										style={[
-											styles.langCheckBox,
-											selected && styles.langCheckBoxSelected,
-										]}
-									>
-										{selected ? (
-											<Ionicons
-												name='checkmark'
-												size={16}
-												color={COLORS.text}
-											/>
-										) : null}
-									</View>
-								}
-							/>
-						)
-					})}
+					<SettingsItem
+						{...itemProps}
+						icon='language-outline'
+						title={LANGUAGE_NAMES[language ?? 'ru']}
+						onPress={() => setShowLanguageModal(true)}
+						iconColor={colors.primary}
+					/>
 				</View>
 			</ScrollView>
+
+			<Modal
+				visible={showLanguageModal}
+				transparent
+				animationType='slide'
+				onRequestClose={() => setShowLanguageModal(false)}
+			>
+				<View style={styles.langSheetBackdrop}>
+					<TouchableOpacity
+						style={StyleSheet.absoluteFill}
+						activeOpacity={1}
+						onPress={() => setShowLanguageModal(false)}
+					/>
+					<View style={styles.langSheet}>
+						<View style={styles.langSheetHandle} />
+						<Text style={styles.langSheetTitle}>{t('settings', 'language')}</Text>
+						{(['ru', 'en', 'az'] as Language[]).map((lang, index, arr) => {
+							const selected = lang === language
+							return (
+								<TouchableOpacity
+									key={lang}
+									style={[
+										styles.langOption,
+										index === arr.length - 1 && styles.langOptionLast,
+									]}
+									onPress={() => void handleLanguageChange(lang)}
+									activeOpacity={0.7}
+								>
+									<Text
+										style={[
+											styles.langOptionText,
+											selected && styles.langOptionTextSelected,
+										]}
+									>
+										{LANGUAGE_NAMES[lang]}
+									</Text>
+									{selected ? (
+										<Ionicons name='checkmark' size={20} color={colors.primary} />
+									) : null}
+								</TouchableOpacity>
+							)
+						})}
+					</View>
+				</View>
+			</Modal>
 		</SafeAreaView>
 	)
 }
-
-const styles = StyleSheet.create({
-	safe: { flex: 1, backgroundColor: COLORS.background },
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 8,
-		paddingTop: 8,
-		paddingBottom: 12,
-		gap: 4,
-	},
-	backBtn: {
-		width: 40,
-		height: 40,
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	title: { fontSize: 22, fontWeight: '800', color: COLORS.text },
-	subtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
-	scroll: { paddingBottom: 40 },
-	section: { marginTop: 20, paddingHorizontal: 12 },
-	sectionTitle: {
-		fontSize: 13,
-		fontWeight: '700',
-		color: COLORS.textSecondary,
-		textTransform: 'uppercase',
-		letterSpacing: 0.6,
-		marginBottom: 10,
-		marginLeft: 4,
-	},
-	settingsItem: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: COLORS.card,
-		borderRadius: 14,
-		padding: 14,
-		marginBottom: 8,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-	},
-	settingsIcon: {
-		width: 44,
-		height: 44,
-		borderRadius: 22,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: 12,
-	},
-	settingsContent: { flex: 1, marginRight: 8 },
-	settingsTitle: { fontSize: 16, fontWeight: '600', color: COLORS.text },
-	settingsSubtitle: {
-		fontSize: 12,
-		color: COLORS.textSecondary,
-		marginTop: 2,
-	},
-	langCheckBox: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: COLORS.border,
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	langCheckBoxSelected: {
-		backgroundColor: COLORS.primary,
-		borderColor: COLORS.primary,
-	},
-})
-
-const pickerStyles = StyleSheet.create({
-	overlay: {
-		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.7)',
-		justifyContent: 'center',
-		alignItems: 'center',
-		padding: 24,
-	},
-	container: {
-		backgroundColor: COLORS.card,
-		borderRadius: 20,
-		padding: 20,
-		width: 300,
-	},
-	title: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: COLORS.text,
-		textAlign: 'center',
-		marginBottom: 16,
-	},
-	pickers: { flexDirection: 'row', gap: 16, height: 180 },
-	pickerCol: { flex: 1 },
-	pickerLabel: {
-		fontSize: 12,
-		color: COLORS.textSecondary,
-		textAlign: 'center',
-		marginBottom: 8,
-	},
-	scroll: { flex: 1 },
-	option: {
-		paddingVertical: 8,
-		borderRadius: 8,
-		alignItems: 'center',
-	},
-	optionSelected: { backgroundColor: 'rgba(52,199,89,0.2)' },
-	optionText: { fontSize: 18, color: COLORS.textSecondary },
-	optionTextSelected: { color: COLORS.primary, fontWeight: '700' },
-	actions: { flexDirection: 'row', gap: 10, marginTop: 16 },
-	cancelBtn: {
-		flex: 1,
-		paddingVertical: 12,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		alignItems: 'center',
-	},
-	saveBtn: {
-		flex: 1,
-		paddingVertical: 12,
-		borderRadius: 12,
-		backgroundColor: COLORS.primary,
-		alignItems: 'center',
-	},
-	cancelText: { color: COLORS.textSecondary, fontWeight: '600' },
-	saveText: { color: '#fff', fontWeight: '700' },
-})

@@ -4,14 +4,16 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts \
+	&& npm rebuild sharp --foreground-scripts
 
 COPY . .
 # nest/tsc в Docker часто упираются в лимит кучи (~2GB) → heap out of memory
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
-# Remove dev dependencies
-RUN npm prune --production
+# Remove dev dependencies (keep sharp native binary)
+RUN npm prune --production \
+	&& npm rebuild sharp --foreground-scripts
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine

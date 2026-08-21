@@ -266,7 +266,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	}
 
 	const registerWithEmail = async (email: string, password: string, firstName: string, lastName?: string) => {
-		await api.post('/auth/register', { email, password, firstName, lastName })
+		const { data } = await api.post('/auth/register', { email, password, firstName, lastName })
+		// SMTP configured → verify screen. SMTP missing/failed → server auto-verifies and returns tokens.
+		if (data?.access_token && data?.user) {
+			setPendingVerificationEmail(null)
+			await saveUser(data.user, data.access_token)
+			return
+		}
 		setPendingVerificationEmail(email)
 		router.push('/(auth)/verify-email' as any)
 	}

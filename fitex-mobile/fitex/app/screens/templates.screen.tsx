@@ -1,9 +1,12 @@
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
+import { PageListSkeleton } from '@/components/ui/skeleton'
 import { WorkoutTemplate } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useFocusEffect, useRouter } from 'expo-router'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
 	FlatList,
@@ -15,17 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDatabase } from '../contexts/database-context'
 
-const COLORS = {
-	primary: '#34C759',
-	background: '#0A0A0A',
-	card: '#1C1C1E',
-	border: 'rgba(255,255,255,0.08)',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	blue: '#5AC8FA',
-} as const
-
-function accentFor(groups: string | undefined) {
+function accentFor(groups: string | undefined, primary: string) {
 	const g = (groups || '').toLowerCase()
 	if (g.includes('chest') || g.includes('грудь') || g.includes('sinə')) return '#FF6B6B'
 	if (g.includes('back') || g.includes('спина') || g.includes('bel')) return '#4ECDC4'
@@ -33,13 +26,15 @@ function accentFor(groups: string | undefined) {
 	if (g.includes('shoulder') || g.includes('плеч') || g.includes('çiyin')) return '#DDA0DD'
 	if (g.includes('arm') || g.includes('биц') || g.includes('триц') || g.includes('əl'))
 		return '#45B7D1'
-	return COLORS.primary
+	return primary
 }
 
 export default function TemplatesScreen() {
 	const router = useRouter()
 	const { templates, refreshTemplates, getWorkoutTemplate } = useDatabase()
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const [booting, setBooting] = useState(true)
 	const [startingId, setStartingId] = useState<number | null>(null)
 
@@ -88,18 +83,20 @@ export default function TemplatesScreen() {
 				activeOpacity={0.75}
 				disabled={startingId != null}
 			>
-				<View style={[styles.accent, { backgroundColor: accentFor(item.muscle_groups) }]} />
+				<View
+					style={[styles.accent, { backgroundColor: accentFor(item.muscle_groups, C.primary) }]}
+				/>
 				<View style={styles.cardBody}>
 					<Text style={styles.name} numberOfLines={1}>
 						{item.name}
 					</Text>
 					<View style={styles.meta}>
-						<Ionicons name='barbell-outline' size={12} color={COLORS.textSecondary} />
+						<Ionicons name='barbell-outline' size={12} color={C.textSecondary} />
 						<Text style={styles.metaText}>
 							{item.exercises_count} {t('templates', 'exercisesShort')}
 						</Text>
 						<View style={styles.dot} />
-						<Ionicons name='time-outline' size={12} color={COLORS.textSecondary} />
+						<Ionicons name='time-outline' size={12} color={C.textSecondary} />
 						<Text style={styles.metaText}>
 							{item.estimated_duration || 60} {t('templates', 'minShort')}
 						</Text>
@@ -117,11 +114,11 @@ export default function TemplatesScreen() {
 					}
 					hitSlop={10}
 				>
-					<Ionicons name='create-outline' size={18} color={COLORS.blue} />
+					<Ionicons name='create-outline' size={18} color={C.info} />
 				</TouchableOpacity>
 				<View style={styles.playWrap}>
 					{busy ? (
-						<ActivityIndicator size='small' color={COLORS.primary} />
+						<ActivityIndicator size='small' color={C.primary} />
 					) : (
 						<Ionicons name='play' size={16} color='#06140A' />
 					)}
@@ -134,7 +131,7 @@ export default function TemplatesScreen() {
 		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
 			<View style={styles.header}>
 				<TouchableOpacity onPress={() => router.back()} style={styles.iconBtn} hitSlop={8}>
-					<Ionicons name='arrow-back' size={22} color={COLORS.text} />
+					<Ionicons name='arrow-back' size={22} color={C.text} />
 				</TouchableOpacity>
 				<View style={styles.headerCenter}>
 					<Text style={styles.headerTitle}>{t('templates', 'title')}</Text>
@@ -147,14 +144,12 @@ export default function TemplatesScreen() {
 					onPress={() => router.push('/(routes)/add-template')}
 					hitSlop={8}
 				>
-					<Ionicons name='add' size={24} color={COLORS.primary} />
+					<Ionicons name='add' size={24} color={C.primary} />
 				</TouchableOpacity>
 			</View>
 
 			{booting ? (
-				<View style={styles.center}>
-					<ActivityIndicator color={COLORS.primary} />
-				</View>
+				<PageListSkeleton rows={5} />
 			) : (
 				<FlatList
 					data={templates}
@@ -167,7 +162,7 @@ export default function TemplatesScreen() {
 					ListEmptyComponent={
 						<View style={styles.emptyWrap}>
 							<View style={styles.emptyIcon}>
-								<Ionicons name='copy-outline' size={36} color={COLORS.primary} />
+								<Ionicons name='copy-outline' size={36} color={C.primary} />
 							</View>
 							<Text style={styles.emptyTitle}>{t('templates', 'noTemplates')}</Text>
 							<Text style={styles.emptyText}>{t('templates', 'emptyHint')}</Text>
@@ -189,97 +184,99 @@ export default function TemplatesScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: COLORS.background },
-	center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 12,
-		paddingVertical: 12,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: COLORS.border,
-	},
-	iconBtn: { padding: 4, width: 36 },
-	headerCenter: { flex: 1, alignItems: 'center' },
-	headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text, letterSpacing: -0.3 },
-	headerSub: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
-	addButton: { padding: 4, width: 36, alignItems: 'flex-end' },
-	list: { padding: 16, paddingBottom: 40, gap: 10 },
-	emptyList: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-	card: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: COLORS.card,
-		borderRadius: 16,
-		overflow: 'hidden',
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		marginBottom: 10,
-		paddingRight: 10,
-	},
-	accent: { width: 4, alignSelf: 'stretch' },
-	cardBody: { flex: 1, paddingVertical: 14, paddingHorizontal: 12 },
-	name: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-	meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-	metaText: { fontSize: 12, color: COLORS.textSecondary },
-	dot: {
-		width: 3,
-		height: 3,
-		borderRadius: 1.5,
-		backgroundColor: COLORS.textSecondary,
-		marginHorizontal: 4,
-	},
-	desc: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
-	editBtn: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: 'rgba(90,200,250,0.12)',
-		marginRight: 8,
-	},
-	playWrap: {
-		width: 36,
-		height: 36,
-		borderRadius: 18,
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: COLORS.primary,
-	},
-	emptyWrap: { alignItems: 'center', paddingHorizontal: 16 },
-	emptyIcon: {
-		width: 72,
-		height: 72,
-		borderRadius: 36,
-		alignItems: 'center',
-		justifyContent: 'center',
-		backgroundColor: 'rgba(52,199,89,0.12)',
-		marginBottom: 16,
-	},
-	emptyTitle: {
-		fontSize: 20,
-		fontWeight: '800',
-		color: COLORS.text,
-		marginBottom: 8,
-	},
-	emptyText: {
-		fontSize: 14,
-		color: COLORS.textSecondary,
-		textAlign: 'center',
-		lineHeight: 20,
-		marginBottom: 20,
-	},
-	emptyButton: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 6,
-		backgroundColor: COLORS.primary,
-		paddingHorizontal: 20,
-		paddingVertical: 12,
-		borderRadius: 14,
-	},
-	emptyButtonText: { color: '#06140A', fontWeight: '800', fontSize: 15 },
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: { flex: 1, backgroundColor: C.background },
+		center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 12,
+			paddingVertical: 12,
+			borderBottomWidth: StyleSheet.hairlineWidth,
+			borderBottomColor: C.border,
+		},
+		iconBtn: { padding: 4, width: 36 },
+		headerCenter: { flex: 1, alignItems: 'center' },
+		headerTitle: { fontSize: 18, fontWeight: '800', color: C.text, letterSpacing: -0.3 },
+		headerSub: { fontSize: 11, color: C.textSecondary, marginTop: 2 },
+		addButton: { padding: 4, width: 36, alignItems: 'flex-end' },
+		list: { padding: 16, paddingBottom: 40, gap: 10 },
+		emptyList: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+		card: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: C.card,
+			borderRadius: 16,
+			overflow: 'hidden',
+			borderWidth: 1,
+			borderColor: C.border,
+			marginBottom: 10,
+			paddingRight: 10,
+		},
+		accent: { width: 4, alignSelf: 'stretch' },
+		cardBody: { flex: 1, paddingVertical: 14, paddingHorizontal: 12 },
+		name: { fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 4 },
+		meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+		metaText: { fontSize: 12, color: C.textSecondary },
+		dot: {
+			width: 3,
+			height: 3,
+			borderRadius: 1.5,
+			backgroundColor: C.textSecondary,
+			marginHorizontal: 4,
+		},
+		desc: { fontSize: 12, color: C.textSecondary, marginTop: 4 },
+		editBtn: {
+			width: 36,
+			height: 36,
+			borderRadius: 10,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: 'rgba(90,200,250,0.12)',
+			marginRight: 8,
+		},
+		playWrap: {
+			width: 36,
+			height: 36,
+			borderRadius: 18,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: C.primary,
+		},
+		emptyWrap: { alignItems: 'center', paddingHorizontal: 16 },
+		emptyIcon: {
+			width: 72,
+			height: 72,
+			borderRadius: 36,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: 'rgba(52,199,89,0.12)',
+			marginBottom: 16,
+		},
+		emptyTitle: {
+			fontSize: 20,
+			fontWeight: '800',
+			color: C.text,
+			marginBottom: 8,
+		},
+		emptyText: {
+			fontSize: 14,
+			color: C.textSecondary,
+			textAlign: 'center',
+			lineHeight: 20,
+			marginBottom: 20,
+		},
+		emptyButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			backgroundColor: C.primary,
+			paddingHorizontal: 20,
+			paddingVertical: 12,
+			borderRadius: 14,
+		},
+		emptyButtonText: { color: '#06140A', fontWeight: '800', fontSize: 15 },
+	})
+}

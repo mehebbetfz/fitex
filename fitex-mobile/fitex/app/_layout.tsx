@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@/components/error-boundary'
 import OtaUpdateGate from '@/components/ota-update-gate'
 import SyncBanner from '@/components/sync-banner'
 import { LanguageProvider } from '@/contexts/language-context'
+import { ThemeProvider } from '@/contexts/theme-context'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
@@ -44,20 +45,22 @@ function RootLayoutContent() {
 export default function RootLayout() {
 	return (
 		<ErrorBoundary>
-			<LanguageProvider>
-				<AuthProvider>
-					<DatabaseProvider>
-						<SyncProvider>
-							<SyncInitializer />
-							<SafeAreaProvider>
-								<SyncBanner />
-								<OtaUpdateGate />
-								<RootLayoutContent />
-							</SafeAreaProvider>
-						</SyncProvider>
-					</DatabaseProvider>
-				</AuthProvider>
-			</LanguageProvider>
+			<ThemeProvider>
+				<LanguageProvider>
+					<AuthProvider>
+						<DatabaseProvider>
+							<SyncProvider>
+								<SyncInitializer />
+								<SafeAreaProvider>
+									<SyncBanner />
+									<OtaUpdateGate />
+									<RootLayoutContent />
+								</SafeAreaProvider>
+							</SyncProvider>
+						</DatabaseProvider>
+					</AuthProvider>
+				</LanguageProvider>
+			</ThemeProvider>
 		</ErrorBoundary>
 	)
 }

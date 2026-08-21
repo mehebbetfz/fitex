@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
+import { formatApiError } from '@/services/api'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import React, { useState } from 'react'
@@ -59,8 +60,7 @@ export default function RegisterScreen() {
 		try {
 			await registerWithEmail(email.trim().toLowerCase(), password, firstName.trim(), lastName.trim() || undefined)
 		} catch (e: any) {
-			const msg = e?.response?.data?.message || e.message || t('common', 'error')
-			Alert.alert(t('common', 'error'), msg)
+			Alert.alert(t('common', 'error'), formatApiError(e))
 		} finally {
 			setLoading(false)
 		}

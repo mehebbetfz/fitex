@@ -1,5 +1,6 @@
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
+import { LeaderboardSkeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/contexts/language-context'
 import { TIERS, TierName } from '@/services/rating'
 import { api } from '@/services/api'
@@ -8,7 +9,6 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-	ActivityIndicator,
 	Animated,
 	FlatList,
 	Image,
@@ -588,11 +588,7 @@ export default function LeaderboardScreen() {
 			/>
 
 			{loading ? (
-				<View style={s.loader}>
-					<ActivityIndicator size='large' color={C.primary} />
-					<Ionicons name='podium-outline' size={36} color={C.sub} style={{ marginTop: 16 }} />
-					<Text style={s.loaderText}>{t('common', 'loading')}</Text>
-				</View>
+				<LeaderboardSkeleton />
 			) : (
 				<Animated.View style={{ flex: 1, opacity: fadeAnim }}>
 					<FlatList

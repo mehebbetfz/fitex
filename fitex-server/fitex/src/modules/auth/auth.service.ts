@@ -39,26 +39,58 @@ export class AuthService {
 		return Math.floor(100000 + Math.random() * 900000).toString()
 	}
 
-	async registerWithEmail(email: string, password: string, firstName: string, lastName?: string): Promise<{ message: string }> {
-		const existing = await this.userModel.findOne({ email, provider: 'email' })
+	async registerWithEmail(
+		email: string,
+		password: string,
+		firstName: string,
+		lastName?: string,
+	): Promise<
+		| { message: string; requiresVerification: true }
+		| Awaited<ReturnType<AuthService['login']>> & { requiresVerification: false }
+	> {
+		const normalized = email.trim().toLowerCase()
+		const existing = await this.userModel.findOne({ email: normalized, provider: 'email' })
 		if (existing) {
 			if (existing.isEmailVerified) throw new ConflictException('Email already registered')
-			// Resend verification code for unverified accounts
+
+			const passwordHash = await bcrypt.hash(password, 12)
+			existing.passwordHash = passwordHash
+			existing.firstName = firstName
+			if (lastName != null) existing.lastName = lastName
+
 			const code = this.generateCode()
 			existing.emailVerificationToken = code
 			existing.emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000)
 			await existing.save()
-			await this.emailService.sendVerificationCode(email, code)
-			return { message: 'Verification code resent' }
+
+			const sent = await this.emailService.trySendVerificationCode(normalized, code)
+			if (sent) {
+				return { message: 'Verification code resent', requiresVerification: true }
+			}
+
+			// SMTP down / missing — complete signup without email gate
+			existing.isEmailVerified = true
+			existing.emailVerificationToken = undefined
+			existing.emailVerificationExpires = undefined
+			await existing.save()
+			const session = await this.login(existing)
+			return { ...session, requiresVerification: false }
+		}
+
+		const otherProvider = await this.userModel.findOne({ email: normalized })
+		if (otherProvider) {
+			throw new ConflictException(
+				'This email is already used with Google or Apple Sign-In. Please sign in that way.',
+			)
 		}
 
 		const passwordHash = await bcrypt.hash(password, 12)
 		const code = this.generateCode()
 
 		const user = new this.userModel({
-			email,
+			email: normalized,
 			provider: 'email',
-			providerId: email,
+			providerId: normalized,
 			firstName,
 			lastName: lastName || '',
 			passwordHash,
@@ -67,13 +99,31 @@ export class AuthService {
 			emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
 			isNewUser: true,
 		})
+		try {
+			await user.save()
+		} catch (err: any) {
+			if (err?.code === 11000) {
+				throw new ConflictException('Email already registered')
+			}
+			throw err
+		}
+
+		const sent = await this.emailService.trySendVerificationCode(normalized, code)
+		if (sent) {
+			return { message: 'Verification code sent', requiresVerification: true }
+		}
+
+		user.isEmailVerified = true
+		user.emailVerificationToken = undefined
+		user.emailVerificationExpires = undefined
 		await user.save()
-		await this.emailService.sendVerificationCode(email, code)
-		return { message: 'Verification code sent' }
+		const session = await this.login(user)
+		return { ...session, requiresVerification: false }
 	}
 
 	async verifyEmail(email: string, code: string): Promise<ReturnType<AuthService['login']>> {
-		const user = await this.userModel.findOne({ email, provider: 'email' })
+		const normalized = email.trim().toLowerCase()
+		const user = await this.userModel.findOne({ email: normalized, provider: 'email' })
 		if (!user) throw new BadRequestException('User not found')
 		if (user.isEmailVerified) throw new BadRequestException('Email already verified')
 		if (!user.emailVerificationToken || user.emailVerificationToken !== code) {
@@ -91,18 +141,37 @@ export class AuthService {
 	}
 
 	async loginWithEmail(email: string, password: string): Promise<ReturnType<AuthService['login']>> {
-		const user = await this.userModel.findOne({ email, provider: 'email' })
+		const normalized = email.trim().toLowerCase()
+		const user = await this.userModel.findOne({ email: normalized, provider: 'email' })
 		if (!user || !user.passwordHash) throw new UnauthorizedException('Invalid email or password')
-		if (!user.isEmailVerified) throw new UnauthorizedException('Please verify your email first')
 
 		const valid = await bcrypt.compare(password, user.passwordHash)
 		if (!valid) throw new UnauthorizedException('Invalid email or password')
+
+		if (!user.isEmailVerified) {
+			// Prefer sending a code when SMTP works; otherwise unlock the account so login is usable.
+			const code = this.generateCode()
+			user.emailVerificationToken = code
+			user.emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000)
+			await user.save()
+
+			const sent = await this.emailService.trySendVerificationCode(normalized, code)
+			if (sent) {
+				throw new UnauthorizedException('Please verify your email first')
+			}
+
+			user.isEmailVerified = true
+			user.emailVerificationToken = undefined
+			user.emailVerificationExpires = undefined
+			await user.save()
+		}
 
 		return await this.login(user)
 	}
 
 	async resendVerificationCode(email: string): Promise<{ message: string }> {
-		const user = await this.userModel.findOne({ email, provider: 'email' })
+		const normalized = email.trim().toLowerCase()
+		const user = await this.userModel.findOne({ email: normalized, provider: 'email' })
 		if (!user) throw new BadRequestException('User not found')
 		if (user.isEmailVerified) throw new BadRequestException('Email already verified')
 
@@ -110,12 +179,18 @@ export class AuthService {
 		user.emailVerificationToken = code
 		user.emailVerificationExpires = new Date(Date.now() + 10 * 60 * 1000)
 		await user.save()
-		await this.emailService.sendVerificationCode(email, code)
+		const sent = await this.emailService.trySendVerificationCode(normalized, code)
+		if (!sent) {
+			throw new BadRequestException(
+				'Could not send email. Check SMTP settings on the server, or try again later.',
+			)
+		}
 		return { message: 'Verification code sent' }
 	}
 
 	async requestPasswordReset(email: string): Promise<{ message: string }> {
-		const user = await this.userModel.findOne({ email, provider: 'email' })
+		const normalized = email.trim().toLowerCase()
+		const user = await this.userModel.findOne({ email: normalized, provider: 'email' })
 		// Always return success to prevent email enumeration
 		if (!user) return { message: 'If this email exists, a reset code was sent' }
 
@@ -123,12 +198,13 @@ export class AuthService {
 		user.passwordResetToken = code
 		user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000)
 		await user.save()
-		await this.emailService.sendPasswordResetCode(email, code)
+		await this.emailService.trySendPasswordResetCode(normalized, code)
 		return { message: 'If this email exists, a reset code was sent' }
 	}
 
 	async resetPassword(email: string, code: string, newPassword: string): Promise<{ message: string }> {
-		const user = await this.userModel.findOne({ email, provider: 'email' })
+		const normalized = email.trim().toLowerCase()
+		const user = await this.userModel.findOne({ email: normalized, provider: 'email' })
 		if (!user || !user.passwordResetToken || user.passwordResetToken !== code) {
 			throw new BadRequestException('Invalid or expired reset code')
 		}

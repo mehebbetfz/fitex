@@ -1,9 +1,10 @@
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
-import { Language, LANGUAGE_FLAGS, LANGUAGE_NAMES } from '@/locales'
+import { useAppTheme } from '@/contexts/theme-context'
+import { Language, LANGUAGE_NAMES } from '@/locales'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
 	StyleSheet,
 	Text,
@@ -12,14 +13,12 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-const LANGUAGES: { code: Language; nativeName: string; localName: string }[] = [
-	{ code: 'ru', nativeName: 'Русский', localName: 'Russian' },
-	{ code: 'en', nativeName: 'English', localName: 'English' },
-	{ code: 'az', nativeName: 'Azərbaycanca', localName: 'Azerbaijani' },
-]
+const LANGUAGES: Language[] = ['ru', 'en', 'az']
 
 export default function LanguageSelectScreen() {
 	const { setLanguage, t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const [selected, setSelected] = useState<Language | null>(null)
 	const [loading, setLoading] = useState(false)
 
@@ -28,7 +27,6 @@ export default function LanguageSelectScreen() {
 		setLoading(true)
 		try {
 			await setLanguage(selected)
-			// Explicit login gate — avoids racing into tabs before auth/language settle
 			router.replace('/')
 		} catch {
 			setLoading(false)
@@ -36,196 +34,123 @@ export default function LanguageSelectScreen() {
 	}
 
 	return (
-		<SafeAreaView style={styles.container}>
-			{/* Header */}
+		<SafeAreaView style={styles.container} edges={['top', 'bottom']}>
 			<View style={styles.header}>
-				<LinearGradient
-					colors={['rgba(52,199,89,0.15)', 'transparent']}
-					style={styles.headerGlow}
-				/>
-				<View style={styles.iconWrap}>
-					<Text style={styles.globeEmoji}>🌍</Text>
-				</View>
 				<Text style={styles.title}>{t('languageSelect', 'title')}</Text>
 				<Text style={styles.subtitle}>{t('languageSelect', 'subtitle')}</Text>
 			</View>
 
-			{/* Language cards */}
-			<View style={styles.languageList}>
-				{LANGUAGES.map(lang => {
-					const isSelected = selected === lang.code
+			<View style={styles.list}>
+				{LANGUAGES.map(code => {
+					const isSelected = selected === code
 					return (
 						<TouchableOpacity
-							key={lang.code}
-							style={[styles.card, isSelected && styles.cardSelected]}
-							onPress={() => setSelected(lang.code)}
-							activeOpacity={0.75}
+							key={code}
+							style={[styles.row, isSelected && styles.rowSelected]}
+							onPress={() => setSelected(code)}
+							activeOpacity={0.7}
 						>
-							<View style={styles.cardLeft}>
-								<Text style={styles.flag}>{LANGUAGE_FLAGS[lang.code]}</Text>
-								<View>
-									<Text style={[styles.nativeName, isSelected && styles.nativeNameSelected]}>
-										{lang.nativeName}
-									</Text>
-									<Text style={styles.localName}>{LANGUAGE_NAMES[lang.code]}</Text>
-								</View>
-							</View>
-							<View style={[styles.radio, isSelected && styles.radioSelected]}>
-								{isSelected && (
-									<View style={styles.radioDot} />
-								)}
-							</View>
+							<Text style={[styles.rowText, isSelected && styles.rowTextSelected]}>
+								{LANGUAGE_NAMES[code]}
+							</Text>
+							{isSelected ? (
+								<Ionicons name='checkmark' size={20} color={C.primary} />
+							) : (
+								<View style={styles.checkPlaceholder} />
+							)}
 						</TouchableOpacity>
 					)
 				})}
 			</View>
 
-			{/* Continue button */}
 			<View style={styles.footer}>
 				<TouchableOpacity
 					style={[styles.btn, !selected && styles.btnDisabled]}
 					onPress={handleContinue}
 					disabled={!selected || loading}
-					activeOpacity={0.8}
+					activeOpacity={0.85}
 				>
-					{loading ? (
-						<Text style={styles.btnText}>{t('common', 'loading')}</Text>
-					) : (
-						<>
-							<Text style={styles.btnText}>{t('languageSelect', 'continue')}</Text>
-							<Ionicons name='arrow-forward' size={20} color='#fff' />
-						</>
-					)}
+					<Text style={[styles.btnText, !selected && styles.btnTextDisabled]}>
+						{loading ? t('common', 'loading') : t('languageSelect', 'continue')}
+					</Text>
 				</TouchableOpacity>
 			</View>
 		</SafeAreaView>
 	)
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#121212',
-	},
-	header: {
-		alignItems: 'center',
-		paddingTop: 40,
-		paddingBottom: 32,
-		paddingHorizontal: 24,
-		position: 'relative',
-	},
-	headerGlow: {
-		position: 'absolute',
-		top: 0,
-		left: 0,
-		right: 0,
-		height: 200,
-	},
-	iconWrap: {
-		width: 80,
-		height: 80,
-		borderRadius: 40,
-		backgroundColor: 'rgba(52,199,89,0.12)',
-		borderWidth: 1,
-		borderColor: 'rgba(52,199,89,0.3)',
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginBottom: 20,
-	},
-	globeEmoji: {
-		fontSize: 40,
-	},
-	title: {
-		fontSize: 28,
-		fontWeight: 'bold',
-		color: '#FFFFFF',
-		textAlign: 'center',
-		marginBottom: 10,
-	},
-	subtitle: {
-		fontSize: 15,
-		color: '#8E8E93',
-		textAlign: 'center',
-		lineHeight: 22,
-	},
-	languageList: {
-		flex: 1,
-		paddingHorizontal: 20,
-		gap: 12,
-	},
-	card: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		backgroundColor: '#1C1C1E',
-		borderRadius: 20,
-		padding: 20,
-		borderWidth: 1.5,
-		borderColor: '#2C2C2E',
-	},
-	cardSelected: {
-		borderColor: '#34C759',
-		backgroundColor: 'rgba(52,199,89,0.07)',
-	},
-	cardLeft: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 16,
-	},
-	flag: {
-		fontSize: 38,
-	},
-	nativeName: {
-		fontSize: 18,
-		fontWeight: '600',
-		color: '#FFFFFF',
-		marginBottom: 2,
-	},
-	nativeNameSelected: {
-		color: '#34C759',
-	},
-	localName: {
-		fontSize: 13,
-		color: '#8E8E93',
-	},
-	radio: {
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: '#3A3A3C',
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	radioSelected: {
-		borderColor: '#34C759',
-	},
-	radioDot: {
-		width: 12,
-		height: 12,
-		borderRadius: 6,
-		backgroundColor: '#34C759',
-	},
-	footer: {
-		paddingHorizontal: 20,
-		paddingBottom: 16,
-		paddingTop: 12,
-	},
-	btn: {
-		backgroundColor: '#34C759',
-		borderRadius: 16,
-		paddingVertical: 17,
-		alignItems: 'center',
-		justifyContent: 'center',
-		flexDirection: 'row',
-		gap: 8,
-	},
-	btnDisabled: {
-		backgroundColor: '#2C2C2E',
-	},
-	btnText: {
-		color: '#fff',
-		fontSize: 17,
-		fontWeight: '700',
-	},
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: {
+			flex: 1,
+			backgroundColor: C.background,
+			paddingHorizontal: 24,
+		},
+		header: {
+			paddingTop: 48,
+			paddingBottom: 36,
+		},
+		title: {
+			fontSize: 28,
+			fontWeight: '700',
+			color: C.text,
+			letterSpacing: -0.4,
+			marginBottom: 8,
+		},
+		subtitle: {
+			fontSize: 15,
+			color: C.textSecondary,
+			lineHeight: 22,
+		},
+		list: {
+			flex: 1,
+			gap: 4,
+		},
+		row: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingVertical: 18,
+			paddingHorizontal: 4,
+			borderBottomWidth: StyleSheet.hairlineWidth,
+			borderBottomColor: C.border,
+		},
+		rowSelected: {
+			borderBottomColor: C.primary,
+		},
+		rowText: {
+			fontSize: 18,
+			fontWeight: '500',
+			color: C.text,
+		},
+		rowTextSelected: {
+			color: C.primary,
+			fontWeight: '600',
+		},
+		checkPlaceholder: {
+			width: 20,
+			height: 20,
+		},
+		footer: {
+			paddingBottom: 12,
+			paddingTop: 20,
+		},
+		btn: {
+			backgroundColor: C.primary,
+			borderRadius: 14,
+			paddingVertical: 16,
+			alignItems: 'center',
+		},
+		btnDisabled: {
+			backgroundColor: C.cardLight,
+		},
+		btnText: {
+			color: '#000',
+			fontSize: 16,
+			fontWeight: '700',
+		},
+		btnTextDisabled: {
+			color: C.textSecondary,
+		},
+	})
+}

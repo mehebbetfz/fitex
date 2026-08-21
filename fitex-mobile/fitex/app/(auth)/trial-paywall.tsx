@@ -1,4 +1,5 @@
 ﻿import { useLanguage } from '@/contexts/language-context'
+import { PlansSkeleton } from '@/components/ui/skeleton'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
@@ -278,7 +279,7 @@ export default function TrialPaywallScreen() {
 	if (initializing) {
 		return (
 			<SafeAreaView style={styles.loadingContainer}>
-				<ActivityIndicator size='large' color={COLORS.primary} />
+				<PlansSkeleton />
 			</SafeAreaView>
 		)
 	}

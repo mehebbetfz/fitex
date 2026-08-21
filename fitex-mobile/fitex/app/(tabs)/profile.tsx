@@ -1,4 +1,6 @@
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
+import type { AppColors } from '@/constants/app-theme'
 import { Language } from '@/locales'
 import ProfileStatsSections from '@/components/profile-stats-sections'
 import { Ionicons } from '@expo/vector-icons'
@@ -16,18 +18,6 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { hasActivePremium, useAuth } from '../contexts/auth-context'
-
-const COLORS = {
-	primary: '#34C759',
-	background: '#121212',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#2C2C2E',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	accent: '#FF9500',
-	error: '#FF3B30',
-} as const
 
 /** До окончания текущего периода подписки (сервер: premiumExpiresAt). */
 function formatNextBillingRelative(
@@ -108,193 +98,213 @@ const FadeIn = ({
 // ─────────────────────────────────────────────
 // Skeleton blocks
 // ─────────────────────────────────────────────
-const HeaderSkeleton = () => (
-	<View style={styles.header}>
-		<View style={{ flex: 1, gap: 10, paddingRight: 12 }}>
+const HeaderSkeleton = () => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={styles.header}>
+			<View style={{ flex: 1, gap: 10, paddingRight: 12 }}>
+				<ShimmerBlock
+					style={{
+						height: 28,
+						width: '58%',
+						maxWidth: 220,
+						borderRadius: 8,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 15,
+						width: '82%',
+						maxWidth: 280,
+						borderRadius: 5,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+			</View>
 			<ShimmerBlock
 				style={{
-					height: 28,
-					width: '58%',
-					maxWidth: 220,
-					borderRadius: 8,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-			<ShimmerBlock
-				style={{
-					height: 15,
-					width: '82%',
-					maxWidth: 280,
-					borderRadius: 5,
-					backgroundColor: COLORS.cardLight,
+					height: 34,
+					width: 88,
+					borderRadius: 20,
+					backgroundColor: colors.cardLight,
 				}}
 			/>
 		</View>
-		<ShimmerBlock
-			style={{
-				height: 34,
-				width: 88,
-				borderRadius: 20,
-				backgroundColor: COLORS.cardLight,
-			}}
-		/>
-	</View>
-)
+	)
+}
 
-const UserCardSkeleton = () => (
-	<View style={[styles.userCard, { borderColor: COLORS.border }]}>
-		<ShimmerBlock
-			style={{
-				width: 70,
-				height: 70,
-				borderRadius: 35,
-				backgroundColor: COLORS.cardLight,
-				marginRight: 16,
-			}}
-		/>
-		<View style={{ flex: 1, gap: 10 }}>
+const UserCardSkeleton = () => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={[styles.userCard, { borderColor: colors.border }]}>
+			<ShimmerBlock
+				style={{
+					width: 70,
+					height: 70,
+					borderRadius: 35,
+					backgroundColor: colors.cardLight,
+					marginRight: 16,
+				}}
+			/>
+			<View style={{ flex: 1, gap: 10 }}>
+				<ShimmerBlock
+					style={{
+						height: 18,
+						width: 130,
+						borderRadius: 6,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 13,
+						width: 180,
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 12,
+						width: '65%',
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+						marginTop: 2,
+					}}
+				/>
+			</View>
+		</View>
+	)
+}
+
+const PremiumBlockSkeleton = () => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={[styles.premiumStatusBlock, { borderColor: colors.border }]}>
+			<View
+				style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+			>
+				<ShimmerBlock
+					style={{
+						width: 24,
+						height: 24,
+						borderRadius: 12,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 16,
+						width: 120,
+						borderRadius: 5,
+						backgroundColor: colors.cardLight,
+						marginLeft: 10,
+					}}
+				/>
+			</View>
+			<View style={{ paddingLeft: 34, gap: 10 }}>
+				<ShimmerBlock
+					style={{
+						height: 13,
+						width: '80%',
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 12,
+						width: '62%',
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 38,
+						width: 140,
+						borderRadius: 30,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+			</View>
+		</View>
+	)
+}
+
+const SettingsItemSkeleton = () => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={[styles.settingsItem, { marginBottom: 8 }]}>
+			<ShimmerBlock
+				style={{
+					width: 44,
+					height: 44,
+					borderRadius: 22,
+					backgroundColor: colors.cardLight,
+					marginRight: 12,
+				}}
+			/>
+			<View style={{ flex: 1, gap: 8 }}>
+				<ShimmerBlock
+					style={{
+						height: 14,
+						width: 150,
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						height: 11,
+						width: 110,
+						borderRadius: 4,
+						backgroundColor: colors.cardLight,
+					}}
+				/>
+			</View>
+			<ShimmerBlock
+				style={{
+					width: 20,
+					height: 20,
+					borderRadius: 4,
+					backgroundColor: colors.cardLight,
+				}}
+			/>
+		</View>
+	)
+}
+
+/** Заголовок секции + N строк в стиле SettingsItem */
+const SettingsSectionSkeleton = ({ rows = 2 }: { rows?: number }) => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	return (
+		<View style={styles.section}>
 			<ShimmerBlock
 				style={{
 					height: 18,
-					width: 130,
-					borderRadius: 6,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-			<ShimmerBlock
-				style={{
-					height: 13,
-					width: 180,
-					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-			<ShimmerBlock
-				style={{
-					height: 12,
-					width: '65%',
-					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
-					marginTop: 2,
-				}}
-			/>
-		</View>
-	</View>
-)
-
-const PremiumBlockSkeleton = () => (
-	<View style={[styles.premiumStatusBlock, { borderColor: COLORS.border }]}>
-		<View
-			style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
-		>
-			<ShimmerBlock
-				style={{
-					width: 24,
-					height: 24,
-					borderRadius: 12,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-			<ShimmerBlock
-				style={{
-					height: 16,
-					width: 120,
-					borderRadius: 5,
-					backgroundColor: COLORS.cardLight,
-					marginLeft: 10,
-				}}
-			/>
-		</View>
-		<View style={{ paddingLeft: 34, gap: 10 }}>
-			<ShimmerBlock
-				style={{
-					height: 13,
-					width: '80%',
-					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-			<ShimmerBlock
-				style={{
-					height: 12,
-					width: '62%',
-					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-			<ShimmerBlock
-				style={{
-					height: 38,
 					width: 140,
-					borderRadius: 30,
-					backgroundColor: COLORS.cardLight,
+					borderRadius: 5,
+					backgroundColor: colors.cardLight,
+					marginBottom: 12,
+					marginLeft: 8,
 				}}
 			/>
+			{Array.from({ length: rows }, (_, i) => (
+				<SettingsItemSkeleton key={i} />
+			))}
 		</View>
-	</View>
-)
-
-const SettingsItemSkeleton = () => (
-	<View style={[styles.settingsItem, { marginBottom: 8 }]}>
-		<ShimmerBlock
-			style={{
-				width: 44,
-				height: 44,
-				borderRadius: 22,
-				backgroundColor: COLORS.cardLight,
-				marginRight: 12,
-			}}
-		/>
-		<View style={{ flex: 1, gap: 8 }}>
-			<ShimmerBlock
-				style={{
-					height: 14,
-					width: 150,
-					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-			<ShimmerBlock
-				style={{
-					height: 11,
-					width: 110,
-					borderRadius: 4,
-					backgroundColor: COLORS.cardLight,
-				}}
-			/>
-		</View>
-		<ShimmerBlock
-			style={{
-				width: 20,
-				height: 20,
-				borderRadius: 4,
-				backgroundColor: COLORS.cardLight,
-			}}
-		/>
-	</View>
-)
-
-/** Заголовок секции + N строк в стиле SettingsItem */
-const SettingsSectionSkeleton = ({ rows = 2 }: { rows?: number }) => (
-	<View style={styles.section}>
-		<ShimmerBlock
-			style={{
-				height: 18,
-				width: 140,
-				borderRadius: 5,
-				backgroundColor: COLORS.cardLight,
-				marginBottom: 12,
-				marginLeft: 8,
-			}}
-		/>
-		{Array.from({ length: rows }, (_, i) => (
-			<SettingsItemSkeleton key={i} />
-		))}
-	</View>
-)
+	)
+}
 
 // ─────────────────────────────────────────────
-// SettingsItem (unchanged from original)
+// SettingsItem
 // ─────────────────────────────────────────────
 interface SettingsItemProps {
 	icon: keyof typeof Ionicons.glyphMap
@@ -313,32 +323,48 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 	onPress,
 	showChevron = true,
 	rightElement,
-	iconColor = COLORS.primary,
-}) => (
-	<TouchableOpacity
-		style={styles.settingsItem}
-		onPress={onPress}
-		disabled={!onPress}
-		activeOpacity={0.7}
-	>
-		<View style={[styles.settingsIcon, { backgroundColor: `${iconColor}20` }]}>
-			<Ionicons name={icon} size={24} color={iconColor} />
-		</View>
-		<View style={styles.settingsContent}>
-			<Text style={styles.settingsTitle}>{title}</Text>
-			{subtitle && <Text style={styles.settingsSubtitle}>{subtitle}</Text>}
-		</View>
-		{rightElement}
-		{showChevron && !rightElement && (
-			<Ionicons name='chevron-forward' size={20} color={COLORS.textSecondary} />
-		)}
-	</TouchableOpacity>
-)
+	iconColor,
+}) => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	const resolvedIconColor = iconColor ?? colors.primary
+	return (
+		<TouchableOpacity
+			style={styles.settingsItem}
+			onPress={onPress}
+			disabled={!onPress}
+			activeOpacity={0.7}
+		>
+			<View
+				style={[
+					styles.settingsIcon,
+					{ backgroundColor: `${resolvedIconColor}20` },
+				]}
+			>
+				<Ionicons name={icon} size={24} color={resolvedIconColor} />
+			</View>
+			<View style={styles.settingsContent}>
+				<Text style={styles.settingsTitle}>{title}</Text>
+				{subtitle && <Text style={styles.settingsSubtitle}>{subtitle}</Text>}
+			</View>
+			{rightElement}
+			{showChevron && !rightElement && (
+				<Ionicons
+					name='chevron-forward'
+					size={20}
+					color={colors.textSecondary}
+				/>
+			)}
+		</TouchableOpacity>
+	)
+}
 
 // ─────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────
 export default function ProfileScreen() {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
 	const { user, signOut } = useAuth()
 	const { t, language } = useLanguage()
 	const [signingOut, setSigningOut] = useState(false)
@@ -423,8 +449,8 @@ export default function ProfileScreen() {
 										height: 7,
 										borderRadius: 3.5,
 										backgroundColor: premium
-											? COLORS.primary
-											: COLORS.textSecondary,
+											? colors.primary
+											: colors.textSecondary,
 									}}
 								/>
 								<Text
@@ -432,8 +458,8 @@ export default function ProfileScreen() {
 										fontSize: 13,
 										fontWeight: '600',
 										color: premium
-											? COLORS.primary
-											: COLORS.textSecondary,
+											? colors.primary
+											: colors.textSecondary,
 									}}
 								>
 									{premium ? t('profile', 'premium') : t('profile', 'basic')}
@@ -472,7 +498,7 @@ export default function ProfileScreen() {
 								title={t('profile', 'displayNameEntry')}
 								subtitle={t('profile', 'displayNameSubtitle')}
 								onPress={() => router.push('/(auth)/(routes)/edit-name')}
-								iconColor={COLORS.primary}
+								iconColor={colors.primary}
 							/>
 						</View>
 					</FadeIn>
@@ -489,7 +515,7 @@ export default function ProfileScreen() {
 								name={premium ? 'diamond' : 'diamond-outline'}
 								size={24}
 								color={
-									premium ? COLORS.primary : COLORS.textSecondary
+									premium ? colors.primary : colors.textSecondary
 								}
 							/>
 							<Text style={styles.premiumStatusTitle}>{t('profile', 'premiumStatus')}</Text>
@@ -514,7 +540,7 @@ export default function ProfileScreen() {
 									<Ionicons
 										name='arrow-forward'
 										size={18}
-										color={COLORS.primary}
+										color={colors.primary}
 									/>
 								</TouchableOpacity>
 							)}
@@ -541,7 +567,7 @@ export default function ProfileScreen() {
 									title={t('profile', 'adminEntry')}
 									subtitle={t('profile', 'adminSubtitle')}
 									onPress={() => router.push('/(auth)/(routes)/admin')}
-									iconColor={COLORS.accent}
+									iconColor={colors.accent}
 								/>
 							) : null}
 							<SettingsItem
@@ -549,7 +575,7 @@ export default function ProfileScreen() {
 								title={t('profile', 'settingsEntry')}
 								subtitle={t('profile', 'settingsSubtitle')}
 								onPress={() => router.push('/(auth)/(routes)/settings')}
-								iconColor={COLORS.textSecondary}
+								iconColor={colors.textSecondary}
 							/>
 						</View>
 					</FadeIn>
@@ -598,11 +624,11 @@ export default function ProfileScreen() {
 							title={t('profile', 'signOut')}
 							subtitle={t('profile', 'signOutSubtitle')}
 							onPress={handleSignOut}
-							iconColor={COLORS.error}
+							iconColor={colors.error}
 							showChevron={false}
 							rightElement={
 								signingOut ? (
-									<ActivityIndicator size='small' color={COLORS.error} />
+									<ActivityIndicator size='small' color={colors.error} />
 								) : null
 							}
 						/>
@@ -613,8 +639,9 @@ export default function ProfileScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: COLORS.background },
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+	container: { flex: 1, backgroundColor: C.background },
 	scrollContent: { paddingBottom: 40 },
 	header: {
 		flexDirection: 'row',
@@ -624,40 +651,40 @@ const styles = StyleSheet.create({
 		paddingTop: 20,
 		paddingBottom: 16,
 	},
-	title: { fontSize: 28, fontWeight: 'bold', color: COLORS.text },
-	subtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: 4 },
+	title: { fontSize: 28, fontWeight: 'bold', color: C.text },
+	subtitle: { fontSize: 15, color: C.textSecondary, marginTop: 4 },
 	userCard: {
 		flexDirection: 'row',
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 20,
 		padding: 20,
 		marginHorizontal: 10,
 		marginBottom: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 		alignItems: 'center',
 	},
 	avatarContainer: {
 		width: 70,
 		height: 70,
 		borderRadius: 35,
-		backgroundColor: COLORS.primary,
+		backgroundColor: C.primary,
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginRight: 16,
 	},
-	avatarText: { fontSize: 30, fontWeight: 'bold', color: COLORS.text },
+	avatarText: { fontSize: 30, fontWeight: 'bold', color: C.text },
 	userInfo: { flex: 1 },
-	userName: { fontSize: 20, fontWeight: '600', color: COLORS.text },
-	userEmail: { fontSize: 15, color: COLORS.textSecondary, marginTop: 2 },
+	userName: { fontSize: 20, fontWeight: '600', color: C.text },
+	userEmail: { fontSize: 15, color: C.textSecondary, marginTop: 2 },
 	premiumStatusBlock: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 20,
 		padding: 20,
 		marginHorizontal: 10,
 		marginBottom: 15,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	premiumStatusHeader: {
 		flexDirection: 'row',
@@ -667,20 +694,20 @@ const styles = StyleSheet.create({
 	premiumStatusTitle: {
 		fontSize: 18,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		marginLeft: 10,
 	},
 	premiumStatusBody: { paddingLeft: 34 },
 	premiumStatusText: {
 		fontSize: 15,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		marginBottom: 12,
 	},
 	premiumRenewal: {
 		marginTop: -6,
 		marginBottom: 12,
 		fontSize: 13,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		lineHeight: 18,
 	},
 	upgradeButton: {
@@ -693,25 +720,25 @@ const styles = StyleSheet.create({
 		borderRadius: 30,
 		gap: 8,
 	},
-	upgradeButtonText: { color: COLORS.primary, fontSize: 15, fontWeight: '600' },
+	upgradeButtonText: { color: C.primary, fontSize: 15, fontWeight: '600' },
 	section: { marginTop: 10 },
 	sectionTitle: {
 		fontSize: 18,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 12,
 		marginLeft: 8,
 	},
 	settingsItem: {
 		flexDirection: 'row',
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderRadius: 16,
 		padding: 16,
 		marginBottom: 8,
 		marginHorizontal: 10,
 		alignItems: 'center',
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	settingsIcon: {
 		width: 44,
@@ -722,6 +749,8 @@ const styles = StyleSheet.create({
 		marginRight: 12,
 	},
 	settingsContent: { flex: 1 },
-	settingsTitle: { fontSize: 16, fontWeight: '500', color: COLORS.text },
-	settingsSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+	settingsTitle: { fontSize: 16, fontWeight: '500', color: C.text },
+	settingsSubtitle: { fontSize: 13, color: C.textSecondary, marginTop: 2 },
 })
+}
+

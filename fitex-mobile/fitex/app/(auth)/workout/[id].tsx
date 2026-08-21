@@ -1,5 +1,7 @@
 import { useDatabase } from '@/app/contexts/database-context'
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -15,20 +17,6 @@ import {
 	View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-
-// Константы для цветов
-const COLORS = {
-	primary: '#34C759',
-	background: '#000',
-	card: '#1C1C1E',
-	border: '#2C2C2E',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	error: '#FF3B30',
-	warning: '#FFCC00',
-	success: '#34C759',
-	modalOverlay: 'rgba(0, 0, 0, 0.8)',
-} as const
 
 function parseWeightRepsInput(raw: string): number {
 	const t = raw.replace(',', '.').trim()
@@ -148,6 +136,8 @@ interface SetRowProps {
 
 const SetRow: React.FC<SetRowProps> = React.memo(
 	({ set, exerciseId, onComplete, onUpdate, onRemove }) => {
+		const { colors: COLORS } = useAppTheme()
+		const styles = useMemo(() => makeStyles(COLORS), [COLORS])
 		const setId = set.id || parseInt(set.setId || '0')
 
 		const [weightText, setWeightText] = useState(
@@ -223,7 +213,7 @@ const SetRow: React.FC<SetRowProps> = React.memo(
 					activeOpacity={0.7}
 				>
 					{set.completed && (
-						<Ionicons name='checkmark' size={16} color={COLORS.background} />
+						<Ionicons name='checkmark' size={16} color='#000' />
 					)}
 				</TouchableOpacity>
 
@@ -256,6 +246,8 @@ interface ExerciseItemProps {
 
 const ExerciseSetsHeader = () => {
 	const { t } = useLanguage()
+	const { colors: COLORS } = useAppTheme()
+	const styles = useMemo(() => makeStyles(COLORS), [COLORS])
 	return (
 		<View style={styles.setsHeader}>
 			<Text style={{ ...styles.setHeaderText, width: 20 }}>#</Text>
@@ -277,6 +269,8 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 		onAddSet,
 	}) => {
 		const { t } = useLanguage()
+		const { colors: COLORS } = useAppTheme()
+		const styles = useMemo(() => makeStyles(COLORS), [COLORS])
 		const exerciseId = exercise.id || parseInt(exercise.exerciseId || '0')
 
 		return (
@@ -341,6 +335,8 @@ const ExerciseItem: React.FC<ExerciseItemProps> = React.memo(
 export default function WorkoutScreen() {
 	const router = useRouter()
 	const { t } = useLanguage()
+	const { colors: COLORS } = useAppTheme()
+	const styles = useMemo(() => makeStyles(COLORS), [COLORS])
 	const params = useLocalSearchParams()
 	const workoutId = params.id ? parseInt(params.id as string) : 0
 	const {
@@ -658,7 +654,7 @@ export default function WorkoutScreen() {
 				</Text>
 			</TouchableOpacity>
 		),
-		[imageError],
+		[imageError, styles, COLORS.primary, t],
 	)
 
 	const renderExerciseListItem = useCallback(
@@ -676,7 +672,7 @@ export default function WorkoutScreen() {
 				/>
 			</TouchableOpacity>
 		),
-		[],
+		[styles, COLORS.textSecondary],
 	)
 
 	return (
@@ -880,10 +876,11 @@ export default function WorkoutScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: COLORS.background,
+		backgroundColor: C.background,
 	},
 	header: {
 		flexDirection: 'row',
@@ -891,9 +888,9 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		paddingHorizontal: 10,
 		paddingVertical: 16,
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		borderBottomColor: C.border,
 	},
 	backButton: {
 		padding: 4,
@@ -901,7 +898,7 @@ const styles = StyleSheet.create({
 	headerTitle: {
 		fontSize: 18,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 	},
 	finishButton: {
 		padding: 8,
@@ -909,10 +906,10 @@ const styles = StyleSheet.create({
 	finishButtonText: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.primary,
+		color: C.primary,
 	},
 	workoutInfo: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		padding: 20,
 		marginBottom: 12,
 		marginTop: 8,
@@ -922,14 +919,14 @@ const styles = StyleSheet.create({
 	workoutName: {
 		fontSize: 20,
 		fontWeight: 'bold',
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 20,
-		backgroundColor: COLORS.border,
+		backgroundColor: C.inputBg,
 		paddingHorizontal: 16,
 		paddingVertical: 12,
 		borderRadius: 12,
 		borderWidth: 1,
-		borderColor: '#3A3A3C',
+		borderColor: C.border,
 	},
 	statsRow: {
 		flexDirection: 'row',
@@ -942,12 +939,12 @@ const styles = StyleSheet.create({
 	statNumber: {
 		fontSize: 18,
 		fontWeight: 'bold',
-		color: COLORS.primary,
+		color: C.primary,
 		marginBottom: 6,
 	},
 	statLabel: {
 		fontSize: 12,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 	},
 	timerButton: {
 		flexDirection: 'row',
@@ -962,20 +959,20 @@ const styles = StyleSheet.create({
 	timerButtonText: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.primary,
+		color: C.primary,
 		marginLeft: 8,
 	},
 	exercisesList: {
 		paddingVertical: 10,
 	},
 	exerciseCard: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		marginBottom: 12,
 		padding: 16,
 		marginHorizontal: 16,
 		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	exerciseHeader: {
 		flexDirection: 'row',
@@ -994,11 +991,11 @@ const styles = StyleSheet.create({
 	exerciseName: {
 		fontSize: 18,
 		fontWeight: 'bold',
-		color: COLORS.text,
+		color: C.text,
 	},
 	exerciseMuscle: {
 		fontSize: 14,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		marginTop: 4,
 	},
 	setsHeader: {
@@ -1010,7 +1007,7 @@ const styles = StyleSheet.create({
 	setHeaderText: {
 		fontSize: 12,
 		fontWeight: '600',
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		width: 60,
 		textAlign: 'center',
 	},
@@ -1020,12 +1017,12 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		paddingVertical: 12,
 		borderBottomWidth: 1,
-		borderBottomColor: COLORS.border,
+		borderBottomColor: C.border,
 	},
 	setNumber: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		width: 30,
 		textAlign: 'center',
 	},
@@ -1033,31 +1030,31 @@ const styles = StyleSheet.create({
 		width: 80,
 		height: 50,
 		borderWidth: 1,
-		borderColor: '#3A3A3C',
+		borderColor: C.border,
 		borderRadius: 8,
 		textAlign: 'center',
 		fontSize: 16,
-		color: COLORS.text,
-		backgroundColor: COLORS.border,
+		color: C.text,
+		backgroundColor: C.inputBg,
 	},
 	inputCompleted: {
-		backgroundColor: COLORS.card,
-		color: COLORS.textSecondary,
-		borderColor: COLORS.primary,
+		backgroundColor: C.card,
+		color: C.textSecondary,
+		borderColor: C.primary,
 	},
 	checkbox: {
 		width: 24,
 		height: 24,
 		borderRadius: 12,
 		borderWidth: 2,
-		borderColor: '#3A3A3C',
+		borderColor: C.border,
 		alignItems: 'center',
 		justifyContent: 'center',
-		backgroundColor: COLORS.border,
+		backgroundColor: C.inputBg,
 	},
 	checkboxCompleted: {
-		backgroundColor: COLORS.primary,
-		borderColor: COLORS.primary,
+		backgroundColor: C.primary,
+		borderColor: C.primary,
 	},
 	deleteButton: {
 		width: 60,
@@ -1077,7 +1074,7 @@ const styles = StyleSheet.create({
 	},
 	addSetText: {
 		fontSize: 14,
-		color: COLORS.primary,
+		color: C.primary,
 		fontWeight: '600',
 		marginLeft: 8,
 	},
@@ -1085,53 +1082,53 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		padding: 16,
 		marginBottom: 12,
 		marginHorizontal: 16,
 		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	addExerciseText: {
 		fontSize: 16,
-		color: COLORS.primary,
+		color: C.primary,
 		fontWeight: '600',
 		marginLeft: 8,
 	},
 	notesSection: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.card,
 		padding: 20,
 		marginBottom: 20,
 		marginHorizontal: 16,
 		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: COLORS.border,
+		borderColor: C.border,
 	},
 	notesTitle: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 12,
 	},
 	notesInput: {
 		borderWidth: 1,
-		borderColor: '#3A3A3C',
+		borderColor: C.border,
 		borderRadius: 12,
 		padding: 16,
 		fontSize: 14,
-		color: COLORS.text,
+		color: C.text,
 		minHeight: 100,
-		backgroundColor: COLORS.border,
+		backgroundColor: C.inputBg,
 	},
 	// Стили для модального окна
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: COLORS.modalOverlay,
+		backgroundColor: C.overlay,
 		justifyContent: 'flex-end',
 	},
 	modalContent: {
-		backgroundColor: COLORS.card,
+		backgroundColor: C.modalSurface,
 		borderTopLeftRadius: 24,
 		borderTopRightRadius: 24,
 		padding: 20,
@@ -1146,7 +1143,7 @@ const styles = StyleSheet.create({
 	modalTitle: {
 		fontSize: 20,
 		fontWeight: 'bold',
-		color: COLORS.text,
+		color: C.text,
 		flex: 1,
 	},
 	modalCloseButton: {
@@ -1157,19 +1154,19 @@ const styles = StyleSheet.create({
 	},
 	muscleGroupCard: {
 		width: 120,
-		backgroundColor: COLORS.border,
+		backgroundColor: C.cardLight,
 		borderRadius: 16,
 		padding: 16,
 		marginRight: 12,
 		alignItems: 'center',
 		borderWidth: 1,
-		borderColor: '#3A3A3C',
+		borderColor: C.border,
 	},
 	muscleGroupImageContainer: {
 		width: 60,
 		height: 60,
 		borderRadius: 30,
-		backgroundColor: COLORS.background,
+		backgroundColor: C.background,
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginBottom: 12,
@@ -1178,18 +1175,18 @@ const styles = StyleSheet.create({
 	muscleGroupImage: {
 		width: 40,
 		height: 40,
-		tintColor: COLORS.primary,
+		tintColor: C.primary,
 	},
 	muscleGroupName: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 4,
 		textAlign: 'center',
 	},
 	muscleGroupExercisesCount: {
 		fontSize: 12,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		textAlign: 'center',
 	},
 	exercisesListModal: {
@@ -1201,15 +1198,15 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		paddingVertical: 16,
 		paddingHorizontal: 16,
-		backgroundColor: COLORS.border,
+		backgroundColor: C.cardLight,
 		borderRadius: 12,
 		marginBottom: 8,
 		borderWidth: 1,
-		borderColor: '#3A3A3C',
+		borderColor: C.border,
 	},
 	exerciseItemName: {
 		fontSize: 16,
-		color: COLORS.text,
+		color: C.text,
 		flex: 1,
 	},
 	confirmationContainer: {
@@ -1218,32 +1215,32 @@ const styles = StyleSheet.create({
 	},
 	confirmationTitle: {
 		fontSize: 18,
-		color: COLORS.text,
+		color: C.text,
 		marginBottom: 20,
 	},
 	selectedExerciseCard: {
-		backgroundColor: COLORS.border,
+		backgroundColor: C.cardLight,
 		borderRadius: 16,
 		padding: 20,
 		width: '100%',
 		borderWidth: 1,
-		borderColor: COLORS.primary,
+		borderColor: C.primary,
 		marginBottom: 30,
 	},
 	selectedExerciseName: {
 		fontSize: 20,
 		fontWeight: 'bold',
-		color: COLORS.primary,
+		color: C.primary,
 		marginBottom: 8,
 		textAlign: 'center',
 	},
 	selectedExerciseGroup: {
 		fontSize: 14,
-		color: COLORS.textSecondary,
+		color: C.textSecondary,
 		textAlign: 'center',
 	},
 	confirmButton: {
-		backgroundColor: COLORS.primary,
+		backgroundColor: C.primary,
 		paddingHorizontal: 32,
 		paddingVertical: 16,
 		borderRadius: 12,
@@ -1253,6 +1250,7 @@ const styles = StyleSheet.create({
 	confirmButtonText: {
 		fontSize: 16,
 		fontWeight: 'bold',
-		color: COLORS.background,
+		color: '#000',
 	},
-})
+	})
+}

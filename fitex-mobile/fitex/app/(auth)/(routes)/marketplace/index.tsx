@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import { CardGridSkeleton } from '@/components/ui/skeleton'
 import {
 	getPlans,
 	getTrainers,
@@ -10,7 +11,6 @@ import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-	ActivityIndicator,
 	Animated,
 	Dimensions,
 	ScrollView,
@@ -388,7 +388,7 @@ export default function MarketplaceScreen() {
 				</ScrollView>
 
 				{loading ? (
-					<ActivityIndicator color={COLORS.primary} style={{ marginTop: 60 }} />
+					<CardGridSkeleton cards={4} />
 				) : (
 					<Animated.View style={{ opacity: fadeAnim }}>
 						{tab === 'trainers' ? (
