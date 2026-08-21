@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
-import sharp from 'sharp'
+import { sharp } from 'src/lib/sharp'
 import { randomUUID } from 'crypto'
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])

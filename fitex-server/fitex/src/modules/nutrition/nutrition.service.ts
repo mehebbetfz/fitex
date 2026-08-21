@@ -11,7 +11,7 @@ import { User, UserDocument } from 'src/models/user.schema'
 import { MealStorageService } from './meal-storage.service'
 import { computeNutritionTargets } from './nutrition-targets'
 import { NutritionVisionService } from './nutrition-vision.service'
-import sharp from 'sharp'
+import { sharp } from 'src/lib/sharp'
 
 @Injectable()
 export class NutritionService {

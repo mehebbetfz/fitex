@@ -1,10 +1,14 @@
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+# sharp needs libc/vips bits for native rebuild on alpine
+RUN apk add --no-cache vips-dev build-base python3
+
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci --ignore-scripts \
+	&& npm install --os=linux --cpu=x64 --libc=musl sharp \
 	&& npm rebuild sharp --foreground-scripts
 
 COPY . .
