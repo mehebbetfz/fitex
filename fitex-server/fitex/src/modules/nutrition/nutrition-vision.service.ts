@@ -50,24 +50,70 @@ export class NutritionVisionService {
 
 		const b64 = jpegBuffer.toString('base64')
 		const noteLine = note?.trim()
-			? `User note: ${note.trim()}`
-			: 'No extra note.'
+			? `User note (treat as ground truth for ingredients/amounts when possible): ${note.trim()}`
+			: 'No extra note from the user.'
 
-		const system = `You are a nutrition analyst. Estimate the meal in the photo.
-Return ONLY valid JSON (no markdown) with this shape:
+		const system = `You are a precise nutrition analyst for meal photos.
+Your job is to estimate TOTAL macros for EVERYTHING visible on the plate / in the frame — not a "typical small serving".
+
+METHOD (follow strictly):
+1) List each distinct food item (e.g. cottage cheese / творог, banana, rice, chicken…).
+2) For each item estimate edible weight in GRAMS using visual cues:
+   - plate diameter ~22–26 cm for a dinner plate; bowl volume; fork/spoon size; hand if visible
+   - whole fruits: medium banana edible part ≈ 100–120 g each; large ≈ 130–150 g
+   - mounds of soft food (cottage cheese, yogurt, oatmeal): compare height/spread to plate; a heaping pile covering most of a dinner plate is often 300–500 g, NOT 100 g
+3) Apply realistic per-100g nutrition, then multiply by grams/100.
+4) SUM all items → final calories / proteinG / carbsG / fatG.
+
+CRITICAL ant-bias rules:
+- Do NOT default to restaurant "small portion" or snack sizes when the photo shows a large mound or multiple whole fruits.
+- If you see TWO whole bananas, count BOTH (≈ 200–280 g edible total), not one.
+- Cottage cheese (творог): dense white curds. Typical large home portion on a plate is often 250–450 g. Per 100 g approx:
+  • 0–2% fat: ~70–90 kcal, ~16–18 g protein, ~3 g carbs, ~0–2 g fat
+  • ~5% fat: ~110–130 kcal, ~16 g protein, ~3 g carbs, ~5 g fat
+  • ~9% fat: ~150–170 kcal, ~16 g protein, ~2–3 g carbs, ~9 g fat
+- Banana per 100 g edible: ~89 kcal, ~1.1 g protein, ~23 g carbs, ~0.3 g fat.
+- Prefer slightly higher weight when unsure between two sizes for dense dairy piles (people usually under-estimate).
+
+Return ONLY valid JSON (no markdown):
 {
-  "name": "short food name",
+  "name": "short combined meal name",
+  "items": [
+    {
+      "name": "item name",
+      "grams": number,
+      "calories": number,
+      "proteinG": number,
+      "carbsG": number,
+      "fatG": number
+    }
+  ],
   "calories": number,
   "proteinG": number,
   "carbsG": number,
   "fatG": number,
-  "vitamins": { "vitaminC_mg": number, "iron_mg": number, "calcium_mg": number, "vitaminA_ug": number, "vitaminD_ug": number, "magnesium_mg": number, "potassium_mg": number, "fiber_g": number },
+  "vitamins": {
+    "vitaminC_mg": number,
+    "iron_mg": number,
+    "calcium_mg": number,
+    "vitaminA_ug": number,
+    "vitaminD_ug": number,
+    "magnesium_mg": number,
+    "potassium_mg": number,
+    "fiber_g": number
+  },
   "confidence": number between 0 and 1
 }
-Write the "name" field in ${langName}. Use common dish names people would recognize.
-Estimate a single serving as shown. Use realistic values. If unclear, still give best estimate.`
 
-		const userText = `Analyze this meal photo. Reply with dish name in ${langName}. ${noteLine}`
+Rules for numbers:
+- "calories"/"proteinG"/"carbsG"/"fatG" MUST equal the sum of items (within rounding).
+- Write "name" and each items[].name in ${langName}.
+- Use common local names (e.g. Russian: "Творог с бананами").
+- confidence lower if food is occluded or lighting is bad; still give best estimate.`
+
+		const userText = `Analyze this meal photo carefully. Estimate grams per item, then macros.
+Reply with dish name and item names in ${langName}.
+${noteLine}`
 
 		const res = await fetch('https://api.openai.com/v1/chat/completions', {
 			method: 'POST',
@@ -77,7 +123,7 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 			},
 			body: JSON.stringify({
 				model,
-				temperature: 0.2,
+				temperature: 0.1,
 				response_format: { type: 'json_object' },
 				messages: [
 					{ role: 'system', content: system },
@@ -89,7 +135,7 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 								type: 'image_url',
 								image_url: {
 									url: `data:image/jpeg;base64,${b64}`,
-									detail: 'low',
+									detail: 'high',
 								},
 							},
 						],
@@ -152,19 +198,57 @@ Estimate a single serving as shown. Use realistic values. If unclear, still give
 			if (n >= 0) vitamins[k] = Math.round(n * 10) / 10
 		}
 
+		// Prefer summing structured items when the model provided them
+		let calories = num(parsed.calories)
+		let proteinG = num(parsed.proteinG)
+		let carbsG = num(parsed.carbsG)
+		let fatG = num(parsed.fatG)
+
+		const itemsRaw = Array.isArray(parsed.items) ? parsed.items : []
+		if (itemsRaw.length > 0) {
+			let c = 0
+			let p = 0
+			let cb = 0
+			let f = 0
+			for (const it of itemsRaw) {
+				if (!it || typeof it !== 'object') continue
+				const row = it as Record<string, unknown>
+				c += num(row.calories)
+				p += num(row.proteinG)
+				cb += num(row.carbsG)
+				f += num(row.fatG)
+			}
+			if (c > 0 || p > 0 || cb > 0 || f > 0) {
+				calories = c
+				proteinG = p
+				carbsG = cb
+				fatG = f
+			}
+		}
+
 		const result: VisionFoodResult = {
 			name: String(parsed.name || 'Meal').slice(0, 120),
-			calories: Math.round(num(parsed.calories)),
-			proteinG: Math.round(num(parsed.proteinG) * 10) / 10,
-			carbsG: Math.round(num(parsed.carbsG) * 10) / 10,
-			fatG: Math.round(num(parsed.fatG) * 10) / 10,
+			calories: Math.round(calories),
+			proteinG: Math.round(proteinG * 10) / 10,
+			carbsG: Math.round(carbsG * 10) / 10,
+			fatG: Math.round(fatG * 10) / 10,
 			vitamins,
 			confidence: num(parsed.confidence, 0.5),
 			raw: parsed,
 		}
 
+		const itemSummary = itemsRaw
+			.map(it => {
+				if (!it || typeof it !== 'object') return '?'
+				const row = it as Record<string, unknown>
+				return `${String(row.name || '?')}~${Math.round(num(row.grams))}g`
+			})
+			.join(', ')
+
 		this.log.log(
 			`vision ok name="${result.name}" kcal=${result.calories} ` +
+				`P/C/F=${result.proteinG}/${result.carbsG}/${result.fatG} ` +
+				`items=[${itemSummary}] ` +
 				`tokens=${data.usage?.prompt_tokens ?? '?'}/${data.usage?.completion_tokens ?? '?'} ` +
 				`ms=${Date.now() - started}`,
 		)
