@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
+import { premiumGrantFields } from 'src/common/premium-grant'
 import { Subscription, SubscriptionDocument } from 'src/models/subscription.schema'
 import { User, UserDocument } from 'src/models/user.schema'
 import { IapService } from '../iap/iap.service'
@@ -86,8 +87,7 @@ export class SubscriptionService {
 		}
 
 		await this.userModel.findByIdAndUpdate(userId, {
-			isPremium: true,
-			premiumExpiresAt: expirationDate,
+			$set: premiumGrantFields(expirationDate),
 		})
 
 		return {
@@ -179,8 +179,7 @@ export class SubscriptionService {
 		const uid = sub.userId.toString()
 		if (isActive && expiresMs) {
 			await this.userModel.findByIdAndUpdate(uid, {
-				isPremium: true,
-				premiumExpiresAt: new Date(expiresMs),
+				$set: premiumGrantFields(new Date(expiresMs)),
 			})
 		} else {
 			await this.userModel.findByIdAndUpdate(uid, {
@@ -239,8 +238,7 @@ export class SubscriptionService {
 		const uid = sub.userId.toString()
 		if (isActive && expiresMs !== undefined) {
 			await this.userModel.findByIdAndUpdate(uid, {
-				isPremium: true,
-				premiumExpiresAt: new Date(expiresMs),
+				$set: premiumGrantFields(new Date(expiresMs)),
 			})
 		} else {
 			await this.userModel.findByIdAndUpdate(uid, {

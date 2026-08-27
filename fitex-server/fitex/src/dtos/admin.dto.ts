@@ -31,3 +31,20 @@ export class SetUserRoleDto {
 	@IsIn(['user', 'admin'])
 	role: 'user' | 'admin'
 }
+
+/** Add or set meal-photo AI credits for a user. */
+export class AdjustMealPhotosDto {
+	/** Add this many credits (can be negative to subtract). */
+	@IsOptional()
+	@IsInt()
+	@Min(-10000)
+	@Max(10000)
+	add?: number
+
+	/** Set absolute remaining credits. */
+	@IsOptional()
+	@IsInt()
+	@Min(0)
+	@Max(100000)
+	set?: number
+}

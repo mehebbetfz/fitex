@@ -25,6 +25,7 @@ export class NutritionVisionService {
 	async analyzeImage(
 		jpegBuffer: Buffer,
 		note?: string,
+		language?: string,
 	): Promise<VisionFoodResult> {
 		const started = Date.now()
 		const apiKey = this.config.get<string>('OPENAI_API_KEY')?.trim()
@@ -38,9 +39,13 @@ export class NutritionVisionService {
 			)
 		}
 
+		const lang = (language || 'en').toLowerCase().slice(0, 2)
+		const langName =
+			lang === 'ru' ? 'Russian' : lang === 'az' ? 'Azerbaijani' : 'English'
+
 		this.log.log(
 			`vision request model=${model} jpegBytes=${jpegBuffer.length} ` +
-				`keyPrefix=${apiKey.slice(0, 7)}… note=${note?.trim() ? 'yes' : 'no'}`,
+				`keyPrefix=${apiKey.slice(0, 7)}… note=${note?.trim() ? 'yes' : 'no'} lang=${lang}`,
 		)
 
 		const b64 = jpegBuffer.toString('base64')
@@ -56,12 +61,13 @@ Return ONLY valid JSON (no markdown) with this shape:
   "proteinG": number,
   "carbsG": number,
   "fatG": number,
-  "vitamins": { "vitaminC_mg": number, "iron_mg": number, "calcium_mg": number, "vitaminA_ug": number },
+  "vitamins": { "vitaminC_mg": number, "iron_mg": number, "calcium_mg": number, "vitaminA_ug": number, "vitaminD_ug": number, "magnesium_mg": number, "potassium_mg": number, "fiber_g": number },
   "confidence": number between 0 and 1
 }
+Write the "name" field in ${langName}. Use common dish names people would recognize.
 Estimate a single serving as shown. Use realistic values. If unclear, still give best estimate.`
 
-		const userText = `Analyze this meal photo. ${noteLine}`
+		const userText = `Analyze this meal photo. Reply with dish name in ${langName}. ${noteLine}`
 
 		const res = await fetch('https://api.openai.com/v1/chat/completions', {
 			method: 'POST',

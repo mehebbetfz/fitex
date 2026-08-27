@@ -8,8 +8,9 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
+import { premiumGrantFields, PREMIUM_MEAL_PHOTO_LIMIT } from 'src/common/premium-grant'
 import { User, UserDocument } from 'src/models/user.schema'
-import type { GrantPremiumDto } from 'src/dtos/admin.dto'
+import type { AdjustMealPhotosDto, GrantPremiumDto } from 'src/dtos/admin.dto'
 
 function addDays(from: Date, days: number): Date {
 	return new Date(from.getTime() + days * 24 * 60 * 60 * 1000)
@@ -59,7 +60,7 @@ export class AdminService implements OnModuleInit {
 			.sort({ updatedAt: -1 })
 			.limit(lim)
 			.select(
-				'email firstName lastName isPremium premiumExpiresAt role provider createdAt',
+				'email firstName lastName isPremium premiumExpiresAt role provider createdAt mealPhotoRemaining mealPhotoUsed',
 			)
 			.lean()
 
@@ -93,11 +94,12 @@ export class AdminService implements OnModuleInit {
 		}
 
 		if (duration === 'lifetime') {
-			user.isPremium = true
-			user.premiumExpiresAt = undefined
 			await this.userModel.updateOne(
 				{ _id: user._id },
-				{ $set: { isPremium: true }, $unset: { premiumExpiresAt: 1 } },
+				{
+					$set: premiumGrantFields(null),
+					$unset: { premiumExpiresAt: 1 },
+				},
 			)
 			const fresh = await this.userModel.findById(user._id).lean()
 			return this.toAdminUser(fresh!)
@@ -128,10 +130,44 @@ export class AdminService implements OnModuleInit {
 				? user.premiumExpiresAt
 				: new Date()
 		const expires = addDays(base, days)
-		user.isPremium = true
-		user.premiumExpiresAt = expires
+		await this.userModel.updateOne(
+			{ _id: user._id },
+			{ $set: premiumGrantFields(expires) },
+		)
+		const fresh = await this.userModel.findById(user._id).lean()
+		return this.toAdminUser(fresh!)
+	}
+
+	async adjustMealPhotos(targetUserId: string, dto: AdjustMealPhotosDto) {
+		if (!Types.ObjectId.isValid(targetUserId)) {
+			throw new BadRequestException('Invalid id')
+		}
+		if (dto.add == null && dto.set == null) {
+			throw new BadRequestException('Provide add or set')
+		}
+		if (dto.add != null && dto.set != null) {
+			throw new BadRequestException('Provide only one of add or set')
+		}
+
+		const user = await this.userModel.findById(targetUserId)
+		if (!user) throw new NotFoundException('User not found')
+
+		let next: number
+		if (dto.set != null) {
+			next = Math.max(0, Math.round(dto.set))
+		} else {
+			const current =
+				user.mealPhotoRemaining != null &&
+				Number.isFinite(Number(user.mealPhotoRemaining))
+					? Number(user.mealPhotoRemaining)
+					: PREMIUM_MEAL_PHOTO_LIMIT
+			next = Math.max(0, Math.round(current + Number(dto.add)))
+		}
+
+		user.mealPhotoRemaining = next
 		await user.save()
-		return this.toAdminUser(user.toObject())
+		const fresh = await this.userModel.findById(user._id).lean()
+		return this.toAdminUser(fresh!)
 	}
 
 	async setRole(targetUserId: string, role: 'user' | 'admin', actorId: string) {
@@ -165,6 +201,10 @@ export class AdminService implements OnModuleInit {
 			premiumActive: active,
 			premiumExpiresAt: expires ? expires.toISOString() : null,
 			premiumLifetime: !!u.isPremium && !expires,
+			mealPhotoRemaining:
+				u.mealPhotoRemaining != null
+					? Math.max(0, Number(u.mealPhotoRemaining))
+					: null,
 			createdAt: u.createdAt ?? null,
 		}
 	}

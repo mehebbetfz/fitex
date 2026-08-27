@@ -167,6 +167,20 @@ export class User {
 	@Prop()
 	socialWebsite?: string
 
+	/**
+	 * Remaining AI meal-photo analyzes for this Premium period.
+	 * Reset to 240 on purchase and on each billing renewal via premiumGrantFields.
+	 */
+	@Prop({ default: 0 })
+	mealPhotoRemaining?: number
+
+	/** Meal photo AI analyzes used (legacy / analytics; remaining is source of truth) */
+	@Prop({ default: 0 })
+	mealPhotoUsed?: number
+
+	@Prop()
+	mealPhotoMonthKey?: string
+
 	/** user | admin — админка раздачи Premium */
 	@Prop({ enum: ['user', 'admin'], default: 'user', index: true })
 	role: string

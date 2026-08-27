@@ -1,11 +1,16 @@
 import {
 	BadRequestException,
+	ForbiddenException,
 	Injectable,
 	Logger,
 	NotFoundException,
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
+import {
+	PREMIUM_MEAL_PHOTO_LIMIT,
+	utcMealPhotoMonthKey,
+} from 'src/common/premium-grant'
 import { FoodEntry, FoodEntryDocument } from 'src/models/food-entry.schema'
 import { User, UserDocument } from 'src/models/user.schema'
 import { MealStorageService } from './meal-storage.service'
@@ -24,6 +29,104 @@ export class NutritionService {
 		private readonly vision: NutritionVisionService,
 		private readonly meals: MealStorageService,
 	) {}
+
+	private isPremiumActive(user: UserDocument | Record<string, any>) {
+		if (user.premiumExpiresAt) {
+			return new Date(user.premiumExpiresAt).getTime() > Date.now()
+		}
+		return !!user.isPremium
+	}
+
+	/**
+	 * Resolve remaining photos from user field.
+	 * Backfills once for legacy users who only have mealPhotoUsed / month key.
+	 */
+	private resolveRemaining(user: UserDocument | Record<string, any>): number {
+		if (!this.isPremiumActive(user)) return 0
+
+		if (
+			user.mealPhotoRemaining != null &&
+			Number.isFinite(Number(user.mealPhotoRemaining))
+		) {
+			return Math.max(0, Number(user.mealPhotoRemaining))
+		}
+
+		// Legacy: derive from monthly used counter
+		const month = utcMealPhotoMonthKey()
+		const used =
+			user.mealPhotoMonthKey === month ? Number(user.mealPhotoUsed || 0) : 0
+		return Math.max(0, PREMIUM_MEAL_PHOTO_LIMIT - used)
+	}
+
+	private photoQuotaSnapshot(user: UserDocument | Record<string, any>) {
+		const premium = this.isPremiumActive(user)
+		if (!premium) {
+			return { limit: 0, used: 0, remaining: 0 }
+		}
+		const remaining = this.resolveRemaining(user)
+		const used = Math.max(0, Number(user.mealPhotoUsed || 0))
+		// Limit can grow above 240 when admin tops up remaining
+		const limit = Math.max(PREMIUM_MEAL_PHOTO_LIMIT, remaining + used)
+		return {
+			limit,
+			used,
+			remaining,
+		}
+	}
+
+	/** Persist mealPhotoRemaining if missing (one-time migration for older accounts). */
+	private async ensureMealPhotoRemaining(
+		user: UserDocument,
+	): Promise<UserDocument> {
+		if (!this.isPremiumActive(user)) return user
+		if (
+			user.mealPhotoRemaining != null &&
+			Number.isFinite(Number(user.mealPhotoRemaining))
+		) {
+			return user
+		}
+		const remaining = this.resolveRemaining(user)
+		user.mealPhotoRemaining = remaining
+		await user.save()
+		return user
+	}
+
+	private async assertAndConsumePhotoQuota(userId: string) {
+		let user = await this.userModel.findById(userId)
+		if (!user) throw new NotFoundException('User not found')
+
+		if (!this.isPremiumActive(user)) {
+			throw new ForbiddenException('Meal photos require Premium')
+		}
+
+		user = await this.ensureMealPhotoRemaining(user)
+
+		const remainingNow = Number(user.mealPhotoRemaining || 0)
+		if (remainingNow <= 0) {
+			throw new ForbiddenException('Meal photo limit reached for this month')
+		}
+
+		const updated = await this.userModel.findOneAndUpdate(
+			{
+				_id: new Types.ObjectId(userId),
+				mealPhotoRemaining: { $gt: 0 },
+			},
+			{
+				$inc: { mealPhotoRemaining: -1, mealPhotoUsed: 1 },
+				$set: { mealPhotoMonthKey: utcMealPhotoMonthKey() },
+			},
+			{ new: true },
+		)
+
+		if (!updated) {
+			throw new ForbiddenException('Meal photo limit reached for this month')
+		}
+
+		this.log.log(
+			`photo quota consumed user=${userId} remaining=${updated.mealPhotoRemaining}/${PREMIUM_MEAL_PHOTO_LIMIT}`,
+		)
+		return this.photoQuotaSnapshot(updated)
+	}
 
 	async getTargets(userId: string) {
 		const user = await this.userModel.findById(userId).lean()
@@ -130,7 +233,7 @@ export class NutritionService {
 		this.assertDate(date)
 		const uid = new Types.ObjectId(userId)
 		const entries = await this.foodModel
-			.find({ userId: uid, date, isDeleted: false })
+			.find({ userId: uid, date, isDeleted: { $ne: true } })
 			.sort({ createdAt: -1 })
 			.lean()
 
@@ -146,6 +249,13 @@ export class NutritionService {
 		)
 
 		const targets = await this.getTargets(userId)
+		let user = await this.userModel.findById(userId)
+		if (user) {
+			user = await this.ensureMealPhotoRemaining(user)
+		}
+		const photoQuota = user
+			? this.photoQuotaSnapshot(user)
+			: { limit: 0, used: 0, remaining: 0 }
 		return {
 			date,
 			targets,
@@ -156,6 +266,42 @@ export class NutritionService {
 				fatG: Math.round(totals.fatG * 10) / 10,
 			},
 			entries: entries.map(e => this.toPublic(e)),
+			photoQuota,
+		}
+	}
+
+	async getHistory(
+		userId: string,
+		opts?: { limit?: number; before?: string },
+	) {
+		const limit = Math.min(50, Math.max(1, Number(opts?.limit) || 30))
+		const uid = new Types.ObjectId(userId)
+		// $ne: true — include docs where isDeleted is missing (legacy rows)
+		const filter: Record<string, unknown> = {
+			userId: uid,
+			isDeleted: { $ne: true },
+		}
+		if (opts?.before) {
+			const beforeDate = new Date(opts.before)
+			if (!Number.isNaN(beforeDate.getTime())) {
+				filter.createdAt = { $lt: beforeDate }
+			}
+		}
+		const entries = await this.foodModel
+			.find(filter)
+			.sort({ createdAt: -1, _id: -1 })
+			.limit(limit)
+			.lean()
+
+		const last = entries[entries.length - 1] as { createdAt?: Date } | undefined
+		const nextCursor =
+			entries.length === limit && last?.createdAt
+				? new Date(last.createdAt).toISOString()
+				: null
+
+		return {
+			entries: entries.map(e => this.toPublic(e)),
+			nextCursor,
 		}
 	}
 
@@ -164,6 +310,7 @@ export class NutritionService {
 		file: Express.Multer.File,
 		date: string,
 		note?: string,
+		language?: string,
 	) {
 		const started = Date.now()
 		this.assertDate(date)
@@ -172,8 +319,21 @@ export class NutritionService {
 			throw new BadRequestException('Image required')
 		}
 
+		// Pre-check without consuming (consume after successful vision)
+		let userPre = await this.userModel.findById(userId)
+		if (!userPre) throw new NotFoundException('User not found')
+		userPre = await this.ensureMealPhotoRemaining(userPre)
+		const preQuota = this.photoQuotaSnapshot(userPre)
+		if (preQuota.limit <= 0) {
+			throw new ForbiddenException('Meal photos require Premium')
+		}
+		if (preQuota.remaining <= 0) {
+			throw new ForbiddenException('Meal photo limit reached for this month')
+		}
+
 		this.log.log(
-			`analyze start user=${userId} date=${date} rawBytes=${file.buffer.length} mime=${file.mimetype}`,
+			`analyze start user=${userId} date=${date} rawBytes=${file.buffer.length} mime=${file.mimetype} ` +
+				`quotaLeft=${preQuota.remaining}/${preQuota.limit}`,
 		)
 
 		let jpeg: Buffer
@@ -193,12 +353,14 @@ export class NutritionService {
 
 		// Vision first — storage must not block AI analysis if S3/PUBLIC_BASE_URL missing
 		const visionStarted = Date.now()
-		const analysis = await this.vision.analyzeImage(jpeg, note)
+		const analysis = await this.vision.analyzeImage(jpeg, note, language)
 		this.log.log(
 			`analyze vision ok user=${userId} name="${analysis.name}" ` +
 				`kcal=${analysis.calories} P=${analysis.proteinG} C=${analysis.carbsG} F=${analysis.fatG} ` +
 				`conf=${analysis.confidence} ms=${Date.now() - visionStarted}`,
 		)
+
+		const photoQuota = await this.assertAndConsumePhotoQuota(userId)
 
 		let photoUrl: string | null = null
 		try {
@@ -233,6 +395,7 @@ export class NutritionService {
 			analysis: {
 				confidence: analysis.confidence,
 			},
+			photoQuota,
 		}
 	}
 
@@ -291,7 +454,7 @@ export class NutritionService {
 			fatG: e.fatG,
 			vitamins: e.vitamins ?? {},
 			source: e.source,
-			createdAt: e.createdAt,
+			createdAt: e.createdAt ? new Date(e.createdAt).toISOString() : undefined,
 		}
 	}
 }

@@ -57,6 +57,18 @@ export class NutritionController {
 		return this.nutrition.getDay(req.user.userId, d)
 	}
 
+	@Get('history')
+	async history(
+		@Req() req: { user: { userId: string } },
+		@Query('limit') limit?: string,
+		@Query('before') before?: string,
+	) {
+		return this.nutrition.getHistory(req.user.userId, {
+			limit: limit ? Number(limit) : undefined,
+			before: before || undefined,
+		})
+	}
+
 	@Post('analyze')
 	@UseInterceptors(
 		FileInterceptor('file', {
@@ -69,12 +81,13 @@ export class NutritionController {
 		@UploadedFile() file: Express.Multer.File,
 		@Body('date') date?: string,
 		@Body('note') note?: string,
+		@Body('language') language?: string,
 	) {
 		const d = date || new Date().toLocaleDateString('en-CA')
 		this.log.log(
 			`POST /analyze user=${req.user.userId} date=${d} ` +
 				`fileBytes=${file?.size ?? 0} mime=${file?.mimetype ?? 'none'} ` +
-				`note=${note?.trim() ? 'yes' : 'no'}`,
+				`note=${note?.trim() ? 'yes' : 'no'} lang=${language || 'en'}`,
 		)
 		try {
 			const result = await this.nutrition.analyzeAndCreate(
@@ -82,6 +95,7 @@ export class NutritionController {
 				file,
 				d,
 				note,
+				language,
 			)
 			this.log.log(
 				`POST /analyze ok user=${req.user.userId} entry=${result.entry?.id} ` +

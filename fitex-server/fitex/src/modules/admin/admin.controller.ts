@@ -8,7 +8,7 @@ import {
 	Req,
 	UseGuards,
 } from '@nestjs/common'
-import { GrantPremiumDto, SetUserRoleDto } from 'src/dtos/admin.dto'
+import { GrantPremiumDto, SetUserRoleDto, AdjustMealPhotosDto } from 'src/dtos/admin.dto'
 import { AdminGuard } from 'src/guards/admin.guard'
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard'
 import { AdminService } from './admin.service'
@@ -37,6 +37,14 @@ export class AdminController {
 		@Body() dto: GrantPremiumDto,
 	) {
 		return this.admin.grantPremium(id, dto)
+	}
+
+	@Patch('users/:id/meal-photos')
+	async adjustMealPhotos(
+		@Param('id') id: string,
+		@Body() dto: AdjustMealPhotosDto,
+	) {
+		return this.admin.adjustMealPhotos(id, dto)
 	}
 
 	@Patch('users/:id/role')
