@@ -298,6 +298,11 @@ export default function AddTemplateScreen() {
 				onSelectExercise={({ name: exName, muscleGroup }) => {
 					handleAddExercise(exName, muscleGroup)
 				}}
+				preferredMuscleGroup={
+					exercises.length > 0
+						? exercises[exercises.length - 1]?.muscle_group
+						: null
+				}
 			/>
 		</SafeAreaView>
 	)

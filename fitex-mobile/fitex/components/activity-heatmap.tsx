@@ -71,7 +71,7 @@ export default function ActivityHeatmap({
 
 	return (
 		<View style={styles.wrap}>
-			<Text style={styles.title}>{title}</Text>
+			{title ? <Text style={styles.title}>{title}</Text> : null}
 			<ScrollView
 				ref={scrollRef}
 				horizontal

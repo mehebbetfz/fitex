@@ -1,6 +1,7 @@
 import { CachedVideo } from '@/components/cached-video'
 import ManBackSvg from '@/components/man-back-svg'
 import ManFrontSvg from '@/components/man-front-svg'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import {
 	manBackMuscleGroupParts,
 	manFrontMuscleGroupParts,
@@ -18,10 +19,14 @@ import type { AppColors } from '@/constants/app-theme'
 import { muscle_groups } from '@/constants/muscle-groups'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
+import {
+	loadExerciseFavorites,
+	saveExerciseFavorites,
+} from '@/services/exercise-favorites'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { Image } from 'expo-image'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Animated,
 	Dimensions,
@@ -275,6 +280,8 @@ interface ExerciseSelectionModalProps {
 	visible: boolean
 	onClose: () => void
 	onSelectExercise: (exercise: { name: string; muscleGroup: string }) => void
+	/** Prefill muscle group (e.g. last exercise in the workout). */
+	preferredMuscleGroup?: string | null
 }
 
 const EXERCISES_PAGE_SIZE = 10
@@ -370,6 +377,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	visible,
 	onClose,
 	onSelectExercise,
+	preferredMuscleGroup = null,
 }) => {
 	const { t, language } = useLanguage()
 	const { colors: C } = useAppTheme()
@@ -382,9 +390,12 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 		useState<ExerciseDetail | null>(null)
 	const [searchQuery, setSearchQuery] = useState('')
 	const [favorites, setFavorites] = useState<string[]>([])
+	const [showFavoritesFirst, setShowFavoritesFirst] = useState(false)
+	const favoritesRef = useRef<string[]>([])
 
 	const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
 	const [modalVisible, setModalVisible] = useState(false)
+	const lastSelectedGroupRef = useRef<MuscleGroup | null>(null)
 
 	// Pagination — single source of truth
 	const [allExercises, setAllExercises] = useState<ExerciseDetail[]>([])
@@ -459,29 +470,71 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 
 	// ── Load exercises for a group or search query ─────────────────────────────
 
+	const sortFavoritesFirst = useCallback(
+		(exercises: ExerciseDetail[], favIds: string[]) => {
+			if (favIds.length === 0) return exercises
+			const favSet = new Set(favIds)
+			return [...exercises].sort((a, b) => {
+				const af = favSet.has(a.id) ? 0 : 1
+				const bf = favSet.has(b.id) ? 0 : 1
+				return af - bf
+			})
+		},
+		[],
+	)
+
+	const collectAllExercises = useCallback((): ExerciseDetail[] => {
+		return MUSCLE_GROUPS.flatMap(group =>
+			group.subgroups.flatMap(sg => sg.exercises),
+		)
+	}, [])
+
+	const findMuscleGroupNameForExercise = useCallback((exerciseId: string) => {
+		for (const g of MUSCLE_GROUPS) {
+			for (const sg of g.subgroups) {
+				if (sg.exercises.some(ex => ex.id === exerciseId)) return g.name
+			}
+		}
+		return ''
+	}, [])
+
 	const loadExercises = (exercises: ExerciseDetail[], source: string) => {
 		const key = ++loadKey.current
+		const ordered = sortFavoritesFirst(exercises, favoritesRef.current)
 
-		// Показываем скелетон
 		setIsInitialLoading(true)
 		setDisplayedExercises([])
-		setAllExercises(exercises)
+		setAllExercises(ordered)
 
-		// Используем setTimeout для гарантии обновления UI
 		setTimeout(() => {
-			if (loadKey.current !== key) {
-				console.log(`Stale load cancelled: ${source}`)
-				return // устаревший вызов, игнорируем
-			}
+			if (loadKey.current !== key) return
 
-			setDisplayedExercises(exercises.slice(0, EXERCISES_PAGE_SIZE))
+			setDisplayedExercises(ordered.slice(0, EXERCISES_PAGE_SIZE))
 			setCurrentPage(1)
-			setHasMore(exercises.length > EXERCISES_PAGE_SIZE)
+			setHasMore(ordered.length > EXERCISES_PAGE_SIZE)
 			setIsInitialLoading(false)
 		}, 50)
 	}
 
+	const loadFavoritesList = () => {
+		const favSet = new Set(favoritesRef.current)
+		const favExercises = collectAllExercises().filter(ex => favSet.has(ex.id))
+		loadExercises(favExercises, 'favorites')
+	}
+
 	// ── Effects ────────────────────────────────────────────────────────────────
+
+	useEffect(() => {
+		favoritesRef.current = favorites
+	}, [favorites])
+
+	useEffect(() => {
+		if (!visible) return
+		void loadExerciseFavorites().then(ids => {
+			setFavorites(ids)
+			favoritesRef.current = ids
+		})
+	}, [visible])
 
 	useEffect(() => {
 		if (visible) {
@@ -502,6 +555,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 				setSelectedMuscleGroup(null)
 				setSelectedExercise(null)
 				setSearchQuery('')
+				setShowFavoritesFirst(false)
 				setDisplayedExercises([])
 				setAllExercises([])
 				setCurrentPage(1)
@@ -513,42 +567,67 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 		}
 	}, [visible])
 
-	// Default to first group on open
-	useEffect(() => {
-		if (visible && MUSCLE_GROUPS.length > 0 && !selectedMuscleGroup) {
-			setSelectedMuscleGroup(MUSCLE_GROUPS[0])
+	const resolveMuscleGroup = useCallback((hint?: string | null): MuscleGroup => {
+		const q = hint?.trim()
+		if (q) {
+			const byNameOrId = MUSCLE_GROUPS.find(
+				g =>
+					g.name === q ||
+					g.id === q ||
+					g.name.toLowerCase() === q.toLowerCase() ||
+					g.id.toLowerCase() === q.toLowerCase(),
+			)
+			if (byNameOrId) return byNameOrId
+			// Match subgroup names (e.g. "Бицепс" under "Руки")
+			for (const g of MUSCLE_GROUPS) {
+				if (g.subgroups?.some(sg => sg.name === q || sg.id === q)) return g
+			}
 		}
-	}, [visible, selectedMuscleGroup])
+		return lastSelectedGroupRef.current ?? MUSCLE_GROUPS[0]
+	}, [])
 
-	// Reload when group changes (and no active search)
+	// Restore last / preferred muscle group when opening
 	useEffect(() => {
-		if (!selectedMuscleGroup || searchQuery) return
+		if (!visible || MUSCLE_GROUPS.length === 0) return
+		const next = resolveMuscleGroup(preferredMuscleGroup)
+		setSelectedMuscleGroup(next)
+		lastSelectedGroupRef.current = next
+	}, [visible, preferredMuscleGroup, resolveMuscleGroup])
 
-		// Обновляем ref с текущей группой
+	// Reload when group changes (and no active search / favorites mode)
+	useEffect(() => {
+		if (!selectedMuscleGroup || searchQuery || showFavoritesFirst) return
+
 		currentGroupIdRef.current = selectedMuscleGroup.id
 
 		const exercises = selectedMuscleGroup.subgroups.flatMap(sg => sg.exercises)
 
-		// Добавляем небольшую задержку перед загрузкой
 		const timeoutId = setTimeout(() => {
-			// Проверяем, не изменилась ли группа за время задержки
 			if (currentGroupIdRef.current === selectedMuscleGroup.id) {
 				loadExercises(exercises, `group-${selectedMuscleGroup.id}`)
 			}
 		}, 100)
 
 		return () => clearTimeout(timeoutId)
-	}, [selectedMuscleGroup])
+	}, [selectedMuscleGroup, showFavoritesFirst, searchQuery])
+
+	// Favorites-first mode: show all starred exercises at the top of the list
+	useEffect(() => {
+		if (!visible || !showFavoritesFirst || searchQuery) return
+		loadFavoritesList()
+	}, [visible, showFavoritesFirst, searchQuery, favorites])
 
 	// Reload when search query changes
 	useEffect(() => {
-		// Очищаем предыдущий таймаут поиска
 		if (searchTimeoutRef.current) {
 			clearTimeout(searchTimeoutRef.current)
 		}
 
 		if (!searchQuery) {
-			// Возвращаемся к группе
+			if (showFavoritesFirst) {
+				loadFavoritesList()
+				return
+			}
 			if (selectedMuscleGroup) {
 				currentGroupIdRef.current = selectedMuscleGroup.id
 				const exercises = selectedMuscleGroup.subgroups.flatMap(
@@ -559,7 +638,6 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 			return
 		}
 
-		// Debounce для поиска
 		searchTimeoutRef.current = setTimeout(() => {
 			const q = searchQuery.toLowerCase()
 			const filtered = MUSCLE_GROUPS.flatMap(group =>
@@ -580,7 +658,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 				clearTimeout(searchTimeoutRef.current)
 			}
 		}
-	}, [searchQuery])
+	}, [searchQuery, showFavoritesFirst])
 
 	// ── Pagination ─────────────────────────────────────────────────────────────
 
@@ -603,9 +681,21 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 
 	const toggleFavorite = (id: string) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-		setFavorites(prev =>
-			prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
-		)
+		setFavorites(prev => {
+			const next = prev.includes(id)
+				? prev.filter(x => x !== id)
+				: [...prev, id]
+			favoritesRef.current = next
+			void saveExerciseFavorites(next)
+			return next
+		})
+	}
+
+	const toggleFavoritesFirst = () => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+		setShowFavoritesFirst(prev => !prev)
+		setSearchQuery('')
+		setSelectedExercise(null)
 	}
 
 	const handleBack = () => {
@@ -617,9 +707,16 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	const handleSelectExercise = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 		if (selectedExercise) {
+			if (selectedMuscleGroup) {
+				lastSelectedGroupRef.current = selectedMuscleGroup
+			}
+			const groupName =
+				findMuscleGroupNameForExercise(selectedExercise.id) ||
+				selectedMuscleGroup?.name ||
+				''
 			onSelectExercise({
 				name: selectedExercise.name,
-				muscleGroup: selectedMuscleGroup?.name || '',
+				muscleGroup: groupName,
 			})
 			onClose()
 		}
@@ -627,7 +724,9 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 
 	const handleSelectMuscleGroup = (group: MuscleGroup) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+		setShowFavoritesFirst(false)
 		setSelectedMuscleGroup(group)
+		lastSelectedGroupRef.current = group
 		setSearchQuery('')
 		setSelectedExercise(null)
 	}
@@ -635,21 +734,20 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 	// ── Render helpers ─────────────────────────────────────────────────────────
 
 	const renderHeader = () => (
-		<View style={modalStyles.header}>
-			<TouchableOpacity
-				style={modalStyles.backButton}
-				onPress={handleBack}
-				activeOpacity={0.7}
-			>
-				<Ionicons
-					name={selectedExercise ? 'arrow-back' : 'close'}
-					size={24}
-					color={C.text}
-				/>
-			</TouchableOpacity>
-		<Text style={modalStyles.headerTitle} numberOfLines={1}>
-			{selectedExercise ? translateExerciseName(selectedExercise.name, language ?? 'ru') : t('exercises', 'title')}
-		</Text>
+		<View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+			<SheetModalHeader
+				title={
+					selectedExercise
+						? translateExerciseName(selectedExercise.name, language ?? 'ru')
+						: t('exercises', 'title')
+				}
+				onClose={onClose}
+				leading={
+					selectedExercise
+						? { icon: 'arrow-back', onPress: handleBack }
+						: undefined
+				}
+			/>
 		</View>
 	)
 
@@ -738,6 +836,48 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 					</TouchableOpacity>
 				)}
 			</View>
+			<TouchableOpacity
+				style={[
+					modalStyles.favoritesBtn,
+					showFavoritesFirst && modalStyles.favoritesBtnActive,
+				]}
+				onPress={toggleFavoritesFirst}
+				activeOpacity={0.8}
+				accessibilityRole='button'
+				accessibilityState={{ selected: showFavoritesFirst }}
+				accessibilityLabel={t('exercises', 'favorites')}
+			>
+				<Ionicons
+					name={showFavoritesFirst ? 'star' : 'star-outline'}
+					size={20}
+					color={showFavoritesFirst ? '#000' : C.primary}
+				/>
+				<Text
+					style={[
+						modalStyles.favoritesBtnText,
+						showFavoritesFirst && modalStyles.favoritesBtnTextActive,
+					]}
+				>
+					{t('exercises', 'favorites')}
+				</Text>
+				{favorites.length > 0 ? (
+					<View
+						style={[
+							modalStyles.favoritesCount,
+							showFavoritesFirst && modalStyles.favoritesCountActive,
+						]}
+					>
+						<Text
+							style={[
+								modalStyles.favoritesCountText,
+								showFavoritesFirst && modalStyles.favoritesCountTextActive,
+							]}
+						>
+							{favorites.length}
+						</Text>
+					</View>
+				) : null}
+			</TouchableOpacity>
 		</View>
 	)
 
@@ -817,7 +957,7 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 			return <ExercisesListSkeleton />
 		}
 
-		if (!selectedMuscleGroup && !searchQuery) {
+		if (!selectedMuscleGroup && !searchQuery && !showFavoritesFirst) {
 			return (
 				<View style={modalStyles.emptyState}>
 					<Ionicons
@@ -837,32 +977,56 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 			return (
 				<View style={modalStyles.emptyState}>
 					<Ionicons
-						name='search-outline'
+						name={showFavoritesFirst ? 'star-outline' : 'search-outline'}
 						size={64}
 						color={C.textSecondary}
 					/>
-					<Text style={modalStyles.emptyStateTitle}>{t('exercises', 'notFound')}</Text>
+					<Text style={modalStyles.emptyStateTitle}>
+						{showFavoritesFirst
+							? t('exercises', 'favoritesEmpty')
+							: t('exercises', 'notFound')}
+					</Text>
 				</View>
+			)
+		}
+
+		// Favorites / search: flat list with favorites already sorted first
+		if (showFavoritesFirst || searchQuery) {
+			return (
+				<FlatList
+					data={displayedExercises}
+					keyExtractor={item => item.id}
+					contentContainerStyle={[
+						modalStyles.exercisesList,
+						{ paddingBottom: 40 },
+					]}
+					showsVerticalScrollIndicator={false}
+					renderItem={({ item }) => renderExerciseListItem(item)}
+					onEndReached={loadNextPage}
+					onEndReachedThreshold={0.3}
+					ListFooterComponent={
+						hasMore && !isInitialLoading ? <LoadMoreFooter /> : null
+					}
+				/>
 			)
 		}
 
 		// Group by subgroup when browsing (no search)
 		if (selectedMuscleGroup && !searchQuery) {
-			// Create a flat list of exercises with section headers
-			const sections = selectedMuscleGroup.subgroups
-				.map(sg => ({
-					title: sg.name,
-					data: sg.exercises.filter(ex =>
-						displayedExercises.some(de => de.id === ex.id),
-					),
-				}))
-				.filter(s => s.data.length > 0)
+			const favSet = new Set(favorites)
+			const groupExercises = sortFavoritesFirst(
+				selectedMuscleGroup.subgroups.flatMap(sg => sg.exercises),
+				favorites,
+			).filter(ex => displayedExercises.some(de => de.id === ex.id))
 
-			// Flatten the data with section headers
-			const flatData = sections.flatMap(section => [
-				{ type: 'header', title: section.title, id: `header-${section.title}` },
-				...section.data.map(ex => ({ type: 'exercise', data: ex, id: ex.id })),
-			])
+			// Favorites block first, then remaining by subgroup order among non-fav
+			const favItems = groupExercises.filter(ex => favSet.has(ex.id))
+			const restItems = groupExercises.filter(ex => !favSet.has(ex.id))
+
+			const flatData = [
+				...favItems.map(ex => ({ type: 'exercise' as const, data: ex, id: ex.id })),
+				...restItems.map(ex => ({ type: 'exercise' as const, data: ex, id: ex.id })),
+			]
 
 			return (
 				<FlatList
@@ -878,17 +1042,11 @@ export const ExerciseSelectionModal: React.FC<ExerciseSelectionModalProps> = ({
 					ListFooterComponent={
 						hasMore && !isInitialLoading ? <LoadMoreFooter /> : null
 					}
-					renderItem={({ item }) => {
-						if (item.type === 'header') {
-							return <View></View>
-						}
-						return renderExerciseListItem(item.data)
-					}}
+					renderItem={({ item }) => renderExerciseListItem(item.data)}
 				/>
 			)
 		}
 
-		// Flat list for search results
 		return (
 			<FlatList
 				data={displayedExercises}
@@ -1312,6 +1470,9 @@ function makeModalStyles(C: AppColors) {
 	groupNameActive: { color: C.primary },
 	groupCount: { fontSize: 9, color: C.textSecondary, marginTop: 2 },
 	searchContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
 		paddingHorizontal: 8,
 		paddingVertical: 12,
 		backgroundColor: C.card,
@@ -1319,12 +1480,56 @@ function makeModalStyles(C: AppColors) {
 		borderBottomColor: C.border,
 	},
 	searchInner: {
+		flex: 1,
 		flexDirection: 'row',
 		alignItems: 'center',
 		backgroundColor: C.inputBg,
 		borderRadius: 12,
 		paddingHorizontal: 8,
 		paddingVertical: 12,
+	},
+	favoritesBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		paddingHorizontal: 10,
+		paddingVertical: 10,
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: C.primary,
+		backgroundColor: C.card,
+	},
+	favoritesBtnActive: {
+		backgroundColor: C.primary,
+		borderColor: C.primary,
+	},
+	favoritesBtnText: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: C.primary,
+	},
+	favoritesBtnTextActive: {
+		color: '#000',
+	},
+	favoritesCount: {
+		minWidth: 18,
+		height: 18,
+		borderRadius: 9,
+		paddingHorizontal: 4,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: `${C.primary}22`,
+	},
+	favoritesCountActive: {
+		backgroundColor: 'rgba(0,0,0,0.15)',
+	},
+	favoritesCountText: {
+		fontSize: 11,
+		fontWeight: '700',
+		color: C.primary,
+	},
+	favoritesCountTextActive: {
+		color: '#000',
 	},
 	searchInput: {
 		flex: 1,

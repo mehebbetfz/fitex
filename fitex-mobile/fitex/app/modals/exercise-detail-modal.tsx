@@ -1,6 +1,7 @@
 import { CachedVideo } from '@/components/cached-video'
 import ManBackSvg from '@/components/man-back-svg'
 import ManFrontSvg from '@/components/man-front-svg'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import type { AppColors } from '@/constants/app-theme'
 import {
 	manBackMuscleGroupParts,
@@ -24,6 +25,7 @@ import {
 	Dimensions,
 	FlatList,
 	Modal,
+	Pressable,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -369,10 +371,11 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 			onRequestClose={handleClose}
 		>
 			<View style={styles.modalOverlay}>
-				<TouchableOpacity
+				<Pressable
 					style={styles.modalBackdrop}
-					activeOpacity={1}
 					onPress={handleClose}
+					accessibilityRole='button'
+					accessibilityLabel='Close'
 				/>
 				<Animated.View
 					style={[
@@ -380,17 +383,11 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 						{ transform: [{ translateY: slideAnim }] },
 					]}
 				>
-					<View style={styles.header}>
-						<TouchableOpacity
-							style={styles.backButton}
-							onPress={handleClose}
-							activeOpacity={0.7}
-						>
-							<Ionicons name='close' size={24} color={C.text} />
-						</TouchableOpacity>
-					<Text style={styles.headerTitle} numberOfLines={1}>
-						{translateExerciseName(exerciseDetail.name, language ?? 'ru')}
-					</Text>
+					<View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+						<SheetModalHeader
+							title={translateExerciseName(exerciseDetail.name, language ?? 'ru')}
+							onClose={handleClose}
+						/>
 					</View>
 
 					<ScrollView

@@ -1,3 +1,4 @@
+import { dateLocaleFor } from '@/locales'
 import { useDatabase } from '@/app/contexts/database-context'
 import { SyncMeta, SyncHistoryEntry, SYNC_META_KEY } from '@/app/contexts/database-context'
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
@@ -27,7 +28,7 @@ import * as db from '@/scripts/database'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const C = {
-	bg:      '#121212',
+	bg:      '#222226',
 	card:    '#1C1C1E',
 	card2:   '#2C2C2E',
 	border:  '#3A3A3C',
@@ -45,7 +46,7 @@ const fmtDate = (iso: string, lang: string): string => {
 	try {
 		const d = new Date(iso)
 		const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', az: 'az-AZ' }
-		return d.toLocaleString(localeMap[lang] ?? 'en-US', {
+		return d.toLocaleString(dateLocaleFor(lang), {
 			day: '2-digit', month: 'short', year: 'numeric',
 			hour: '2-digit', minute: '2-digit',
 		})

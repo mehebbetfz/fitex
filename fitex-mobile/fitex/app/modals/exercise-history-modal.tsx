@@ -1,6 +1,8 @@
+import { dateLocaleFor } from '@/locales'
 // app/modals/exercise-history-modal.tsx
 import { useDatabase } from '@/app/contexts/database-context'
 import type { AppColors } from '@/constants/app-theme'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -130,7 +132,7 @@ const fmtDate = (d: string, todayStr: string, yesterdayStr: string, lang = 'ru')
 		yesterday.setDate(today.getDate() - 1)
 		if (date.toDateString() === today.toDateString()) return todayStr
 		if (date.toDateString() === yesterday.toDateString()) return yesterdayStr
-		return date.toLocaleDateString(LOCALE_MAP[lang] ?? 'ru-RU', { day: 'numeric', month: 'short' })
+		return date.toLocaleDateString(dateLocaleFor(lang), { day: 'numeric', month: 'short' })
 	} catch {
 		return d
 	}
@@ -421,53 +423,39 @@ export default function ExerciseHistoryModal({
 			<Animated.View
 				style={[ms.sheet, { transform: [{ translateY: slideY }] }]}
 			>
-				{/* Handle */}
-				<View style={ms.handle} />
-
-				{/* Header */}
-				<View style={ms.header}>
-					<View style={ms.headerIcon}>
-						<Ionicons name='barbell' size={18} color={C.primary} />
-					</View>
-					<Text style={ms.title} numberOfLines={1}>
-						{exerciseName}
-					</Text>
-
-					{/* Volume diff badge in header */}
-					{!loading && volDiff !== null && (
-						<View
-							style={[
-								ms.volBadge,
-								{
-									backgroundColor: (volDiff >= 0 ? C.primary : C.error) + '22',
-									borderColor: (volDiff >= 0 ? C.primary : C.error) + '44',
-								},
-							]}
-						>
-							<Ionicons
-								name={volDiff >= 0 ? 'trending-up' : 'trending-down'}
-								size={13}
-								color={volDiff >= 0 ? C.primary : C.error}
-							/>
-							<Text
-								style={[
-									ms.volBadgeTxt,
-									{ color: volDiff >= 0 ? C.primary : C.error },
-								]}
-							>
-						{volDiff >= 0 ? '+' : ''}
-						{volDiff.toFixed(0)} {t('workout', 'kg')} {t('exercises', 'volumeLabel')}
-							</Text>
-						</View>
-					)}
-
-					<TouchableOpacity
-						style={ms.closeBtn}
-						onPress={onClose}
-						activeOpacity={0.7}
-					>
-						<Ionicons name='close' size={22} color={C.textSecondary} />
-					</TouchableOpacity>
+				<View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+					<SheetModalHeader
+						title={exerciseName}
+						onClose={onClose}
+						trailing={
+							!loading && volDiff !== null ? (
+								<View
+									style={[
+										ms.volBadge,
+										{
+											backgroundColor: (volDiff >= 0 ? C.primary : C.error) + '22',
+											borderColor: (volDiff >= 0 ? C.primary : C.error) + '44',
+										},
+									]}
+								>
+									<Ionicons
+										name={volDiff >= 0 ? 'trending-up' : 'trending-down'}
+										size={13}
+										color={volDiff >= 0 ? C.primary : C.error}
+									/>
+									<Text
+										style={[
+											ms.volBadgeTxt,
+											{ color: volDiff >= 0 ? C.primary : C.error },
+										]}
+									>
+										{volDiff >= 0 ? '+' : ''}
+										{volDiff.toFixed(0)} {t('workout', 'kg')}
+									</Text>
+								</View>
+							) : null
+						}
+					/>
 				</View>
 
 				<ScrollView

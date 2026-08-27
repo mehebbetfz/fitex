@@ -1,5 +1,10 @@
 // app/(tabs)/_layout.tsx
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
+import {
+	PremiumGateModal,
+	markPremiumNudgeShown,
+	shouldShowPremiumNudge,
+} from '@/app/components/premium-gate'
 import TemplateSelectionModal from '@/app/modals/template-selection-modal'
 import DailyLeadersModal, {
 	DAILY_LEADERS_STORAGE_KEY,
@@ -11,13 +16,14 @@ import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import { api } from '@/services/api'
 import { TemplateExercise, WorkoutTemplate } from '@/scripts/database'
+import { hasActiveWorkoutDraft } from '@/scripts/workout-draft'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
-import { Tabs, useRouter } from 'expo-router'
+import { Tabs, useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Platform, TouchableOpacity, View } from 'react-native'
+import { AppState, Platform, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 function localTodayKey() {
@@ -31,12 +37,65 @@ export default function TabsLayout() {
 	const { colors } = useAppTheme()
 	const [showTemplateModal, setShowTemplateModal] = useState(false)
 	const [dailyModalVisible, setDailyModalVisible] = useState(false)
+	const [premiumNudgeVisible, setPremiumNudgeVisible] = useState(false)
 	const [dailyRows, setDailyRows] = useState<DailyLeaderRow[]>([])
+	const [hasActiveWorkout, setHasActiveWorkout] = useState(false)
 	const dailyFetchInFlight = useRef(false)
+	const premiumNudgeInFlight = useRef(false)
 	/** null = ещё не измеряли; иначе был ли Premium в прошлом проходе эффекта (для free→premium) */
 	const hadPremiumRef = useRef<boolean | null>(null)
 	const lastUserIdForLeadersRef = useRef<string | undefined>(undefined)
 	const { t } = useLanguage()
+
+	const tryShowPremiumNudge = useCallback(async () => {
+		if (authLoading || !user) return
+		if (hasActivePremium(user)) return
+		if (premiumNudgeInFlight.current || premiumNudgeVisible) return
+		premiumNudgeInFlight.current = true
+		try {
+			const ok = await shouldShowPremiumNudge(user.id)
+			if (!ok) return
+			await markPremiumNudgeShown(user.id)
+			setPremiumNudgeVisible(true)
+		} catch {
+			/* ignore */
+		} finally {
+			premiumNudgeInFlight.current = false
+		}
+	}, [authLoading, user, premiumNudgeVisible])
+
+	const dismissPremiumNudge = useCallback(() => {
+		setPremiumNudgeVisible(false)
+	}, [])
+
+	const refreshActiveWorkout = useCallback(async () => {
+		try {
+			setHasActiveWorkout(await hasActiveWorkoutDraft())
+		} catch {
+			setHasActiveWorkout(false)
+		}
+	}, [])
+
+	useFocusEffect(
+		useCallback(() => {
+			void refreshActiveWorkout()
+		}, [refreshActiveWorkout]),
+	)
+
+	useEffect(() => {
+		void refreshActiveWorkout()
+		const sub = AppState.addEventListener('change', state => {
+			if (state === 'active') {
+				void refreshActiveWorkout()
+				void tryShowPremiumNudge()
+			}
+		})
+		return () => sub.remove()
+	}, [refreshActiveWorkout, tryShowPremiumNudge])
+
+	useEffect(() => {
+		void tryShowPremiumNudge()
+	}, [tryShowPremiumNudge])
 
 	useEffect(() => {
 		if (authLoading || !user) return
@@ -68,7 +127,6 @@ export default function TabsLayout() {
 		lastUserIdForLeadersRef.current = user.id
 
 		const premiumNow = hasActivePremium(user)
-		// Только что оформили Premium: снимаем «уже показали сегодня», чтобы окно открылось в этот же день
 		if (hadPremiumRef.current === false && premiumNow) {
 			void AsyncStorage.removeItem(DAILY_LEADERS_STORAGE_KEY)
 		}
@@ -102,6 +160,10 @@ export default function TabsLayout() {
 	}, [authLoading, user])
 
 	const handleStartWorkout = () => {
+		if (hasActiveWorkout) {
+			router.replace('/workout/create')
+			return
+		}
 		setShowTemplateModal(true)
 	}
 
@@ -115,7 +177,6 @@ export default function TabsLayout() {
 			params: {
 				templateId: template.id,
 				templateName: template.name,
-				// Упражнения передаём сериализованными
 				templateExercises: JSON.stringify(exercises),
 			},
 		})
@@ -170,32 +231,32 @@ export default function TabsLayout() {
 					tabBarButton: props => <HapticTab {...props} />,
 				}}
 			>
-			<Tabs.Screen
-				name='index'
-				options={{
-					href: null,
-				}}
-			/>
+				<Tabs.Screen
+					name='index'
+					options={{
+						href: null,
+					}}
+				/>
 
-			<Tabs.Screen
-				name='nutrition'
-				options={{
-					title: t('tabs', 'nutrition'),
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name='restaurant-outline' size={size} color={color} />
-					),
-				}}
-			/>
+				<Tabs.Screen
+					name='nutrition'
+					options={{
+						title: t('tabs', 'nutrition'),
+						tabBarIcon: ({ color, size }) => (
+							<Ionicons name='restaurant-outline' size={size} color={color} />
+						),
+					}}
+				/>
 
-			<Tabs.Screen
-				name='recovery'
-				options={{
-					title: t('tabs', 'body'),
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name='body-outline' size={size} color={color} />
-					),
-				}}
-			/>
+				<Tabs.Screen
+					name='recovery'
+					options={{
+						title: t('tabs', 'body'),
+						tabBarIcon: ({ color, size }) => (
+							<Ionicons name='body-outline' size={size} color={color} />
+						),
+					}}
+				/>
 
 				<Tabs.Screen
 					name='start-workout'
@@ -213,7 +274,9 @@ export default function TabsLayout() {
 								<TouchableOpacity
 									onPressIn={() => {
 										if (Platform.OS !== 'web') {
-											void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+											void Haptics.impactAsync(
+												Haptics.ImpactFeedbackStyle.Light,
+											)
 										}
 									}}
 									onPress={handleStartWorkout}
@@ -222,7 +285,9 @@ export default function TabsLayout() {
 										width: 70,
 										height: 70,
 										borderRadius: 55,
-										backgroundColor: colors.card,
+										backgroundColor: hasActiveWorkout
+											? colors.primary
+											: colors.card,
 										alignItems: 'center',
 										justifyContent: 'center',
 										shadowOffset: { width: 0, height: 4 },
@@ -230,30 +295,36 @@ export default function TabsLayout() {
 										shadowRadius: 8,
 										elevation: 8,
 										borderWidth: 2,
-										borderColor: colors.tabBarBorder,
+										borderColor: hasActiveWorkout
+											? colors.primary
+											: colors.tabBarBorder,
 									}}
 								>
-									<Ionicons name='flag' size={30} color={colors.text} />
+									<Ionicons
+										name={hasActiveWorkout ? 'play' : 'flag'}
+										size={30}
+										color={hasActiveWorkout ? '#fff' : colors.text}
+									/>
 								</TouchableOpacity>
 							</View>
 						),
 					}}
 				/>
 
-			<Tabs.Screen
-				name='history'
-				options={{
-					title: t('tabs', 'history'),
+				<Tabs.Screen
+					name='history'
+					options={{
+						title: t('tabs', 'history'),
 						tabBarIcon: ({ color, size }) => (
 							<MaterialIcons name='history' size={size} color={color} />
 						),
 					}}
 				/>
 
-			<Tabs.Screen
-				name='profile'
-				options={{
-					title: t('tabs', 'profile'),
+				<Tabs.Screen
+					name='profile'
+					options={{
+						title: t('tabs', 'profile'),
 						tabBarIcon: ({ color, size }) => (
 							<Ionicons name='person-outline' size={size} color={color} />
 						),
@@ -261,15 +332,26 @@ export default function TabsLayout() {
 				/>
 			</Tabs>
 
-		{/* Модал снаружи Tabs — рендерится поверх всего */}
-		<TemplateSelectionModal
-			visible={showTemplateModal}
-			onClose={() => setShowTemplateModal(false)}
-			onSelectTemplate={handleSelectTemplate}
-			onStartEmpty={handleStartEmpty}
-		/>
+			<TemplateSelectionModal
+				visible={showTemplateModal}
+				onClose={() => setShowTemplateModal(false)}
+				onSelectTemplate={handleSelectTemplate}
+				onStartEmpty={handleStartEmpty}
+			/>
 
-		<DailyLeadersModal visible={dailyModalVisible} onClose={dismissDailyLeaders} entries={dailyRows} t={t} />
-	</>
+			<DailyLeadersModal
+				visible={dailyModalVisible}
+				onClose={dismissDailyLeaders}
+				entries={dailyRows}
+				t={t}
+			/>
+
+			<PremiumGateModal
+				visible={premiumNudgeVisible}
+				onClose={dismissPremiumNudge}
+				featureIcon='diamond'
+				featureColor='#E8C547'
+			/>
+		</>
 	)
 }

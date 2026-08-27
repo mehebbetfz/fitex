@@ -9,22 +9,85 @@ import {
 	manFrontMuscleGroupParts,
 } from '@/constants/images'
 import { Language } from '@/locales'
+import { dateLocaleFor } from '@/locales'
+import {
+	DEFAULT_RECOVERY_SETTINGS,
+	getRecoveryHoursForGroup,
+	hoursUntilRecoveryTarget,
+	loadRecoverySettings,
+	statusFromRecoveryPct,
+	type RecoverySettings,
+} from '@/services/recovery-settings'
 import { router, useFocusEffect } from 'expo-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from 'react'
 import {
 	Animated,
 	Dimensions,
+	LayoutChangeEvent,
 	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
 	View,
 } from 'react-native'
+import Svg, { Circle, Polyline } from 'react-native-svg'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../contexts/auth-context'
 import { useDatabase } from '../contexts/database-context'
 
 const { width } = Dimensions.get('window')
+
+/** Same viewBox as ManFrontSvg / ManBackSvg */
+const BODY_VB = { minX: -100, minY: -100, w: 800, h: 1200 } as const
+
+/**
+ * Callout origins in SVG user units (viewBox space), on the outer
+ * side of each group so the line leaves the muscle correctly.
+ * Front → labels on the right → prefer higher-x (person's left).
+ * Back → labels on the left → prefer lower-x (person's left).
+ */
+const FRONT_CALLOUT_SVG: Record<string, { x: number; y: number }> = {
+	Шея: { x: 296, y: 210 },
+	Трапеции: { x: 296, y: 228 },
+	Плечи: { x: 385, y: 250 },
+	Грудь: { x: 319, y: 268 },
+	Бицепс: { x: 401, y: 315 },
+	Пресс: { x: 300, y: 365 },
+	Предплечья: { x: 415, y: 420 },
+	Ноги: { x: 350, y: 520 },
+}
+
+const BACK_CALLOUT_SVG: Record<string, { x: number; y: number }> = {
+	Трапеции: { x: 300, y: 200 },
+	Плечи: { x: 227, y: 248 },
+	Трицепс: { x: 199, y: 315 },
+	Спина: { x: 246, y: 315 },
+	Предплечья: { x: 175, y: 415 },
+	Ягодицы: { x: 280, y: 455 },
+	Ноги: { x: 255, y: 555 },
+}
+
+type RecoveryCalloutItem = {
+	id: string
+	name: string
+	recovery: number
+	status: string
+	color: string
+}
+
+function svgPointToStage(
+	svgX: number,
+	svgY: number,
+	svgLeft: number,
+	svgTop: number,
+	dispW: number,
+	dispH: number,
+) {
+	return {
+		x: svgLeft + ((svgX - BODY_VB.minX) / BODY_VB.w) * dispW,
+		y: svgTop + ((svgY - BODY_VB.minY) / BODY_VB.h) * dispH,
+	}
+}
 
 const STATUS_COLORS_FIXED = {
 	recovered: '#34C759',
@@ -50,12 +113,6 @@ function statusBg(colors: AppColors) {
 		...STATUS_BG_FIXED,
 		not_trained: colors.track,
 	}
-}
-
-const DATE_LOCALES: Record<Language, string> = {
-	ru: 'ru-RU',
-	en: 'en-US',
-	az: 'az-AZ',
 }
 
 /** Recovery body groups → top-level names stored on workouts */
@@ -88,7 +145,7 @@ const formatRecoveryLastTrained = (
 		if (date.toDateString() === today.toDateString()) return todayLabel
 		if (date.toDateString() === yesterday.toDateString()) return yesterdayLabel
 
-		return date.toLocaleDateString(DATE_LOCALES[language] ?? 'ru-RU', {
+		return date.toLocaleDateString(dateLocaleFor(language), {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric',
@@ -574,6 +631,179 @@ const SectionLabel = ({ label }: { label: string }) => {
 	)
 }
 
+function layoutRecoveryCallouts(
+	items: RecoveryCalloutItem[],
+	side: 'front' | 'back',
+	stageW: number,
+	stageH: number,
+	svgBox: { x: number; y: number; w: number; h: number },
+) {
+	if (svgBox.w <= 0 || svgBox.h <= 0) return []
+
+	const anchors = side === 'front' ? FRONT_CALLOUT_SVG : BACK_CALLOUT_SVG
+	const badgeW = 44
+	const labelEdgeX = side === 'front' ? stageW - 4 : 4
+
+	const active = items
+		.filter(i => i.status === 'recovering' || i.status === 'needs_rest')
+		.map(i => {
+			const a = anchors[i.name] ?? { x: 300, y: 400 }
+			const p = svgPointToStage(
+				a.x,
+				a.y,
+				svgBox.x,
+				svgBox.y,
+				svgBox.w,
+				svgBox.h,
+			)
+			return { ...i, ax: p.x, ay: p.y }
+		})
+		.sort((a, b) => a.ay - b.ay)
+
+	if (active.length === 0) return []
+
+	const minGap = 28
+	const labels = active.map(p => ({ ...p, ly: p.ay }))
+	for (let i = 1; i < labels.length; i++) {
+		if (labels[i].ly - labels[i - 1].ly < minGap) {
+			labels[i].ly = labels[i - 1].ly + minGap
+		}
+	}
+	const overflow = labels[labels.length - 1].ly - (stageH - 14)
+	if (overflow > 0) {
+		for (const l of labels) l.ly -= overflow
+	}
+	if (labels[0].ly < 14) {
+		const shift = 14 - labels[0].ly
+		for (const l of labels) l.ly += shift
+	}
+
+	return labels.map(l => {
+		const lx =
+			side === 'front' ? labelEdgeX - badgeW / 2 : labelEdgeX + badgeW / 2
+		const elbowX =
+			side === 'front'
+				? Math.min(l.ax + 14, lx - 14)
+				: Math.max(l.ax - 14, lx + 14)
+		return {
+			id: l.id,
+			color: l.color,
+			pct: l.recovery,
+			ax: l.ax,
+			ay: l.ay,
+			lx,
+			ly: l.ly,
+			elbowX,
+			points: `${l.ax},${l.ay} ${elbowX},${l.ay} ${elbowX},${l.ly} ${lx},${l.ly}`,
+		}
+	})
+}
+
+type RecoveryBodyMapProps = {
+	side: 'front' | 'back'
+	muscleColors: { [key: string]: string }
+	callouts: RecoveryCalloutItem[]
+}
+
+const RecoveryBodyMap = ({
+	side,
+	muscleColors,
+	callouts,
+}: RecoveryBodyMapProps) => {
+	const { colors } = useAppTheme()
+	const styles = useMemo(() => makeStyles(colors), [colors])
+	const [stage, setStage] = useState({ w: 0, h: 440 })
+	const [svgSize, setSvgSize] = useState({ w: 0, h: 0 })
+
+	const onStageLayout = (e: LayoutChangeEvent) => {
+		const { width: w, height: h } = e.nativeEvent.layout
+		if (w !== stage.w || h !== stage.h) setStage({ w, h })
+	}
+
+	const onSvgLayout = (e: LayoutChangeEvent) => {
+		const { width: w, height: h } = e.nativeEvent.layout
+		if (w !== svgSize.w || h !== svgSize.h) setSvgSize({ w, h })
+	}
+
+	const svgBox = useMemo(
+		() => ({
+			x: (stage.w - svgSize.w) / 2,
+			y: (stage.h - svgSize.h) / 2,
+			w: svgSize.w,
+			h: svgSize.h,
+		}),
+		[stage.w, stage.h, svgSize.w, svgSize.h],
+	)
+
+	const laidOut = useMemo(
+		() =>
+			stage.w > 0 && svgBox.w > 0
+				? layoutRecoveryCallouts(callouts, side, stage.w, stage.h, svgBox)
+				: [],
+		[callouts, side, stage.w, stage.h, svgBox],
+	)
+
+	return (
+		<View style={styles.bodyMapStage} onLayout={onStageLayout}>
+			{/* Full-size body SVG — same as before callouts (default 450×600) */}
+			<View style={styles.bodyMapSvgWrap} pointerEvents='none'>
+				<View onLayout={onSvgLayout}>
+					{side === 'front' ? (
+						<ManFrontSvg muscleColors={muscleColors} />
+					) : (
+						<ManBackSvg muscleColors={muscleColors} />
+					)}
+				</View>
+			</View>
+
+			{laidOut.length > 0 ? (
+				<>
+					<Svg
+						width={stage.w}
+						height={stage.h}
+						style={StyleSheet.absoluteFill}
+						pointerEvents='none'
+					>
+						{laidOut.map(c => (
+							<Fragment key={`line-${c.id}`}>
+								<Polyline
+									points={c.points}
+									fill='none'
+									stroke={c.color}
+									strokeWidth={1.5}
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									opacity={0.9}
+								/>
+								<Circle cx={c.ax} cy={c.ay} r={3.5} fill={c.color} />
+							</Fragment>
+						))}
+					</Svg>
+					{laidOut.map(c => (
+						<View
+							key={`badge-${c.id}`}
+							pointerEvents='none'
+							style={[
+								styles.calloutBadge,
+								{
+									left: c.lx - 22,
+									top: c.ly - 11,
+									borderColor: c.color,
+									backgroundColor: colors.card,
+								},
+							]}
+						>
+							<Text style={[styles.calloutBadgeText, { color: c.color }]}>
+								{c.pct}%
+							</Text>
+						</View>
+					))}
+				</>
+			) : null}
+		</View>
+	)
+}
+
 // ─────────────────────────────────────────────
 // Дата последней тренировки (с переводом)
 // ─────────────────────────────────────────────
@@ -605,7 +835,12 @@ type MuscleCardProps = {
 	muscle: MuscleConfig
 	side: 'front' | 'back'
 	isSelected: boolean
-	liveStats: { status: string; recovery: number; lastTrained: string }
+	liveStats: {
+		status: string
+		recovery: number
+		lastTrained: string
+		recoveryHours: number
+	}
 	allFrontImages: string[]
 	allBackImages: string[]
 	onPress: () => void
@@ -644,8 +879,12 @@ const MuscleCard = ({
 	const muscleName = translateGroupName(muscle.name, language ?? 'ru')
 
 	const getTimeLeft = () => {
-		if (liveStats.recovery >= 100) return t('recovery', 'fullyRecovered')
-		const totalHours = Math.round(((100 - liveStats.recovery) / 100) * 72)
+		if (liveStats.recovery >= 95) return t('recovery', 'fullyRecovered')
+		const totalHours = hoursUntilRecoveryTarget(
+			liveStats.recovery,
+			liveStats.recoveryHours,
+			95,
+		)
 		if (totalHours <= 0) return t('recovery', 'fullyRecovered')
 
 		const h = t('recovery', 'hoursShort')
@@ -656,10 +895,11 @@ const MuscleCard = ({
 			const mins = Math.max(1, Math.round(totalHours * 60))
 			return `${mins} ${m}`
 		}
-		if (totalHours < 24) return `${totalHours} ${h}`
+		const rounded = Math.round(totalHours)
+		if (rounded < 24) return `${rounded} ${h}`
 
-		const days = Math.floor(totalHours / 24)
-		const hours = totalHours % 24
+		const days = Math.floor(rounded / 24)
+		const hours = rounded % 24
 		if (hours > 0) return `${days} ${d} ${hours} ${h}`
 		return `${days} ${d}`
 	}
@@ -706,7 +946,7 @@ const MuscleCard = ({
 					style={[styles.cardTimeLeft, { color: liveColor }]}
 					numberOfLines={1}
 				>
-					{liveStats.recovery < 100
+					{liveStats.recovery < 95
 						? `${t('recovery', 'timeLeft')}: ${getTimeLeft()}`
 						: t('recovery', 'fullyRecovered')}
 				</Text>
@@ -733,6 +973,9 @@ export default function RecoveryTab() {
 	const [muscleSide, setMuscleSide] = useState<string | null>(null)
 	const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [recoverySettings, setRecoverySettings] = useState<RecoverySettings>(
+		DEFAULT_RECOVERY_SETTINGS,
+	)
 	const { t, language } = useLanguage()
 	const { user } = useAuth()
 
@@ -743,11 +986,18 @@ export default function RecoveryTab() {
 	// Stale-while-revalidate: если данные уже есть — обновляем тихо без скелетонов
 	useFocusEffect(
 		useCallback(() => {
-			if (!hasData) {
-				setLoading(true)
+			let cancelled = false
+			void (async () => {
+				if (!hasData) setLoading(true)
+				const settings = await loadRecoverySettings()
+				if (!cancelled) setRecoverySettings(settings)
+				await refreshRecoveryWithRecalc()
+				if (!cancelled && !hasData) setLoading(false)
+			})()
+			return () => {
+				cancelled = true
 			}
-			refreshRecoveryWithRecalc()
-		}, [hasData]),
+		}, [hasData, refreshRecoveryWithRecalc]),
 	)
 
 	// Убираем скелетон как только данные появились — плавно
@@ -774,7 +1024,16 @@ export default function RecoveryTab() {
 		(
 			muscleImages: string[],
 			muscleName: string,
-		): { status: string; recovery: number; lastTrained: string } => {
+		): {
+			status: string
+			recovery: number
+			lastTrained: string
+			recoveryHours: number
+		} => {
+			const recoveryHours = getRecoveryHoursForGroup(
+				muscleName,
+				recoverySettings,
+			)
 			const matchedById = muscleImages
 				.map(imgKey =>
 					recoveryData.find(
@@ -795,18 +1054,14 @@ export default function RecoveryTab() {
 					status: 'not_trained',
 					recovery: 0,
 					lastTrained: t('recovery', 'noData'),
+					recoveryHours,
 				}
 
 			const avgRecovery = Math.round(
 				matched.reduce((sum, r) => sum + (r.recovery ?? 0), 0) / matched.length,
 			)
-			const hasRest = matched.some(r => r.status === 'needs_rest')
-			const allRecovered = matched.every(r => r.status === 'recovered')
-			const status = hasRest
-				? 'needs_rest'
-				: allRecovered
-					? 'recovered'
-					: 'recovering'
+			// Цвет группы = по среднему %, а не «любая красная → вся красная»
+			const status = statusFromRecoveryPct(avgRecovery)
 
 			const lastDates = matched
 				.map(r => r.last_trained)
@@ -821,9 +1076,9 @@ export default function RecoveryTab() {
 						)
 					: t('recovery', 'noData')
 
-			return { status, recovery: avgRecovery, lastTrained }
+			return { status, recovery: avgRecovery, lastTrained, recoveryHours }
 		},
-		[recoveryData, t, language],
+		[recoveryData, recoverySettings, t, language],
 	)
 
 	const openMuscleHistory = useCallback(
@@ -892,35 +1147,72 @@ export default function RecoveryTab() {
 
 	const getFrontMuscleColors = useCallback(() => {
 		const muscleColors: { [key: string]: string } = {}
+		// Цвет как у карточек: по среднему % группы, не по worst-case мышце
 		MUSCLE_FRONT_CONFIG.forEach(muscle => {
+			const stats = getMuscleGroupStats(muscle.muscleImages, muscle.name)
+			let opacity = 0.7
+			if (selectedMuscle && muscleSide === 'front')
+				opacity = selectedMuscle === muscle.id ? 0.9 : 0.2
+			const color = getColorByStatus(stats.status, opacity)
 			muscle.muscleImages.forEach(imageKey => {
-				const record = recoveryData.find(
-					r => r.muscle_id.toLowerCase() === imageKey.toLowerCase(),
-				)
-				let opacity = 0.7
-				if (selectedMuscle && muscleSide === 'front')
-					opacity = selectedMuscle === muscle.id ? 0.9 : 0.2
-				muscleColors[imageKey] = getColorByStatus(record?.status, opacity)
+				muscleColors[imageKey] = color
 			})
 		})
 		return muscleColors
-	}, [recoveryData, selectedMuscle, muscleSide, getColorByStatus])
+	}, [
+		getMuscleGroupStats,
+		selectedMuscle,
+		muscleSide,
+		getColorByStatus,
+	])
 
 	const getBackMuscleColors = useCallback(() => {
 		const muscleColors: { [key: string]: string } = {}
 		MUSCLE_BACK_CONFIG.forEach(muscle => {
+			const stats = getMuscleGroupStats(muscle.muscleImages, muscle.name)
+			let opacity = 0.7
+			if (selectedMuscle && muscleSide === 'back')
+				opacity = selectedMuscle === muscle.id ? 0.9 : 0.2
+			const color = getColorByStatus(stats.status, opacity)
 			muscle.muscleImages.forEach(imageKey => {
-				const record = recoveryData.find(
-					r => r.muscle_id.toLowerCase() === imageKey.toLowerCase(),
-				)
-				let opacity = 0.7
-				if (selectedMuscle && muscleSide === 'back')
-					opacity = selectedMuscle === muscle.id ? 0.9 : 0.2
-				muscleColors[imageKey] = getColorByStatus(record?.status, opacity)
+				muscleColors[imageKey] = color
 			})
 		})
 		return muscleColors
-	}, [recoveryData, selectedMuscle, muscleSide, getColorByStatus])
+	}, [
+		getMuscleGroupStats,
+		selectedMuscle,
+		muscleSide,
+		getColorByStatus,
+	])
+
+	const frontCallouts = useMemo<RecoveryCalloutItem[]>(
+		() =>
+			frontDataWithStats.map(m => ({
+				id: `front-${m.id}`,
+				name: m.name,
+				recovery: m.stats.recovery,
+				status: m.stats.status,
+				color:
+					STATUS_COLORS[m.stats.status as keyof typeof STATUS_COLORS] ??
+					STATUS_COLORS.not_trained,
+			})),
+		[frontDataWithStats, STATUS_COLORS],
+	)
+
+	const backCallouts = useMemo<RecoveryCalloutItem[]>(
+		() =>
+			backDataWithStats.map(m => ({
+				id: `back-${m.id}`,
+				name: m.name,
+				recovery: m.stats.recovery,
+				status: m.stats.status,
+				color:
+					STATUS_COLORS[m.stats.status as keyof typeof STATUS_COLORS] ??
+					STATUS_COLORS.not_trained,
+			})),
+		[backDataWithStats, STATUS_COLORS],
+	)
 
 	const handleMuscleSelect = (muscleId: string, type: string) => {
 		setMuscleSide(type)
@@ -964,7 +1256,11 @@ export default function RecoveryTab() {
 									]}
 								/>
 								<Text style={styles.pillText}>
-									{recoveryData.filter(r => r.status === 'recovered').length}{' '}
+									{
+										recoveryData.filter(
+											r => statusFromRecoveryPct(r.recovery ?? 0) === 'recovered',
+										).length
+									}{' '}
 									{t('recovery', 'ready')}
 								</Text>
 							</View>
@@ -1021,7 +1317,7 @@ export default function RecoveryTab() {
 									if (loading) return <StatCardSkeleton key={status} />
 
 									const count = recoveryData.filter(
-										r => r.status === status,
+										r => statusFromRecoveryPct(r.recovery ?? 0) === status,
 									).length
 									const color =
 										STATUS_COLORS[status as keyof typeof STATUS_COLORS]
@@ -1074,11 +1370,19 @@ export default function RecoveryTab() {
 
 								<View style={styles.svgRow}>
 									<View style={styles.svgHalf}>
-										<ManBackSvg muscleColors={getBackMuscleColors()} />
+										<RecoveryBodyMap
+											side='back'
+											muscleColors={getBackMuscleColors()}
+											callouts={backCallouts}
+										/>
 									</View>
 									<View style={styles.svgDivider} />
 									<View style={styles.svgHalf}>
-										<ManFrontSvg muscleColors={getFrontMuscleColors()} />
+										<RecoveryBodyMap
+											side='front'
+											muscleColors={getFrontMuscleColors()}
+											callouts={frontCallouts}
+										/>
 									</View>
 								</View>
 
@@ -1243,6 +1547,36 @@ function makeStyles(C: AppColors) {
 		alignItems: 'center',
 		height: 440,
 		justifyContent: 'center',
+	},
+	bodyMapStage: {
+		width: '100%',
+		height: 440,
+		position: 'relative',
+		overflow: 'visible',
+	},
+	bodyMapSvgWrap: {
+		position: 'absolute',
+		left: 0,
+		right: 0,
+		top: 0,
+		bottom: 0,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	calloutBadge: {
+		position: 'absolute',
+		minWidth: 44,
+		height: 22,
+		paddingHorizontal: 6,
+		borderRadius: 11,
+		borderWidth: 1.5,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	calloutBadgeText: {
+		fontSize: 11,
+		fontWeight: '700',
+		letterSpacing: 0.2,
 	},
 	svgLabel: {
 		fontSize: 11,

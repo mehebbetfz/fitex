@@ -27,6 +27,12 @@ export type FoodEntry = {
 	createdAt?: string
 }
 
+export type PhotoQuota = {
+	limit: number
+	used: number
+	remaining: number
+}
+
 export type NutritionDay = {
 	date: string
 	targets: NutritionTargets
@@ -37,6 +43,7 @@ export type NutritionDay = {
 		fatG: number
 	}
 	entries: FoodEntry[]
+	photoQuota?: PhotoQuota
 }
 
 function apiBase() {
@@ -59,11 +66,99 @@ export async function fetchNutritionDay(date?: string): Promise<NutritionDay> {
 	return data
 }
 
+function shiftLocalDateKey(dateKey: string, deltaDays: number): string {
+	const d = new Date(`${dateKey}T12:00:00`)
+	d.setDate(d.getDate() + deltaDays)
+	return d.toLocaleDateString('en-CA')
+}
+
+/** Fallback when GET /nutrition/history is missing (older server) — walk recent days. */
+async function fetchFoodHistoryFromDays(opts?: {
+	limit?: number
+	before?: string
+}): Promise<{ entries: FoodEntry[]; nextCursor: string | null }> {
+	const limit = Math.min(50, Math.max(1, opts?.limit ?? 30))
+	const beforeMs = opts?.before ? new Date(opts.before).getTime() : NaN
+	const hasBefore = Number.isFinite(beforeMs)
+
+	let dayKey = localTodayKey()
+	if (hasBefore) {
+		dayKey = new Date(beforeMs).toLocaleDateString('en-CA')
+	}
+
+	const collected: FoodEntry[] = []
+	const maxDays = 90
+
+	for (let i = 0; i < maxDays && collected.length < limit; i++) {
+		try {
+			const day = await fetchNutritionDay(dayKey)
+			const dayEntries = [...(day.entries ?? [])].sort((a, b) => {
+				const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+				const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+				return tb - ta
+			})
+			for (const e of dayEntries) {
+				if (hasBefore && e.createdAt) {
+					const t = new Date(e.createdAt).getTime()
+					if (!(t < beforeMs)) continue
+				} else if (hasBefore && !e.createdAt) {
+					continue
+				}
+				collected.push(e)
+				if (collected.length >= limit) break
+			}
+		} catch {
+			/* skip missing day */
+		}
+		dayKey = shiftLocalDateKey(dayKey, -1)
+	}
+
+	const last = collected[collected.length - 1]
+	const nextCursor =
+		collected.length >= limit && last?.createdAt
+			? String(last.createdAt)
+			: null
+
+	return { entries: collected, nextCursor }
+}
+
+export async function fetchFoodHistory(opts?: {
+	limit?: number
+	before?: string
+}): Promise<{ entries: FoodEntry[]; nextCursor: string | null }> {
+	try {
+		const res = await api.get<{
+			entries?: FoodEntry[]
+			nextCursor?: string | null
+			statusCode?: number
+		}>('/nutrition/history', {
+			params: {
+				limit: opts?.limit ?? 30,
+				...(opts?.before ? { before: opts.before } : {}),
+			},
+			validateStatus: () => true,
+		})
+		if (res.status === 200 && Array.isArray(res.data?.entries)) {
+			return {
+				entries: res.data.entries,
+				nextCursor: res.data.nextCursor ?? null,
+			}
+		}
+		// Older servers without /nutrition/history (404) — walk /nutrition/day
+		return fetchFoodHistoryFromDays(opts)
+	} catch {
+		return fetchFoodHistoryFromDays(opts)
+	}
+}
+
 export async function analyzeMealPhoto(
 	jpegUri: string,
-	date?: string,
-	note?: string,
-): Promise<{ entry: FoodEntry; analysis: { confidence: number } }> {
+	opts?: { date?: string; note?: string; language?: string },
+): Promise<{
+	entry: FoodEntry
+	analysis: { confidence: number }
+	photoQuota?: PhotoQuota
+}> {
 	const token = await SecureStore.getItemAsync('access_token')
 	const form = new FormData()
 	form.append('file', {
@@ -71,8 +166,9 @@ export async function analyzeMealPhoto(
 		name: 'meal.jpg',
 		type: 'image/jpeg',
 	} as never)
-	form.append('date', date || localTodayKey())
-	if (note?.trim()) form.append('note', note.trim())
+	form.append('date', opts?.date || localTodayKey())
+	if (opts?.note?.trim()) form.append('note', opts.note.trim())
+	if (opts?.language) form.append('language', opts.language)
 
 	const controller = new AbortController()
 	const timer = setTimeout(() => controller.abort(), 90_000)
@@ -98,6 +194,7 @@ export async function analyzeMealPhoto(
 		return (await res.json()) as {
 			entry: FoodEntry
 			analysis: { confidence: number }
+			photoQuota?: PhotoQuota
 		}
 	} catch (e) {
 		if (e instanceof Error && e.name === 'AbortError') {

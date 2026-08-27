@@ -1,5 +1,7 @@
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { DetailPageSkeleton } from '@/components/ui/skeleton'
+import type { AppColors } from '@/constants/app-theme'
 import { presetAvatarSource } from '@/constants/preset-avatars'
 import { api } from '@/services/api'
 import {
@@ -35,16 +37,6 @@ const { width: SCREEN_W } = Dimensions.get('window')
 const PAD = 16
 const CAT_GAP = 10
 const CAT_W = (SCREEN_W - PAD * 2 - CAT_GAP) / 2
-
-const C = {
-	bg: '#121212',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#2C2C2E',
-	text: '#FFFFFF',
-	sub: '#8E8E93',
-	primary: '#34C759',
-} as const
 
 const TIER_ICONS: Record<TierName, { name: string; color: string }> = {
 	beginner: { name: 'trophy', color: '#8E8E93' },
@@ -151,6 +143,7 @@ function toOpenUrl(kind: keyof AthleteProfile['social'], raw: string): string | 
 }
 
 const ProgressBar = ({ percent, color, height = 8 }: { percent: number; color: string; height?: number }) => {
+	const { colors } = useAppTheme()
 	const anim = useRef(new Animated.Value(0)).current
 	const safePct = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0
 	useEffect(() => {
@@ -162,13 +155,14 @@ const ProgressBar = ({ percent, color, height = 8 }: { percent: number; color: s
 	}, [safePct, anim])
 	const width = anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] })
 	return (
-		<View style={{ height, backgroundColor: C.cardLight, borderRadius: height / 2, overflow: 'hidden' }}>
+		<View style={{ height, backgroundColor: colors.cardLight, borderRadius: height / 2, overflow: 'hidden' }}>
 			<Animated.View style={{ height, width, backgroundColor: color, borderRadius: height / 2 }} />
 		</View>
 	)
 }
 
 const TierLevelDots = ({ tierName, currentLevel }: { tierName: TierName; currentLevel: number }) => {
+	const { colors } = useAppTheme()
 	const tier = TIERS.find(t => t.name === tierName) ?? TIERS[0]
 	const tierLevels = LEVELS.filter(l => l.tierName === tier.name)
 	return (
@@ -183,7 +177,7 @@ const TierLevelDots = ({ tierName, currentLevel }: { tierName: TierName; current
 							width: active ? 22 : 7,
 							height: 7,
 							borderRadius: 4,
-							backgroundColor: done || active ? tier.color : '#2C2C2E',
+							backgroundColor: done || active ? tier.color : colors.cardLight,
 							opacity: active ? 1 : done ? 0.65 : 0.35,
 						}}
 					/>
@@ -209,6 +203,8 @@ export default function AthleteProfileScreen() {
 	const params = useLocalSearchParams<{ userId: string | string[] }>()
 	const userId = normalizeUserIdParam(params.userId)
 	const { t } = useLanguage()
+	const { colors } = useAppTheme()
+	const s = useMemo(() => makeStyles(colors), [colors])
 	const [data, setData] = useState<AthleteProfile | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState(false)
@@ -317,15 +313,9 @@ export default function AthleteProfileScreen() {
 
 	return (
 		<SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
-			<LinearGradient
-				colors={['rgba(52, 199, 89, 0.2)', 'transparent']}
-				start={{ x: 0.5, y: 0 }}
-				end={{ x: 0.5, y: 1 }}
-				style={StyleSheet.absoluteFill}
-			/>
 			<View style={s.header}>
 				<TouchableOpacity onPress={() => router.back()} style={s.backBtn} hitSlop={12}>
-					<Ionicons name='chevron-back' size={26} color={C.text} />
+					<Ionicons name='chevron-back' size={26} color={colors.text} />
 				</TouchableOpacity>
 				<Text style={s.headerTitle} numberOfLines={1}>
 					{t('leaderboard', 'athleteProfile')}
@@ -337,7 +327,7 @@ export default function AthleteProfileScreen() {
 				<DetailPageSkeleton />
 			) : error || !data || !rating ? (
 				<View style={s.centered}>
-					<Ionicons name='alert-circle-outline' size={40} color={C.sub} />
+					<Ionicons name='alert-circle-outline' size={40} color={colors.textSecondary} />
 					<Text style={s.errText}>{t('leaderboard', 'profileLoadError')}</Text>
 					<TouchableOpacity style={s.retry} onPress={() => void load()}>
 						<Text style={s.retryText}>{t('common', 'retry')}</Text>
@@ -390,7 +380,7 @@ export default function AthleteProfileScreen() {
 										style={({ pressed }) => [s.socialBtn, pressed && { opacity: 0.85 }]}
 										onPress={() => void openLink(kind, raw)}
 									>
-										<Ionicons name={icon as any} size={22} color={C.text} />
+										<Ionicons name={icon as any} size={22} color={colors.text} />
 									</Pressable>
 								)
 							})}
@@ -463,14 +453,14 @@ export default function AthleteProfileScreen() {
 											<Ionicons
 												name={ic.name as any}
 												size={isActive ? 16 : 12}
-												color={isActive ? ic.color : isPassed ? `${ic.color}AA` : '#444'}
+												color={isActive ? ic.color : isPassed ? `${ic.color}AA` : colors.textTertiary}
 											/>
 										</View>
 										{i < TIERS.length - 1 && (
 											<View
 												style={[
 													s.tierConn,
-													{ backgroundColor: isPassed ? rating.tier.color : C.border },
+													{ backgroundColor: isPassed ? rating.tier.color : colors.border },
 												]}
 											/>
 										)}
@@ -568,7 +558,7 @@ export default function AthleteProfileScreen() {
 									<Ionicons
 										name={a.icon as any}
 										size={Math.round(ACH_BADGE * 0.42)}
-										color={a.earned ? a.iconColor : '#444'}
+										color={a.earned ? a.iconColor : colors.textTertiary}
 									/>
 									{a.earned && (
 										<View style={s.achCheck}>
@@ -582,18 +572,18 @@ export default function AthleteProfileScreen() {
 					{/* Monthly */}
 					<Text style={s.section}>{t('leaderboard', 'thisMonth')}</Text>
 					<View style={s.card}>
-						<Row k={t('leaderboard', 'rank')} v={`#${data.monthly.rank}`} />
-						<Row k={t('leaderboard', 'score')} v={data.monthly.score.toLocaleString()} accent={TIERS.find(x => x.name === data.monthly.tierName)?.color} />
-						<Row k={t('leaderboard', 'workouts')} v={String(data.monthly.workouts)} />
-						<Row k={t('leaderboard', 'volume')} v={Math.round(data.monthly.volume).toLocaleString()} />
-						<Row k={t('leaderboard', 'streak')} v={String(data.monthly.streakDays)} />
+						<Row styles={s} k={t('leaderboard', 'rank')} v={`#${data.monthly.rank}`} />
+						<Row styles={s} k={t('leaderboard', 'score')} v={data.monthly.score.toLocaleString()} accent={TIERS.find(x => x.name === data.monthly.tierName)?.color} />
+						<Row styles={s} k={t('leaderboard', 'workouts')} v={String(data.monthly.workouts)} />
+						<Row styles={s} k={t('leaderboard', 'volume')} v={Math.round(data.monthly.volume).toLocaleString()} />
+						<Row styles={s} k={t('leaderboard', 'streak')} v={String(data.monthly.streakDays)} />
 					</View>
 
 					<Text style={s.section}>{t('leaderboard', 'podiumHistory')}</Text>
 					<View style={s.card}>
-						<Row k={`🥇 ${t('leaderboard', 'firstPlaces')}`} v={String(data.podium.first)} />
-						<Row k={`🥈 ${t('leaderboard', 'secondPlaces')}`} v={String(data.podium.second)} />
-						<Row k={`🥉 ${t('leaderboard', 'thirdPlaces')}`} v={String(data.podium.third)} />
+						<Row styles={s} k={`🥇 ${t('leaderboard', 'firstPlaces')}`} v={String(data.podium.first)} />
+						<Row styles={s} k={`🥈 ${t('leaderboard', 'secondPlaces')}`} v={String(data.podium.second)} />
+						<Row styles={s} k={`🥉 ${t('leaderboard', 'thirdPlaces')}`} v={String(data.podium.third)} />
 					</View>
 
 					<Text style={s.section}>{t('leaderboard', 'bestRecords')}</Text>
@@ -617,7 +607,17 @@ export default function AthleteProfileScreen() {
 	)
 }
 
-function Row({ k, v, accent }: { k: string; v: string; accent?: string }) {
+function Row({
+	k,
+	v,
+	accent,
+	styles: s,
+}: {
+	k: string
+	v: string
+	accent?: string
+	styles: ReturnType<typeof makeStyles>
+}) {
 	return (
 		<View style={s.row}>
 			<Text style={s.muted}>{k}</Text>
@@ -626,39 +626,38 @@ function Row({ k, v, accent }: { k: string; v: string; accent?: string }) {
 	)
 }
 
-const s = StyleSheet.create({
-	safe: { flex: 1, backgroundColor: C.bg },
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+	safe: { flex: 1, backgroundColor: C.background },
 	header: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingHorizontal: 8,
-		paddingVertical: 8,
+		justifyContent: 'space-between',
+		paddingHorizontal: 10,
+		paddingTop: 12,
+		paddingBottom: 8,
 		zIndex: 2,
 	},
 	backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-	headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: C.text },
+	headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: C.text },
 	centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-	errText: { color: C.sub, fontSize: 15, textAlign: 'center' },
+	errText: { color: C.textSecondary, fontSize: 15, textAlign: 'center' },
 	retry: {
 		marginTop: 8,
 		paddingHorizontal: 20,
 		paddingVertical: 10,
 		borderRadius: 12,
-		backgroundColor: 'rgba(52, 199, 89, 0.15)',
+		backgroundColor: `${C.primary}26`,
 		borderWidth: 1,
-		borderColor: 'rgba(52, 199, 89, 0.35)',
+		borderColor: `${C.primary}59`,
 	},
 	retryText: { color: C.primary, fontWeight: '700' },
 	scroll: { paddingHorizontal: PAD, paddingBottom: 48 },
 	hero: { alignItems: 'center', marginTop: 4, marginBottom: 6 },
 	avatarRing: {
-		padding: 4,
-		borderRadius: 56,
+		padding: 3,
+		borderRadius: 54,
 		borderWidth: 2,
-		...Platform.select({
-			ios: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8 },
-			android: { elevation: 6 },
-		}),
 	},
 	avatarWrap: { position: 'relative', width: 96, height: 96 },
 	avatar: {
@@ -679,7 +678,7 @@ const s = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		borderWidth: 2,
-		borderColor: C.bg,
+		borderColor: C.background,
 		zIndex: 4,
 	},
 	name: { marginTop: 12, fontSize: 24, fontWeight: '800', color: C.text },
@@ -704,13 +703,13 @@ const s = StyleSheet.create({
 		borderRadius: 14,
 		backgroundColor: C.card,
 		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.08)',
+		borderColor: C.border,
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
 	hint: {
 		fontSize: 11,
-		color: C.sub,
+		color: C.textSecondary,
 		lineHeight: 15,
 		marginBottom: 16,
 		textAlign: 'center',
@@ -718,18 +717,17 @@ const s = StyleSheet.create({
 		opacity: 0.95,
 	},
 	section: {
-		fontSize: 13,
-		fontWeight: '800',
-		color: C.sub,
-		letterSpacing: 0.5,
-		textTransform: 'uppercase',
-		marginBottom: 10,
-		marginTop: 6,
+		fontSize: 18,
+		fontWeight: '600',
+		color: C.text,
+		marginBottom: 12,
+		marginLeft: 4,
+		marginTop: 8,
 	},
 	levelCard: {
 		backgroundColor: C.card,
 		borderRadius: 20,
-		borderWidth: 1.5,
+		borderWidth: 1,
 		padding: 16,
 		marginBottom: 20,
 	},
@@ -743,16 +741,16 @@ const s = StyleSheet.create({
 		borderWidth: 1,
 	},
 	levelNum: { fontSize: 26, fontWeight: '800' },
-	levelTotal: { fontSize: 14, color: C.sub, fontWeight: '600' },
+	levelTotal: { fontSize: 14, color: C.textSecondary, fontWeight: '600' },
 	tierTitle: { fontSize: 15, fontWeight: '700', marginTop: 2 },
-	scoreInline: { fontSize: 12, color: C.sub, marginTop: 4 },
+	scoreInline: { fontSize: 12, color: C.textSecondary, marginTop: 4 },
 	progressLabels: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		marginTop: 8,
 		gap: 8,
 	},
-	pl: { fontSize: 11, color: C.sub, flexShrink: 1 },
+	pl: { fontSize: 11, color: C.textSecondary, flexShrink: 1 },
 	tierLadder: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -760,7 +758,7 @@ const s = StyleSheet.create({
 		marginTop: 16,
 		paddingTop: 12,
 		borderTopWidth: StyleSheet.hairlineWidth,
-		borderTopColor: 'rgba(255,255,255,0.08)',
+		borderTopColor: C.border,
 	},
 	tierStep: { alignItems: 'center' },
 	tierStepIcon: {
@@ -768,10 +766,10 @@ const s = StyleSheet.create({
 		height: 32,
 		borderRadius: 10,
 		borderWidth: 1,
-		borderColor: '#333',
+		borderColor: C.border,
 		alignItems: 'center',
 		justifyContent: 'center',
-		backgroundColor: 'rgba(0,0,0,0.2)',
+		backgroundColor: C.cardLight,
 	},
 	tierConn: { width: 2, height: 14, marginVertical: 2 },
 	catGrid: {
@@ -794,7 +792,7 @@ const s = StyleSheet.create({
 		justifyContent: 'center',
 		marginBottom: 8,
 	},
-	catLabel: { fontSize: 11, color: C.sub, fontWeight: '600' },
+	catLabel: { fontSize: 11, color: C.textSecondary, fontWeight: '600' },
 	catValue: { fontSize: 16, fontWeight: '800', color: C.text, marginTop: 4 },
 	catTierBadge: {
 		flexDirection: 'row',
@@ -808,13 +806,13 @@ const s = StyleSheet.create({
 	catTierText: { fontSize: 10, fontWeight: '800' },
 	card: {
 		backgroundColor: C.card,
-		borderRadius: 18,
+		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.06)',
-		padding: 14,
-		marginBottom: 18,
+		borderColor: C.border,
+		padding: 16,
+		marginBottom: 16,
 	},
-	cardTitle: { fontSize: 15, fontWeight: '800', color: C.text, marginBottom: 10 },
+	cardTitle: { fontSize: 16, fontWeight: '600', color: C.text, marginBottom: 12 },
 	breakRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 },
 	breakIcon: {
 		width: 32,
@@ -832,7 +830,7 @@ const s = StyleSheet.create({
 		marginBottom: 8,
 		paddingRight: 4,
 	},
-	achCount: { fontSize: 12, color: C.sub, fontWeight: '600' },
+	achCount: { fontSize: 12, color: C.textSecondary, fontWeight: '600' },
 	achGrid: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
@@ -846,7 +844,7 @@ const s = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		borderWidth: 1,
-		borderColor: '#333',
+		borderColor: C.border,
 	},
 	achEarned: {},
 	achLocked: { opacity: 0.55 },
@@ -862,7 +860,7 @@ const s = StyleSheet.create({
 		justifyContent: 'center',
 	},
 	row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
-	muted: { fontSize: 14, color: C.sub },
+	muted: { fontSize: 14, color: C.textSecondary },
 	val: { fontSize: 15, fontWeight: '700', color: C.text },
 	recRow: {
 		flexDirection: 'row',
@@ -870,8 +868,9 @@ const s = StyleSheet.create({
 		alignItems: 'center',
 		paddingVertical: 8,
 		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: 'rgba(255,255,255,0.08)',
+		borderBottomColor: C.border,
 	},
 	recEx: { flex: 1, fontSize: 14, fontWeight: '600', color: C.text, paddingRight: 12 },
 	recW: { fontSize: 14, fontWeight: '800', color: C.primary },
-})
+	})
+}

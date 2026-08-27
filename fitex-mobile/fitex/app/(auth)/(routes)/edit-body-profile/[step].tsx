@@ -4,15 +4,15 @@ import {
 	type BodyProfileStep,
 	isBodyProfileStep,
 } from '@/constants/body-profile-wizard'
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { Ionicons } from '@expo/vector-icons'
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useEditBodyProfile } from './edit-body-profile-context'
-
-const BG = '#0A0A0A'
 
 function stepParam(raw: string | string[] | undefined): string | undefined {
 	if (raw == null) return undefined
@@ -21,6 +21,8 @@ function stepParam(raw: string | string[] | undefined): string | undefined {
 
 export default function EditBodyProfileStepScreen() {
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const router = useRouter()
 	const raw = stepParam(useLocalSearchParams().step)
 	const { state, setState, loading, submitSave } = useEditBodyProfile()
@@ -49,7 +51,7 @@ export default function EditBodyProfileStepScreen() {
 					onPress={() => router.back()}
 					hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
 				>
-					<Ionicons name='chevron-back' size={28} color='#fff' />
+					<Ionicons name='chevron-back' size={28} color={C.text} />
 				</TouchableOpacity>
 				<Text style={styles.headerTitle}>{t('bodyProfile', 'editTitle')}</Text>
 				<View style={{ width: 28 }} />
@@ -68,22 +70,24 @@ export default function EditBodyProfileStepScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
-	safe: { flex: 1, backgroundColor: BG },
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 8,
-		paddingVertical: 8,
-		borderBottomWidth: 1,
-		borderBottomColor: '#2C2C2E',
-	},
-	headerTitle: {
-		flex: 1,
-		fontSize: 18,
-		fontWeight: '600',
-		color: '#fff',
-		textAlign: 'center',
-	},
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		safe: { flex: 1, backgroundColor: C.background },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 8,
+			paddingVertical: 8,
+			borderBottomWidth: 1,
+			borderBottomColor: C.border,
+		},
+		headerTitle: {
+			flex: 1,
+			fontSize: 18,
+			fontWeight: '600',
+			color: C.text,
+			textAlign: 'center',
+		},
+	})
+}

@@ -48,7 +48,7 @@ const logError = (msg: string, error?: any) => {
 
 const COLORS = {
 	primary: '#34C759',
-	background: '#121212',
+	background: '#222226',
 	card: '#1C1C1E',
 	border: '#2C2C2E',
 	text: '#FFFFFF',
@@ -386,6 +386,7 @@ export default function SubscriptionScreen() {
 				<Text style={styles.productDescription}>{description}</Text>
 				<View style={styles.featureList}>
 					<FeatureItem text={t('subscription', 'feature1')} />
+					<FeatureItem text={t('subscription', 'feature6')} />
 					<FeatureItem text={t('subscription', 'feature2')} />
 					<FeatureItem text={t('subscription', 'feature3')} />
 					<FeatureItem text={t('subscription', 'feature4')} />
@@ -415,7 +416,8 @@ export default function SubscriptionScreen() {
 					<>
 						<Text style={styles.title}>{t('subscription', 'title')}</Text>
 						<Text style={styles.subtitle}>
-							{t('subscription', 'feature1')} · {t('subscription', 'feature2')} · {t('subscription', 'feature3')}
+							{t('subscription', 'feature1')} · {t('subscription', 'feature6')} ·{' '}
+							{t('subscription', 'feature2')}
 						</Text>
 					</>
 				}
@@ -456,14 +458,14 @@ export default function SubscriptionScreen() {
 const modalStyles = StyleSheet.create({
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: '#121212',
+		backgroundColor: '#222226',
 		justifyContent: 'flex-end',
 	},
 	modalBackdrop: {
 		...StyleSheet.absoluteFillObject,
 	},
 	modalContainer: {
-		backgroundColor: '#121212',
+		backgroundColor: '#222226',
 		borderTopLeftRadius: 24,
 		borderTopRightRadius: 24,
 		height: '95%',
@@ -676,7 +678,7 @@ const modalStyles = StyleSheet.create({
 	},
 	exerciseDetailContainer: {
 		flex: 1,
-		backgroundColor: '#121212',
+		backgroundColor: '#222226',
 	},
 	exerciseImageContainer: {
 		width: '100%',

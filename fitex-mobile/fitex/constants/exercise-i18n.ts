@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Translation lookup for all exercise-related Russian strings.
  * The source data (muscle-groups.ts) stores everything in Russian.
  * This file maps those Russian strings to EN and AZ equivalents.
@@ -6,10 +6,24 @@
  */
 
 import { Language } from '@/locales'
+import type { CoreLanguage } from '@/locales'
+
+type CoreLangMap = Record<CoreLanguage, string>
+
+function pickCore(
+	map: CoreLangMap | undefined,
+	language: Language | null | undefined,
+	fallback: string,
+): string {
+	if (!map) return fallback
+	const lang = language ?? 'ru'
+	if (lang === 'ru' || lang === 'en' || lang === 'az') return map[lang]
+	return map.en
+}
 
 // ─── Muscle group & subgroup names ────────────────────────────────────────────
 
-const GROUP_NAMES: Record<string, Record<Language, string>> = {
+const GROUP_NAMES: Record<string, CoreLangMap> = {
   'Грудь':           { ru: 'Грудь',          en: 'Chest',        az: 'Döş' },
   'Руки':            { ru: 'Руки',           en: 'Arms',         az: 'Qollar' },
   'Дельты':          { ru: 'Дельты',         en: 'Shoulders',    az: 'Çiynlər' },
@@ -41,7 +55,7 @@ const GROUP_NAMES: Record<string, Record<Language, string>> = {
 
 // ─── Primary / secondary muscle names ────────────────────────────────────────
 
-const MUSCLE_NAMES: Record<string, Record<Language, string>> = {
+const MUSCLE_NAMES: Record<string, CoreLangMap> = {
   'Середина груди':    { ru: 'Середина груди',    en: 'Mid Chest',       az: 'Orta döş' },
   'Верх груди':        { ru: 'Верх груди',         en: 'Upper Chest',     az: 'Üst döş' },
   'Низ груди':         { ru: 'Низ груди',           en: 'Lower Chest',     az: 'Alt döş' },
@@ -127,7 +141,7 @@ const MUSCLE_NAMES: Record<string, Record<Language, string>> = {
 
 // ─── Equipment names ──────────────────────────────────────────────────────────
 
-const EQUIPMENT_NAMES: Record<string, Record<Language, string>> = {
+const EQUIPMENT_NAMES: Record<string, CoreLangMap> = {
   'Штанга':                              { ru: 'Штанга',                           en: 'Barbell',                az: 'Ştanqa' },
   'Горизонтальная скамья':               { ru: 'Горизонтальная скамья',            en: 'Flat Bench',             az: 'Düz dəzgah' },
   'Наклонная скамья':                    { ru: 'Наклонная скамья',                 en: 'Incline Bench',          az: 'Meyilli dəzgah' },
@@ -180,7 +194,7 @@ const EQUIPMENT_NAMES: Record<string, Record<Language, string>> = {
 
 // ─── Exercise names ────────────────────────────────────────────────────────────
 
-const EXERCISE_NAMES: Record<string, Record<Language, string>> = {
+const EXERCISE_NAMES: Record<string, CoreLangMap> = {
   'Жим штанги лежа':                                           { ru: 'Жим штанги лежа',                                        en: 'Flat Barbell Bench Press',                  az: 'Düz ştanqa presi' },
   'Жим штанги на наклонной скамье':                            { ru: 'Жим штанги на наклонной скамье',                         en: 'Incline Barbell Bench Press',               az: 'Meyilli ştanqa presi' },
   'Сведение рук в тренажере (Бабочка)':                        { ru: 'Сведение рук в тренажере (Бабочка)',                     en: 'Pec Deck Fly (Butterfly)',                  az: 'Kəpənək trenajoru' },
@@ -251,7 +265,7 @@ const EXERCISE_NAMES: Record<string, Record<Language, string>> = {
 
 // ─── Difficulty labels ────────────────────────────────────────────────────────
 
-const DIFFICULTY_LABELS: Record<string, Record<Language, string>> = {
+const DIFFICULTY_LABELS: Record<string, CoreLangMap> = {
   'Начинающий':  { ru: 'Начинающий', en: 'Beginner',     az: 'Başlanğıc' },
   'Новичок':     { ru: 'Новичок',    en: 'Beginner',     az: 'Başlanğıc' },
   'Средний':     { ru: 'Средний',    en: 'Intermediate', az: 'Orta' },
@@ -261,24 +275,42 @@ const DIFFICULTY_LABELS: Record<string, Record<Language, string>> = {
 
 // ─── Public helpers ───────────────────────────────────────────────────────────
 
-export function translateGroupName(russianName: string, language: Language): string {
-  return GROUP_NAMES[russianName]?.[language] ?? russianName
+export function translateGroupName(
+	russianName: string,
+	language: Language | null | undefined,
+): string {
+  return pickCore(GROUP_NAMES[russianName], language, russianName)
 }
 
-export function translateMuscleName(russianName: string, language: Language): string {
-  return MUSCLE_NAMES[russianName]?.[language] ?? GROUP_NAMES[russianName]?.[language] ?? russianName
+export function translateMuscleName(
+	russianName: string,
+	language: Language | null | undefined,
+): string {
+  return (
+    pickCore(MUSCLE_NAMES[russianName], language, '') ||
+    pickCore(GROUP_NAMES[russianName], language, russianName)
+  )
 }
 
-export function translateExerciseName(russianName: string, language: Language): string {
-  return EXERCISE_NAMES[russianName]?.[language] ?? russianName
+export function translateExerciseName(
+	russianName: string,
+	language: Language | null | undefined,
+): string {
+  return pickCore(EXERCISE_NAMES[russianName], language, russianName)
 }
 
-export function translateEquipment(russianName: string, language: Language): string {
-  return EQUIPMENT_NAMES[russianName]?.[language] ?? russianName
+export function translateEquipment(
+	russianName: string,
+	language: Language | null | undefined,
+): string {
+  return pickCore(EQUIPMENT_NAMES[russianName], language, russianName)
 }
 
-export function translateDifficulty(russianName: string, language: Language): string {
-  return DIFFICULTY_LABELS[russianName]?.[language] ?? russianName
+export function translateDifficulty(
+	russianName: string,
+	language: Language | null | undefined,
+): string {
+  return pickCore(DIFFICULTY_LABELS[russianName], language, russianName)
 }
 
 // ─── Exercise descriptions (EN / AZ only; RU falls back to original data) ─────
@@ -1121,23 +1153,37 @@ const EXERCISE_TIPS: Record<string, { en: string[]; az: string[] }> = {
  * Returns translated description for `en`/`az`.
  * Returns null for `ru` so callers can fall back to the original data string.
  */
-export function translateDescription(exerciseRussianName: string, language: Language): string | null {
-  if (language === 'ru') return null
-  return EXERCISE_DESCRIPTIONS[exerciseRussianName]?.[language] ?? null
+export function translateDescription(
+	exerciseRussianName: string,
+	language: Language | null | undefined,
+): string | null {
+  const lang = language ?? 'ru'
+  if (lang === 'ru') return null
+  const pack = EXERCISE_DESCRIPTIONS[exerciseRussianName]
+  if (!pack) return null
+  if (lang === 'az') return pack.az
+  return pack.en
 }
 
 /**
  * Returns translated tips array for `en`/`az`.
  * Returns null for `ru` so callers can fall back to the original data array.
  */
-export function translateTips(exerciseRussianName: string, language: Language): string[] | null {
-  if (language === 'ru') return null
-  return EXERCISE_TIPS[exerciseRussianName]?.[language] ?? null
+export function translateTips(
+	exerciseRussianName: string,
+	language: Language | null | undefined,
+): string[] | null {
+  const lang = language ?? 'ru'
+  if (lang === 'ru') return null
+  const pack = EXERCISE_TIPS[exerciseRussianName]
+  if (!pack) return null
+  if (lang === 'az') return pack.az
+  return pack.en
 }
 
 // ─── Workout type translations ────────────────────────────────────────────────
 
-const WORKOUT_TYPES: Record<string, Record<Language, string>> = {
+const WORKOUT_TYPES: Record<string, CoreLangMap> = {
   'Силовая':    { ru: 'Силовая',    en: 'Strength',   az: 'Güc' },
   'Кардио':     { ru: 'Кардио',     en: 'Cardio',     az: 'Kardio' },
   'Верх тела':  { ru: 'Верх тела',  en: 'Upper Body', az: 'Üst bədən' },
@@ -1153,19 +1199,25 @@ const WORKOUT_TYPES: Record<string, Record<Language, string>> = {
   'Ягодицы':    { ru: 'Ягодицы',    en: 'Glutes',     az: 'Kalça' },
 }
 
-export function translateWorkoutType(type: string, language: Language): string {
-  return WORKOUT_TYPES[type]?.[language] ?? type
+export function translateWorkoutType(
+	type: string,
+	language: Language | null | undefined,
+): string {
+  return pickCore(WORKOUT_TYPES[type], language, type)
 }
 
 // ─── Unit translations ────────────────────────────────────────────────────────
 
-const UNITS: Record<string, Record<Language, string>> = {
+const UNITS: Record<string, CoreLangMap> = {
   'кг':    { ru: 'кг',    en: 'kg',   az: 'kq' },
   'см':    { ru: 'см',    en: 'cm',   az: 'sm' },
   'кг/м²': { ru: 'кг/м²', en: 'kg/m²', az: 'kq/m²' },
   '%':     { ru: '%',     en: '%',    az: '%' },
 }
 
-export function translateUnit(unit: string, language: Language): string {
-  return UNITS[unit]?.[language] ?? unit
+export function translateUnit(
+	unit: string,
+	language: Language | null | undefined,
+): string {
+  return pickCore(UNITS[unit], language, unit)
 }

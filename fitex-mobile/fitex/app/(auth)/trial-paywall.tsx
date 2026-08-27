@@ -502,6 +502,7 @@ export default function TrialPaywallScreen() {
 
 const FEATURES = [
 	{ icon: 'ribbon-outline', key: 'feature1', color: '#E8C547' },
+	{ icon: 'restaurant-outline', key: 'feature6', color: '#FF6B6B' },
 	{ icon: 'podium-outline', key: 'feature4', color: '#FF9500' },
 	{ icon: 'cloud-upload-outline', key: 'feature2', color: '#5AC8FA' },
 	{ icon: 'analytics-outline', key: 'feature3', color: '#34C759' },

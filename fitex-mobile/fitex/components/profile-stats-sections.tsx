@@ -1,3 +1,4 @@
+import { dateLocaleFor } from '@/locales'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import type { AppColors } from '@/constants/app-theme'
@@ -209,7 +210,7 @@ export default function ProfileStatsSections() {
 	const formatDate = (dateString: string) => {
 		try {
 			const locale =
-				language === 'en' ? 'en-US' : language === 'az' ? 'az-AZ' : 'ru-RU'
+				dateLocaleFor(language)
 			return new Date(dateString).toLocaleDateString(locale, {
 				day: 'numeric',
 				month: 'short',

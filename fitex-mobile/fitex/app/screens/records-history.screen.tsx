@@ -1,5 +1,6 @@
 import type { AppColors } from '@/constants/app-theme'
 import { translateExerciseName } from '@/constants/exercise-i18n'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import * as db from '@/scripts/database'
@@ -497,27 +498,12 @@ export default function RecordsHistoryScreen() {
 						onPress={() => setModalVisible(false)}
 					/>
 					<View style={s.modalContent}>
-						<View style={s.sheetHandle} />
 						{selectedRecord && (
 							<>
-								<View style={s.modalHeader}>
-									<View
-										style={[
-											s.modalCatDot,
-											{
-												backgroundColor:
-													CATEGORY_COLORS[selectedRecord.category] ??
-													C.primary,
-											},
-										]}
-									/>
-									<Text style={s.modalTitle} numberOfLines={1}>
-										{translateExerciseName(selectedRecord.exercise, language)}
-									</Text>
-									<TouchableOpacity onPress={() => setModalVisible(false)}>
-										<Ionicons name='close' size={22} color={C.textSecondary} />
-									</TouchableOpacity>
-								</View>
+								<SheetModalHeader
+									title={translateExerciseName(selectedRecord.exercise, language)}
+									onClose={() => setModalVisible(false)}
+								/>
 
 								<View style={s.modalStatsRow}>
 									<View style={s.modalStat}>

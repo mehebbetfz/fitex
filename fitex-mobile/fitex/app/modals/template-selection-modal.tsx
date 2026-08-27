@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────
 import { useDatabase } from '@/app/contexts/database-context'
 import type { AppColors } from '@/constants/app-theme'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import { WorkoutTemplate } from '@/scripts/database'
@@ -16,6 +17,7 @@ import {
 	Dimensions,
 	FlatList,
 	Modal,
+	Pressable,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -193,24 +195,20 @@ export default function TemplateSelectionModal({
 			onRequestClose={onClose}
 		>
 			<View style={styles.overlay}>
-				<TouchableOpacity
+				<Pressable
 					style={styles.backdrop}
-					activeOpacity={1}
 					onPress={onClose}
+					accessibilityRole='button'
+					accessibilityLabel='Close'
 				/>
 				<Animated.View
 					style={[styles.container, { transform: [{ translateY: slideAnim }] }]}
 				>
-					<View style={styles.header}>
-						<TouchableOpacity
-							style={styles.closeBtn}
-							onPress={onClose}
-							activeOpacity={0.7}
-						>
-							<Ionicons name='close' size={24} color={C.text} />
-						</TouchableOpacity>
-						<Text style={styles.headerTitle}>{t('templates', 'startWorkout')}</Text>
-						<View style={{ width: 40 }} />
+					<View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+						<SheetModalHeader
+							title={t('templates', 'startWorkout')}
+							onClose={onClose}
+						/>
 					</View>
 
 					<TouchableOpacity

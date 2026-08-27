@@ -1,15 +1,14 @@
 import { BodyProfileWizardStep } from '@/components/body-profile-wizard-step'
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
-import React from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import {
 	BODY_PROFILE_STEPS,
 	type BodyProfileStep,
 	isBodyProfileStep,
 } from '@/constants/body-profile-wizard'
+import { useAppTheme } from '@/contexts/theme-context'
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
+import React from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useOnboardingBody } from './onboarding-body-context'
-
-const BG = '#0A0A0A'
 
 function stepParam(raw: string | string[] | undefined): string | undefined {
 	if (raw == null) return undefined
@@ -18,6 +17,7 @@ function stepParam(raw: string | string[] | undefined): string | undefined {
 
 export default function OnboardingBodyStepScreen() {
 	const router = useRouter()
+	const { colors: C } = useAppTheme()
 	const raw = stepParam(useLocalSearchParams().step)
 	const { state, setState, loading, submitSave } = useOnboardingBody()
 
@@ -39,7 +39,7 @@ export default function OnboardingBodyStepScreen() {
 	}
 
 	return (
-		<SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
+		<SafeAreaView style={{ flex: 1, backgroundColor: C.background }}>
 			<BodyProfileWizardStep
 				variant='onboarding'
 				step={step}

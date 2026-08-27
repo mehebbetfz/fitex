@@ -1,5 +1,6 @@
 import { useDatabase } from '@/app/contexts/database-context'
 import type { AppColors } from '@/constants/app-theme'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -796,31 +797,36 @@ export default function WorkoutScreen() {
 				statusBarTranslucent
 			>
 				<View style={styles.modalOverlay}>
+					<TouchableOpacity
+						style={StyleSheet.absoluteFill}
+						activeOpacity={1}
+						onPress={() => setShowAddExerciseModal(false)}
+					/>
 					<View style={styles.modalContent}>
-						<View style={styles.modalHeader}>
-						<Text style={styles.modalTitle}>
-							{selectedMuscleGroup
-								? selectedExercise
-									? t('workout', 'confirmExercise')
-									: `${t('workout', 'exercisesFor')} ${selectedMuscleGroup.name}`
-								: t('exercises', 'selectMuscle')}
-						</Text>
-							<TouchableOpacity
-								onPress={() => {
-									if (selectedExercise) {
-										setSelectedExercise(null)
-									} else if (selectedMuscleGroup) {
-										setSelectedMuscleGroup(null)
-									} else {
-										setShowAddExerciseModal(false)
-									}
-								}}
-								style={styles.modalCloseButton}
-								activeOpacity={0.7}
-							>
-								<Ionicons name='close' size={24} color={COLORS.textSecondary} />
-							</TouchableOpacity>
-						</View>
+						<SheetModalHeader
+							title={
+								selectedMuscleGroup
+									? selectedExercise
+										? t('workout', 'confirmExercise')
+										: `${t('workout', 'exercisesFor')} ${selectedMuscleGroup.name}`
+									: t('exercises', 'selectMuscle')
+							}
+							onClose={() => setShowAddExerciseModal(false)}
+							leading={
+								selectedExercise || selectedMuscleGroup
+									? {
+											icon: 'arrow-back',
+											onPress: () => {
+												if (selectedExercise) {
+													setSelectedExercise(null)
+												} else if (selectedMuscleGroup) {
+													setSelectedMuscleGroup(null)
+												}
+											},
+										}
+									: undefined
+							}
+						/>
 
 						{!selectedMuscleGroup ? (
 							// Шаг 1: Выбор группы мышц

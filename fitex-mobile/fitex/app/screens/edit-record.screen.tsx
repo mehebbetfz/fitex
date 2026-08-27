@@ -337,7 +337,7 @@ export default function EditRecordScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#121212',
+		backgroundColor: '#222226',
 	},
 	loadingContainer: {
 		flex: 1,

@@ -14,28 +14,21 @@ const PHASE_COLOR: Record<string, string> = {
 }
 
 /**
- * Тонкий баннер, который выезжает сверху во время синхронизации.
- * Добавь один раз в корневой layout, СНАРУЖИ любых ScrollView.
- *
- * Пример:
- *   <SafeAreaProvider>
- *     <SyncBanner />          ← здесь
- *     <RootLayoutContent />
- *   </SafeAreaProvider>
+ * Тонкий баннер сверху. Анимации только через native driver,
+ * чтобы не нагружать JS-поток во время синка.
  */
 export default function SyncBanner() {
 	const { sync } = useSyncContext()
 	const { top } = useSafeAreaInsets()
 
 	const slideY = useRef(new Animated.Value(-80)).current
-	const progressAnim = useRef(new Animated.Value(0)).current
 	const pulse = useRef(new Animated.Value(1)).current
+	const barPulse = useRef(new Animated.Value(0.35)).current
 
 	const isVisible = sync.phase !== 'idle'
 	const isFinished = sync.phase === 'done' || sync.phase === 'error'
 	const accentColor = PHASE_COLOR[sync.phase] ?? '#34C759'
 
-	// Slide in / out
 	useEffect(() => {
 		Animated.spring(slideY, {
 			toValue: isVisible ? 0 : -(top + 60),
@@ -43,32 +36,49 @@ export default function SyncBanner() {
 			tension: 65,
 			friction: 11,
 		}).start()
-	}, [isVisible])
+	}, [isVisible, slideY, top])
 
-	// Progress bar fill
-	useEffect(() => {
-		Animated.timing(progressAnim, {
-			toValue: sync.progress / 100,
-			duration: 380,
-			useNativeDriver: false,
-		}).start()
-	}, [sync.progress])
-
-	// Pulsing dot while actively syncing
 	useEffect(() => {
 		if (isFinished || !isVisible) {
 			pulse.setValue(1)
+			barPulse.setValue(1)
 			return
 		}
-		const loop = Animated.loop(
+		const dotLoop = Animated.loop(
 			Animated.sequence([
-				Animated.timing(pulse, { toValue: 0.25, duration: 550, useNativeDriver: true }),
-				Animated.timing(pulse, { toValue: 1, duration: 550, useNativeDriver: true }),
+				Animated.timing(pulse, {
+					toValue: 0.25,
+					duration: 550,
+					useNativeDriver: true,
+				}),
+				Animated.timing(pulse, {
+					toValue: 1,
+					duration: 550,
+					useNativeDriver: true,
+				}),
 			]),
 		)
-		loop.start()
-		return () => loop.stop()
-	}, [isFinished, isVisible])
+		const barLoop = Animated.loop(
+			Animated.sequence([
+				Animated.timing(barPulse, {
+					toValue: 1,
+					duration: 900,
+					useNativeDriver: true,
+				}),
+				Animated.timing(barPulse, {
+					toValue: 0.35,
+					duration: 900,
+					useNativeDriver: true,
+				}),
+			]),
+		)
+		dotLoop.start()
+		barLoop.start()
+		return () => {
+			dotLoop.stop()
+			barLoop.stop()
+		}
+	}, [isFinished, isVisible, pulse, barPulse])
 
 	return (
 		<Animated.View
@@ -78,22 +88,18 @@ export default function SyncBanner() {
 			]}
 			pointerEvents='none'
 		>
-			{/* Thin progress line at the bottom edge of the banner */}
 			<Animated.View
 				style={[
 					styles.progressBar,
 					{
 						backgroundColor: accentColor,
-						width: progressAnim.interpolate({
-							inputRange: [0, 1],
-							outputRange: ['0%', '100%'],
-						}),
+						opacity: isFinished ? 1 : barPulse,
+						transform: [{ scaleX: isFinished ? 1 : 1 }],
 					},
 				]}
 			/>
 
 			<View style={styles.row}>
-				{/* Status dot */}
 				<Animated.View
 					style={[styles.dot, { backgroundColor: accentColor, opacity: pulse }]}
 				/>
@@ -124,7 +130,6 @@ const styles = StyleSheet.create({
 		borderBottomWidth: StyleSheet.hairlineWidth,
 		borderBottomColor: 'rgba(255,255,255,0.1)',
 		overflow: 'hidden',
-		// Subtle shadow so it floats above content
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 2 },
 		shadowOpacity: 0.35,
@@ -135,6 +140,7 @@ const styles = StyleSheet.create({
 		position: 'absolute',
 		bottom: 0,
 		left: 0,
+		right: 0,
 		height: 2,
 	},
 	row: {

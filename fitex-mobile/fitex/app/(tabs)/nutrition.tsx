@@ -1,3 +1,4 @@
+import { dateLocaleFor } from '@/locales'
 ﻿import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import type { AppColors } from '@/constants/app-theme'
@@ -9,18 +10,32 @@ import {
 	localTodayKey,
 	type FoodEntry,
 	type NutritionDay,
+	type PhotoQuota,
 	updateFoodEntry,
 	updateNutritionTargets,
 } from '@/services/nutrition'
 import { isMealPhotoSupported, pickMealJpeg } from '@/services/meal-photo-pick'
-import { Ionicons } from '@expo/vector-icons'
-import { useFocusEffect } from 'expo-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import MealCameraModal from '@/components/meal-camera-modal'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
+import {
+	formatVitaminValue,
+	parseVitaminKey,
+	VITAMIN_ACCENTS,
+} from '@/utils/nutrition-labels'
+import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
+import {
+	PremiumGateModal,
+	markPremiumNudgeShown,
+} from '@/app/components/premium-gate'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
 	Animated,
 	Image,
+	Keyboard,
 	KeyboardAvoidingView,
 	Modal,
 	Platform,
@@ -31,7 +46,25 @@ import {
 	TouchableOpacity,
 	View,
 } from 'react-native'
+import Svg, { Circle } from 'react-native-svg'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+const MACRO_COLORS = {
+	protein: '#FF6B6B',
+	carbs: '#0A84FF',
+	fat: '#FFD60A',
+} as const
+
+const softCardShadow = Platform.select({
+	ios: {
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 6 },
+		shadowOpacity: 0.07,
+		shadowRadius: 14,
+	},
+	android: { elevation: 3 },
+	default: {},
+})
 
 const useShimmer = () => {
 	const anim = useRef(new Animated.Value(0)).current
@@ -81,141 +114,136 @@ const FadeIn = ({
 	return <Animated.View style={{ opacity: anim }}>{children}</Animated.View>
 }
 
+const VIT_LABEL_KEYS: Record<string, string> = {
+	vitaminC: 'vitVitaminC',
+	vitaminA: 'vitVitaminA',
+	vitaminD: 'vitVitaminD',
+	vitaminB12: 'vitVitaminB12',
+	vitaminB6: 'vitVitaminB6',
+	vitaminE: 'vitVitaminE',
+	vitaminK: 'vitVitaminK',
+	iron: 'vitIron',
+	calcium: 'vitCalcium',
+	magnesium: 'vitMagnesium',
+	potassium: 'vitPotassium',
+	zinc: 'vitZinc',
+	sodium: 'vitSodium',
+	fiber: 'vitFiber',
+	folate: 'vitFolate',
+	phosphorus: 'vitPhosphorus',
+	selenium: 'vitSelenium',
+}
+
+function vitaminDisplay(
+	rawKey: string,
+	t: (ns: 'nutrition', key: string) => string,
+) {
+	const { id, unit } = parseVitaminKey(rawKey)
+	const labelKey = VIT_LABEL_KEYS[id]
+	const label = labelKey
+		? t('nutrition', labelKey)
+		: id.charAt(0).toUpperCase() + id.slice(1)
+	const unitLabel =
+		unit === 'mg'
+			? t('nutrition', 'mg')
+			: unit === 'ug'
+				? t('nutrition', 'ug')
+				: unit === 'g'
+					? t('nutrition', 'g')
+					: ''
+	return {
+		label,
+		unitLabel,
+		accent: VITAMIN_ACCENTS[id] || '#34C759',
+	}
+}
+
 function NutritionSkeleton() {
 	const { colors: T } = useAppTheme()
 	const styles = useMemo(() => makeNutritionStyles(T), [T])
 	const SKELETON = T.skeleton
 	return (
 		<View>
-			<View style={styles.calorieBlock}>
+			<View style={styles.calorieCard}>
+				<View style={{ flex: 1, gap: 10 }}>
+					<ShimmerBlock
+						style={{ height: 36, width: 120, borderRadius: 10, backgroundColor: SKELETON }}
+					/>
+					<ShimmerBlock
+						style={{ height: 14, width: 90, borderRadius: 6, backgroundColor: SKELETON }}
+					/>
+				</View>
 				<ShimmerBlock
-					style={{
-						height: 44,
-						width: 120,
-						borderRadius: 10,
-						backgroundColor: SKELETON,
-					}}
-				/>
-				<ShimmerBlock
-					style={{
-						height: 14,
-						width: 90,
-						borderRadius: 6,
-						backgroundColor: SKELETON,
-						marginTop: 10,
-					}}
-				/>
-				<ShimmerBlock
-					style={{
-						marginTop: 18,
-						width: '100%',
-						height: 8,
-						borderRadius: 4,
-						backgroundColor: SKELETON,
-					}}
-				/>
-				<ShimmerBlock
-					style={{
-						height: 12,
-						width: 140,
-						borderRadius: 5,
-						backgroundColor: SKELETON,
-						marginTop: 12,
-					}}
+					style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: SKELETON }}
 				/>
 			</View>
 
-			<View style={styles.macros}>
+			<View style={styles.macroRow}>
 				{[0, 1, 2].map(i => (
-					<View key={i} style={styles.macroCol}>
+					<View key={i} style={styles.macroCard}>
+						<ShimmerBlock
+							style={{
+								width: 72,
+								height: 72,
+								borderRadius: 36,
+								backgroundColor: SKELETON,
+							}}
+						/>
+						<ShimmerBlock
+							style={{
+								height: 22,
+								width: 44,
+								borderRadius: 8,
+								backgroundColor: SKELETON,
+								marginTop: 10,
+							}}
+						/>
 						<ShimmerBlock
 							style={{
 								height: 12,
-								width: 48,
-								borderRadius: 4,
+								width: '80%',
+								borderRadius: 5,
 								backgroundColor: SKELETON,
-								marginBottom: 8,
-							}}
-						/>
-						<ShimmerBlock
-							style={{
-								height: 6,
-								width: '100%',
-								borderRadius: 3,
-								backgroundColor: SKELETON,
-							}}
-						/>
-						<ShimmerBlock
-							style={{
-								height: 13,
-								width: 56,
-								borderRadius: 4,
-								backgroundColor: SKELETON,
-								marginTop: 8,
+								marginTop: 6,
 							}}
 						/>
 					</View>
 				))}
 			</View>
 
-			<View style={styles.mealsHead}>
+			<View style={styles.section}>
 				<ShimmerBlock
 					style={{
 						height: 18,
-						width: 88,
+						width: 110,
 						borderRadius: 6,
 						backgroundColor: SKELETON,
+						marginBottom: 12,
+						marginLeft: 8,
 					}}
 				/>
-				<ShimmerBlock
-					style={{
-						height: 14,
-						width: 24,
-						borderRadius: 5,
-						backgroundColor: SKELETON,
-					}}
-				/>
-			</View>
-
-			{[0, 1, 2].map(i => (
-				<View key={i} style={styles.mealRow}>
-					<ShimmerBlock
-						style={{
-							width: 52,
-							height: 52,
-							borderRadius: 12,
-							backgroundColor: SKELETON,
-							marginRight: 14,
-						}}
-					/>
-					<View style={[styles.mealMeta, { gap: 8 }]}>
+				{[0, 1, 2].map(i => (
+					<View key={i} style={styles.mealRow}>
 						<ShimmerBlock
 							style={{
-								height: 15,
-								width: '72%',
-								borderRadius: 5,
+								width: 64,
+								height: 64,
+								borderRadius: 16,
 								backgroundColor: SKELETON,
+								marginRight: 12,
 							}}
 						/>
-						<ShimmerBlock
-							style={{
-								height: 12,
-								width: '48%',
-								borderRadius: 4,
-								backgroundColor: SKELETON,
-							}}
-						/>
+						<View style={[styles.mealMeta, { gap: 8 }]}>
+							<ShimmerBlock
+								style={{ height: 15, width: '75%', borderRadius: 5, backgroundColor: SKELETON }}
+							/>
+							<ShimmerBlock
+								style={{ height: 12, width: '50%', borderRadius: 4, backgroundColor: SKELETON }}
+							/>
+						</View>
 					</View>
-					<ShimmerBlock
-						style={{
-							height: 16,
-							width: 36,
-							borderRadius: 5,
-							backgroundColor: SKELETON,
-						}}
-					/>
-				</View>
-			))}
+				))}
+			</View>
 		</View>
 	)
 }
@@ -225,44 +253,115 @@ function n(v: unknown, fallback = 0) {
 	return Number.isFinite(x) ? x : fallback
 }
 
-function MacroBar({
-	label,
-	current,
+function ProgressRing({
+	size = 88,
+	stroke = 9,
+	progress,
+	trackColor,
+	progressColor,
+	children,
+}: {
+	size?: number
+	stroke?: number
+	progress: number
+	trackColor: string
+	progressColor: string
+	children?: React.ReactNode
+}) {
+	const r = (size - stroke) / 2
+	const c = 2 * Math.PI * r
+	const clamped = Math.min(1, Math.max(0, progress))
+	const offset = c * (1 - clamped)
+
+	return (
+		<View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+			<Svg width={size} height={size} style={{ position: 'absolute' }}>
+				<Circle
+					cx={size / 2}
+					cy={size / 2}
+					r={r}
+					stroke={trackColor}
+					strokeWidth={stroke}
+					fill='none'
+				/>
+				<Circle
+					cx={size / 2}
+					cy={size / 2}
+					r={r}
+					stroke={progressColor}
+					strokeWidth={stroke}
+					fill='none'
+					strokeDasharray={`${c} ${c}`}
+					strokeDashoffset={offset}
+					strokeLinecap='round'
+					transform={`rotate(-90 ${size / 2} ${size / 2})`}
+				/>
+			</Svg>
+			{children}
+		</View>
+	)
+}
+
+function MacroRingCard({
+	eaten,
 	target,
-	color,
 	unit,
+	label,
+	icon,
+	color,
+	over,
+	trackColor,
 	styles,
 }: {
-	label: string
-	current: number
+	eaten: number
 	target: number
-	color: string
 	unit: string
+	label: string
+	icon: ReactNode
+	color: string
+	over: boolean
+	trackColor: string
 	styles: ReturnType<typeof makeNutritionStyles>
 }) {
-	const safeTarget = Math.max(1, n(target, 1))
-	const pct = Math.min(1, Math.max(0, n(current) / safeTarget))
+	const left = target - eaten
+	const progress = target > 0 ? Math.min(1, eaten / target) : 0
+	const ringColor = over ? '#FF3B30' : color
+
 	return (
-		<View style={styles.macroCol}>
-			<Text style={styles.macroLabel}>{label}</Text>
-			<View style={styles.macroTrack}>
-				<View
-					style={[
-						styles.macroFill,
-						{ width: `${pct * 100}%`, backgroundColor: color },
-					]}
-				/>
-			</View>
-			<Text style={styles.macroValue}>
-				{Math.round(n(current))}
-				<Text style={styles.macroTarget}>
-					{' '}
-					/ {Math.round(n(target))}
-					{unit}
-				</Text>
+		<View style={styles.macroCard}>
+			<ProgressRing
+				size={72}
+				stroke={8}
+				progress={progress}
+				trackColor={trackColor}
+				progressColor={ringColor}
+			>
+				<View style={[styles.macroRingCenter, { backgroundColor: `${color}18` }]}>
+					{icon}
+				</View>
+			</ProgressRing>
+			<Text style={styles.macroCardValue}>
+				{Math.abs(Math.round(left))}
+			</Text>
+			<Text style={styles.macroCardLabel} numberOfLines={2}>
+				{label}
+			</Text>
+			<Text style={styles.macroGoalHint}>
+				{Math.round(eaten)} / {Math.round(target)} {unit}
 			</Text>
 		</View>
 	)
+}
+
+function formatMealTime(iso?: string) {
+	if (!iso) return ''
+	try {
+		const d = new Date(iso)
+		if (Number.isNaN(d.getTime())) return ''
+		return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+	} catch {
+		return ''
+	}
 }
 
 function formatTodayTitle(locale: string) {
@@ -292,6 +391,7 @@ function emptyDay(): NutritionDay {
 		},
 		totals: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
 		entries: [],
+		photoQuota: { limit: 0, used: 0, remaining: 0 },
 	}
 }
 
@@ -339,15 +439,23 @@ function normalizeDay(raw: unknown): NutritionDay {
 				createdAt: (e as FoodEntry).createdAt,
 			}))
 			.filter(e => e.id),
+		photoQuota: {
+			limit: n((d.photoQuota as PhotoQuota | undefined)?.limit),
+			used: n((d.photoQuota as PhotoQuota | undefined)?.used),
+			remaining: n((d.photoQuota as PhotoQuota | undefined)?.remaining),
+		},
 	}
 }
 
 function NutritionTabInner() {
 	const { t, language } = useLanguage()
 	const { colors: T } = useAppTheme()
+	const { user } = useAuth()
 	const styles = useMemo(() => makeNutritionStyles(T), [T])
+	const params = useLocalSearchParams<{ add?: string }>()
 	const locale =
-		language === 'az' ? 'az-AZ' : language === 'en' ? 'en-US' : 'ru-RU'
+		dateLocaleFor(language)
+	const premium = hasActivePremium(user)
 
 	const [day, setDay] = useState<NutritionDay | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -367,11 +475,49 @@ function NutritionTabInner() {
 	const [targetF, setTargetF] = useState('')
 	const [savingTargets, setSavingTargets] = useState(false)
 	const [pickSourceOpen, setPickSourceOpen] = useState(false)
+	const [cameraOpen, setCameraOpen] = useState(false)
+	const [premiumGateOpen, setPremiumGateOpen] = useState(false)
+	const [keyboardPad, setKeyboardPad] = useState(0)
+	const [pendingMeal, setPendingMeal] = useState<{
+		entry: FoodEntry
+		localUri: string
+		confidence: number
+	} | null>(null)
+	const [confirmingMeal, setConfirmingMeal] = useState(false)
+	const pendingAnim = useRef(new Animated.Value(0)).current
+
+	useEffect(() => {
+		if (!pendingMeal) {
+			pendingAnim.setValue(0)
+			return
+		}
+		pendingAnim.setValue(0)
+		Animated.spring(pendingAnim, {
+			toValue: 1,
+			friction: 8,
+			tension: 68,
+			useNativeDriver: true,
+		}).start()
+	}, [pendingMeal, pendingAnim])
+
+	useEffect(() => {
+		const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
+		const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide'
+		const onShow = Keyboard.addListener(showEvt, e => {
+			setKeyboardPad(e.endCoordinates?.height ?? 0)
+		})
+		const onHide = Keyboard.addListener(hideEvt, () => setKeyboardPad(0))
+		return () => {
+			onShow.remove()
+			onHide.remove()
+		}
+	}, [])
 
 	const load = useCallback(async () => {
 		setLoadError(null)
 		try {
 			const data = await fetchNutritionDay()
+			// Always trust server photoQuota — never invent/sticky-merge local 240.
 			setDay(normalizeDay(data))
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e)
@@ -393,15 +539,23 @@ function NutritionTabInner() {
 		return Math.round(n(day.targets.calories) - n(day.totals.calories))
 	}, [day])
 
-	const progress = useMemo(() => {
-		if (!day || n(day.targets.calories) <= 0) return 0
-		return Math.min(1, Math.max(0, n(day.totals.calories) / n(day.targets.calories)))
-	}, [day])
-
 	const pickAndAnalyze = async (from: 'camera' | 'library') => {
 		setPickSourceOpen(false)
+		if (!premium) {
+			setPremiumGateOpen(true)
+			if (user?.id) void markPremiumNudgeShown(user.id)
+			return
+		}
+		if (photosLeft <= 0) {
+			Alert.alert(t('nutrition', 'photoLimitReached'))
+			return
+		}
+		if (from === 'camera') {
+			setCameraOpen(true)
+			return
+		}
 		try {
-			const picked = await pickMealJpeg(from)
+			const picked = await pickMealJpeg('library')
 			if (!picked.ok) {
 				if (picked.reason === 'permission') {
 					Alert.alert(
@@ -416,20 +570,88 @@ function NutritionTabInner() {
 				}
 				return
 			}
-
-			setAnalyzing(true)
-			try {
-				await analyzeMealPhoto(picked.uri)
-				await load()
-			} catch (e) {
-				const msg = e instanceof Error ? e.message : String(e)
-				Alert.alert(t('nutrition', 'analyzeError'), msg)
-			} finally {
-				setAnalyzing(false)
-			}
+			await runAnalyze(picked.uri)
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e)
 			Alert.alert(t('nutrition', 'analyzeError'), msg)
+		}
+	}
+
+	const runAnalyze = async (uri: string) => {
+		setAnalyzing(true)
+		try {
+			const result = await analyzeMealPhoto(uri, {
+				language: language || 'ru',
+			})
+			if (result.photoQuota) {
+				setDay(prev => {
+					const base = prev ?? emptyDay()
+					return {
+						...base,
+						photoQuota: {
+							limit: n(result.photoQuota!.limit),
+							used: n(result.photoQuota!.used),
+							remaining: n(result.photoQuota!.remaining),
+						},
+					}
+				})
+			} else {
+				// Old API without quota — refresh from day endpoint
+				void load()
+			}
+			setPendingMeal({
+				entry: result.entry,
+				localUri: uri,
+				confidence: n(result.analysis?.confidence, 0),
+			})
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e)
+			if (/premium/i.test(msg)) {
+				setPremiumGateOpen(true)
+				if (user?.id) void markPremiumNudgeShown(user.id)
+			} else if (/limit/i.test(msg)) {
+				Alert.alert(t('nutrition', 'photoLimitReached'))
+			} else {
+				Alert.alert(t('nutrition', 'analyzeError'), msg)
+			}
+			void load()
+		} finally {
+			setAnalyzing(false)
+		}
+	}
+
+	const onCameraCaptured = async (uri: string) => {
+		setCameraOpen(false)
+		await runAnalyze(uri)
+	}
+
+	const confirmPendingMeal = async () => {
+		if (!pendingMeal || confirmingMeal) return
+		setConfirmingMeal(true)
+		try {
+			setPendingMeal(null)
+			await load()
+		} finally {
+			setConfirmingMeal(false)
+		}
+	}
+
+	const discardPendingMeal = async () => {
+		if (!pendingMeal || confirmingMeal) return
+		const id = pendingMeal.entry.id
+		setConfirmingMeal(true)
+		try {
+			setPendingMeal(null)
+			if (id) {
+				try {
+					await deleteFoodEntry(id)
+				} catch {
+					/* keep going — still refresh */
+				}
+			}
+			await load()
+		} finally {
+			setConfirmingMeal(false)
 		}
 	}
 
@@ -443,6 +665,11 @@ function NutritionTabInner() {
 	}
 
 	const openTargets = () => {
+		if (!premium) {
+			setPremiumGateOpen(true)
+			if (user?.id) void markPremiumNudgeShown(user.id)
+			return
+		}
 		const v = day ?? emptyDay()
 		setTargetCal(String(Math.round(n(v.targets.calories))))
 		setTargetP(String(Math.round(n(v.targets.proteinG))))
@@ -552,10 +779,18 @@ function NutritionTabInner() {
 		return Object.entries(sum)
 			.filter(([, v]) => v > 0)
 			.sort((a, b) => b[1] - a[1])
-			.slice(0, 6)
+			.slice(0, 10)
 	}, [day])
 
 	const view = day ?? emptyDay()
+	const photoQuota = view.photoQuota ?? { limit: 0, used: 0, remaining: 0 }
+	// Remaining AI meal photos this month — only from server, never invent 240.
+	const photosLeft =
+		premium && photoQuota.limit > 0
+			? Math.max(0, Math.round(photoQuota.remaining))
+			: 0
+	const canSendPhoto = premium && photosLeft > 0
+
 	const photoSupported = useMemo(() => {
 		try {
 			return isMealPhotoSupported()
@@ -564,6 +799,30 @@ function NutritionTabInner() {
 		}
 	}, [])
 
+	const openPhotoFlow = useCallback(() => {
+		if (!premium) {
+			setPremiumGateOpen(true)
+			if (user?.id) void markPremiumNudgeShown(user.id)
+			return
+		}
+		if (photosLeft <= 0) {
+			Alert.alert(t('nutrition', 'photoLimitReached'))
+			return
+		}
+		setPickSourceOpen(true)
+	}, [premium, photosLeft, t, user?.id])
+
+	useFocusEffect(
+		useCallback(() => {
+			const raw = params.add
+			const add = Array.isArray(raw) ? raw[0] : raw
+			if (add !== '1') return
+			router.setParams({ add: '' })
+			const tmr = setTimeout(() => openPhotoFlow(), 120)
+			return () => clearTimeout(tmr)
+		}, [params.add, openPhotoFlow]),
+	)
+
 	return (
 		<SafeAreaView style={styles.safe} edges={['top']}>
 			<ScrollView
@@ -571,8 +830,30 @@ function NutritionTabInner() {
 				showsVerticalScrollIndicator={false}
 			>
 				<View style={styles.header}>
-					<Text style={styles.kicker}>{t('nutrition', 'today')}</Text>
-					<Text style={styles.date}>{formatTodayTitle(locale)}</Text>
+					<View style={{ flex: 1, paddingRight: 12 }}>
+						<Text style={styles.title}>{t('nutrition', 'today')}</Text>
+						<Text style={styles.subtitle}>{formatTodayTitle(locale)}</Text>
+					</View>
+					<View
+						style={[
+							styles.quotaBadge,
+							!canSendPhoto && styles.quotaBadgeMuted,
+						]}
+					>
+						<Ionicons
+							name='flame'
+							size={15}
+							color={canSendPhoto ? T.accent : T.textSecondary}
+						/>
+						<Text
+							style={[
+								styles.quotaText,
+								{ color: canSendPhoto ? T.accent : T.textSecondary },
+							]}
+						>
+							{photosLeft}
+						</Text>
+					</View>
 				</View>
 
 				{!photoSupported ? (
@@ -601,28 +882,39 @@ function NutritionTabInner() {
 							</TouchableOpacity>
 						) : null}
 
-						<View style={styles.calorieBlock}>
-							<Text style={styles.remainNum}>
-								{remaining >= 0 ? remaining : Math.abs(remaining)}
-							</Text>
-							<Text style={styles.remainLabel}>
-								{remaining >= 0
-									? t('nutrition', 'leftKcal')
-									: t('nutrition', 'overKcal')}
-							</Text>
-							<View style={styles.calorieTrack}>
-								<View
-									style={[
-										styles.calorieFill,
-										{ width: `${progress * 100}%` },
-									]}
-								/>
+						<View style={styles.calorieCard}>
+							<View style={styles.calorieTextCol}>
+								<Text style={styles.remainNum}>
+									{remaining >= 0 ? remaining : Math.abs(remaining)}
+								</Text>
+								<Text style={styles.remainLabel}>
+									{t('nutrition', 'calories')}
+								</Text>
+								<Text style={styles.goalHint}>
+									{Math.round(n(view.totals.calories))} /{' '}
+									{Math.round(n(view.targets.calories))}{' '}
+									{t('nutrition', 'kcal')}
+								</Text>
 							</View>
-							<Text style={styles.goalHint}>
-								{Math.round(n(view.totals.calories))} /{' '}
-								{Math.round(n(view.targets.calories))}{' '}
-								{t('nutrition', 'kcal')}
-							</Text>
+							<ProgressRing
+								size={92}
+								stroke={10}
+								progress={
+									n(view.targets.calories) > 0
+										? Math.min(1, n(view.totals.calories) / n(view.targets.calories))
+										: 0
+								}
+								trackColor={T.track}
+								progressColor={remaining < 0 ? T.error : T.primary}
+							>
+								<View style={styles.ringCenter}>
+									<Ionicons
+										name='flame'
+										size={26}
+										color={remaining < 0 ? T.error : T.accent}
+									/>
+								</View>
+							</ProgressRing>
 						</View>
 
 						{!view.targets.complete ? (
@@ -631,110 +923,206 @@ function NutritionTabInner() {
 							</Text>
 						) : null}
 
-						<View style={styles.macros}>
-							<MacroBar
-								styles={styles}
+						<View style={styles.macroRow}>
+							<MacroRingCard
+								eaten={n(view.totals.proteinG)}
+								target={n(view.targets.proteinG)}
+								unit={t('nutrition', 'g')}
 								label={t('nutrition', 'protein')}
-								current={view.totals.proteinG}
-								target={view.targets.proteinG}
-								color='#FF6B6B'
-								unit={t('nutrition', 'g')}
-							/>
-							<MacroBar
+								icon={
+									<MaterialCommunityIcons
+										name='food-steak'
+										size={20}
+										color={
+											n(view.totals.proteinG) > n(view.targets.proteinG)
+												? '#FF3B30'
+												: MACRO_COLORS.protein
+										}
+									/>
+								}
+								color={MACRO_COLORS.protein}
+								over={n(view.totals.proteinG) > n(view.targets.proteinG)}
+								trackColor={T.track}
 								styles={styles}
+							/>
+							<MacroRingCard
+								eaten={n(view.totals.carbsG)}
+								target={n(view.targets.carbsG)}
+								unit={t('nutrition', 'g')}
 								label={t('nutrition', 'carbs')}
-								current={view.totals.carbsG}
-								target={view.targets.carbsG}
-								color='#5AC8FA'
-								unit={t('nutrition', 'g')}
-							/>
-							<MacroBar
+								icon={
+									<Ionicons
+										name='flash'
+										size={20}
+										color={
+											n(view.totals.carbsG) > n(view.targets.carbsG)
+												? '#FF3B30'
+												: MACRO_COLORS.carbs
+										}
+									/>
+								}
+								color={MACRO_COLORS.carbs}
+								over={n(view.totals.carbsG) > n(view.targets.carbsG)}
+								trackColor={T.track}
 								styles={styles}
-								label={t('nutrition', 'fat')}
-								current={view.totals.fatG}
-								target={view.targets.fatG}
-								color='#FFD60A'
+							/>
+							<MacroRingCard
+								eaten={n(view.totals.fatG)}
+								target={n(view.targets.fatG)}
 								unit={t('nutrition', 'g')}
+								label={t('nutrition', 'fat')}
+								icon={
+									<Ionicons
+										name='water'
+										size={20}
+										color={
+											n(view.totals.fatG) > n(view.targets.fatG)
+												? '#FF3B30'
+												: MACRO_COLORS.fat
+										}
+									/>
+								}
+								color={MACRO_COLORS.fat}
+								over={n(view.totals.fatG) > n(view.targets.fatG)}
+								trackColor={T.track}
+								styles={styles}
 							/>
 						</View>
 
 						{vitaminRows.length > 0 ? (
-							<View style={styles.vitamins}>
+							<View style={styles.section}>
 								<Text style={styles.sectionTitle}>
 									{t('nutrition', 'vitamins')}
 								</Text>
-								<View style={styles.vitRow}>
-									{vitaminRows.map(([key, val]) => (
-										<View key={key} style={styles.vitChip}>
-											<Text style={styles.vitKey}>
-												{key.replace(/_/g, ' ')}
-											</Text>
-											<Text style={styles.vitVal}>
-												{Math.round(val * 10) / 10}
-											</Text>
-										</View>
-									))}
+								<View style={styles.vitGrid}>
+									{vitaminRows.map(([key, val]) => {
+										const { label, unitLabel, accent } = vitaminDisplay(
+											key,
+											t as (ns: 'nutrition', key: string) => string,
+										)
+										return (
+											<View key={key} style={styles.vitCard}>
+												<View
+													style={[
+														styles.vitCardInner,
+														{ borderLeftColor: accent },
+													]}
+												>
+													<Text style={styles.vitKey} numberOfLines={1}>
+														{label}
+													</Text>
+													<Text style={styles.vitVal}>
+														{formatVitaminValue(val)}
+														{unitLabel ? (
+															<Text style={styles.vitUnit}> {unitLabel}</Text>
+														) : null}
+													</Text>
+												</View>
+											</View>
+										)
+									})}
 								</View>
 							</View>
 						) : null}
 
-						<View style={styles.mealsHead}>
-							<Text style={styles.sectionTitle}>{t('nutrition', 'meals')}</Text>
-							<Text style={styles.mealCount}>{view.entries.length}</Text>
-						</View>
-
-						{view.entries.length === 0 ? (
-							<View style={styles.empty}>
-								<Ionicons
-									name='restaurant-outline'
-									size={36}
-									color={T.textTertiary}
-								/>
-								<Text style={styles.emptyTitle}>
-									{t('nutrition', 'emptyTitle')}
+						<View style={styles.section}>
+							<View style={styles.mealsHead}>
+								<Text style={[styles.sectionTitle, { marginBottom: 0, marginLeft: 0 }]}>
+									{t('nutrition', 'foodIntake')}
 								</Text>
-								<Text style={styles.emptyBody}>
-									{t('nutrition', 'emptyBody')}
-								</Text>
+								<Text style={styles.mealCount}>{view.entries.length}</Text>
 							</View>
-						) : (
-							view.entries.map(entry => (
-								<TouchableOpacity
-									key={entry.id}
-									style={styles.mealRow}
-									onPress={() => openEdit(entry)}
-									activeOpacity={0.75}
-								>
-									{entry.photoUrl ? (
-										<Image
-											source={{ uri: entry.photoUrl }}
-											style={styles.thumb}
-										/>
-									) : (
-										<View style={[styles.thumb, styles.thumbFallback]}>
-											<Ionicons
-												name='fast-food-outline'
-												size={22}
-												color={T.textSecondary}
-											/>
-										</View>
-									)}
-									<View style={styles.mealMeta}>
-										<Text style={styles.mealName} numberOfLines={1}>
-											{entry.name}
-										</Text>
-										<Text style={styles.mealMacros}>
-											{Math.round(n(entry.proteinG))}P ·{' '}
-											{Math.round(n(entry.carbsG))}C ·{' '}
-											{Math.round(n(entry.fatG))}F
-										</Text>
-									</View>
-									<Text style={styles.mealCal}>
-										{Math.round(n(entry.calories))}
+
+							{view.entries.length === 0 ? (
+								<View style={styles.empty}>
+									<Ionicons
+										name='restaurant-outline'
+										size={32}
+										color={T.textTertiary}
+									/>
+									<Text style={styles.emptyTitle}>
+										{t('nutrition', 'emptyTitle')}
 									</Text>
-								</TouchableOpacity>
-							))
-						)}
+									<Text style={styles.emptyBody}>
+										{t('nutrition', 'emptyBody')}
+									</Text>
+								</View>
+							) : (
+								view.entries.map(entry => {
+									const timeLabel = formatMealTime(entry.createdAt)
+									return (
+										<TouchableOpacity
+											key={entry.id}
+											style={styles.mealRow}
+											onPress={() => openEdit(entry)}
+											activeOpacity={0.75}
+										>
+											{entry.photoUrl ? (
+												<Image
+													source={{ uri: entry.photoUrl }}
+													style={styles.thumb}
+												/>
+											) : (
+												<View style={[styles.thumb, styles.thumbFallback]}>
+													<Ionicons
+														name='fast-food-outline'
+														size={24}
+														color={T.textSecondary}
+													/>
+												</View>
+											)}
+											<View style={styles.mealMeta}>
+												<Text style={styles.mealName} numberOfLines={2}>
+													{entry.name}
+												</Text>
+												{timeLabel ? (
+													<Text style={styles.mealTime}>{timeLabel}</Text>
+												) : null}
+												<View style={styles.mealStatsRow}>
+													<View style={styles.mealStat}>
+														<Ionicons name='flame' size={13} color={T.accent} />
+														<Text style={styles.mealCal}>
+															{Math.round(n(entry.calories))}
+														</Text>
+													</View>
+													<View style={styles.mealStat}>
+														<MaterialCommunityIcons
+															name='food-steak'
+															size={12}
+															color={MACRO_COLORS.protein}
+														/>
+														<Text style={styles.mealMacroVal}>
+															{Math.round(n(entry.proteinG))}
+														</Text>
+													</View>
+													<View style={styles.mealStat}>
+														<Ionicons
+															name='flash'
+															size={12}
+															color={MACRO_COLORS.carbs}
+														/>
+														<Text style={styles.mealMacroVal}>
+															{Math.round(n(entry.carbsG))}
+														</Text>
+													</View>
+													<View style={styles.mealStat}>
+														<Ionicons name='water' size={12} color='#E6B800' />
+														<Text style={styles.mealMacroVal}>
+															{Math.round(n(entry.fatG))}
+														</Text>
+													</View>
+												</View>
+											</View>
+											<Ionicons
+												name='chevron-forward'
+												size={18}
+												color={T.textTertiary}
+											/>
+										</TouchableOpacity>
+									)
+								})
+							)}
+						</View>
 					</FadeIn>
 				)}
 			</ScrollView>
@@ -743,6 +1131,19 @@ function NutritionTabInner() {
 				style={[styles.photoFabWrap, { bottom: 16 }]}
 				pointerEvents='box-none'
 			>
+				<TouchableOpacity
+					style={styles.historyFab}
+					onPress={() =>
+						router.push({
+							pathname: '/(tabs)/history',
+							params: { tab: 'food' },
+						})
+					}
+					activeOpacity={0.85}
+					accessibilityLabel={t('nutrition', 'historyFab')}
+				>
+					<Ionicons name='time-outline' size={22} color={T.text} />
+				</TouchableOpacity>
 				<TouchableOpacity
 					style={styles.limitsFab}
 					onPress={openTargets}
@@ -758,12 +1159,12 @@ function NutritionTabInner() {
 				{photoSupported ? (
 					<TouchableOpacity
 						style={styles.photoFab}
-						onPress={() => setPickSourceOpen(true)}
+						onPress={openPhotoFlow}
 						activeOpacity={0.85}
 						disabled={analyzing}
 						accessibilityLabel={t('nutrition', 'addMeal')}
 					>
-						<Ionicons name='camera' size={26} color='#000' />
+						<Ionicons name='add' size={32} color={T.background} />
 					</TouchableOpacity>
 				) : null}
 			</View>
@@ -781,7 +1182,11 @@ function NutritionTabInner() {
 						onPress={() => setPickSourceOpen(false)}
 					/>
 					<View style={styles.sheet}>
-						<Text style={styles.sheetTitle}>{t('nutrition', 'addMeal')}</Text>
+						<SheetModalHeader
+							title={t('nutrition', 'addMeal')}
+							onClose={() => setPickSourceOpen(false)}
+							closeAccessibilityLabel={t('common', 'cancel')}
+						/>
 						<Text style={styles.pickHint}>{t('nutrition', 'addMealHint')}</Text>
 						<TouchableOpacity
 							style={styles.pickOption}
@@ -807,12 +1212,6 @@ function NutritionTabInner() {
 							<Text style={styles.pickOptionText}>{t('nutrition', 'gallery')}</Text>
 							<Ionicons name='chevron-forward' size={18} color={T.textSecondary} />
 						</TouchableOpacity>
-						<TouchableOpacity
-							onPress={() => setPickSourceOpen(false)}
-							style={{ marginTop: 8 }}
-						>
-							<Text style={styles.cancelText}>{t('common', 'cancel')}</Text>
-						</TouchableOpacity>
 					</View>
 				</View>
 			</Modal>
@@ -824,80 +1223,388 @@ function NutritionTabInner() {
 				</View>
 			</Modal>
 
+			<MealCameraModal
+				visible={cameraOpen}
+				hint={t('nutrition', 'cameraFrameHint')}
+				captureLabel={t('nutrition', 'cameraCapture')}
+				cancelLabel={t('common', 'cancel')}
+				permissionBody={t('nutrition', 'permissionBody')}
+				onCancel={() => setCameraOpen(false)}
+				onCaptured={uri => void onCameraCaptured(uri)}
+			/>
+
+			<Modal
+				visible={!!pendingMeal}
+				transparent
+				animationType='fade'
+				onRequestClose={() => void discardPendingMeal()}
+			>
+				<View style={styles.confirmBackdrop}>
+					<TouchableOpacity
+						style={StyleSheet.absoluteFill}
+						activeOpacity={1}
+						onPress={() => void discardPendingMeal()}
+						disabled={confirmingMeal}
+					/>
+					<Animated.View
+						style={[
+							styles.confirmCard,
+							{
+								opacity: pendingAnim,
+								transform: [
+									{
+										translateY: pendingAnim.interpolate({
+											inputRange: [0, 1],
+											outputRange: [36, 0],
+										}),
+									},
+									{
+										scale: pendingAnim.interpolate({
+											inputRange: [0, 1],
+											outputRange: [0.94, 1],
+										}),
+									},
+								],
+							},
+						]}
+					>
+						<SheetModalHeader
+							title={t('nutrition', 'analysisResult')}
+							onClose={() => void discardPendingMeal()}
+							showHandle={false}
+						/>
+
+						{pendingMeal ? (
+							<ScrollView
+								showsVerticalScrollIndicator={false}
+								bounces={false}
+								contentContainerStyle={styles.confirmScroll}
+							>
+								<Image
+									source={{
+										uri: pendingMeal.entry.photoUrl || pendingMeal.localUri,
+									}}
+									style={styles.confirmPhoto}
+								/>
+								<Text style={styles.confirmName} numberOfLines={2}>
+									{pendingMeal.entry.name}
+								</Text>
+								{pendingMeal.confidence > 0 ? (
+									<Text style={styles.confirmConfidence}>
+										{Math.round(pendingMeal.confidence * 100)}%
+									</Text>
+								) : null}
+
+								<View style={styles.detailMacroRow}>
+									<View style={styles.detailMacroCard}>
+										<Text style={styles.detailMacroVal}>
+											{Math.round(n(pendingMeal.entry.calories))}
+										</Text>
+										<Text style={styles.detailMacroLbl}>
+											{t('nutrition', 'kcal')}
+										</Text>
+									</View>
+									<View style={styles.detailMacroCard}>
+										<Text style={[styles.detailMacroVal, { color: '#FF6B6B' }]}>
+											{Math.round(n(pendingMeal.entry.proteinG))}
+										</Text>
+										<Text style={styles.detailMacroLbl}>
+											{t('nutrition', 'protein')}
+										</Text>
+									</View>
+									<View style={styles.detailMacroCard}>
+										<Text style={[styles.detailMacroVal, { color: '#5AC8FA' }]}>
+											{Math.round(n(pendingMeal.entry.carbsG))}
+										</Text>
+										<Text style={styles.detailMacroLbl}>
+											{t('nutrition', 'carbs')}
+										</Text>
+									</View>
+									<View style={styles.detailMacroCard}>
+										<Text style={[styles.detailMacroVal, { color: '#FFD60A' }]}>
+											{Math.round(n(pendingMeal.entry.fatG))}
+										</Text>
+										<Text style={styles.detailMacroLbl}>
+											{t('nutrition', 'fat')}
+										</Text>
+									</View>
+								</View>
+
+								{Object.keys(pendingMeal.entry.vitamins || {}).length > 0 ? (
+									<View style={styles.vitGrid}>
+										{Object.entries(pendingMeal.entry.vitamins || {})
+											.filter(([, v]) => n(v) > 0)
+											.sort((a, b) => n(b[1]) - n(a[1]))
+											.slice(0, 6)
+											.map(([key, val]) => {
+												const { label, unitLabel, accent } = vitaminDisplay(
+													key,
+													t as (ns: 'nutrition', key: string) => string,
+												)
+												return (
+													<View key={key} style={styles.vitCard}>
+														<View
+															style={[
+																styles.vitCardInner,
+																{ borderLeftColor: accent },
+															]}
+														>
+															<Text style={styles.vitKey} numberOfLines={1}>
+																{label}
+															</Text>
+															<Text style={styles.vitVal}>
+																{formatVitaminValue(n(val))}
+																{unitLabel ? (
+																	<Text style={styles.vitUnit}>
+																		{' '}
+																		{unitLabel}
+																	</Text>
+																) : null}
+															</Text>
+														</View>
+													</View>
+												)
+											})}
+									</View>
+								) : null}
+							</ScrollView>
+						) : null}
+
+						<TouchableOpacity
+							style={[styles.confirmBtn, confirmingMeal && { opacity: 0.7 }]}
+							onPress={() => void confirmPendingMeal()}
+							disabled={confirmingMeal}
+							activeOpacity={0.85}
+						>
+							{confirmingMeal ? (
+								<ActivityIndicator color='#000' />
+							) : (
+								<Text style={styles.confirmBtnText}>
+									{t('nutrition', 'confirmMeal')}
+								</Text>
+							)}
+						</TouchableOpacity>
+						<TouchableOpacity
+							style={styles.discardBtn}
+							onPress={() => void discardPendingMeal()}
+							disabled={confirmingMeal}
+						>
+							<Text style={styles.discardBtnText}>
+								{t('nutrition', 'discardMeal')}
+							</Text>
+						</TouchableOpacity>
+					</Animated.View>
+				</View>
+			</Modal>
+
 			<Modal
 				visible={!!editEntry}
 				transparent
 				animationType='slide'
 				onRequestClose={() => setEditEntry(null)}
 			>
-				<View style={styles.sheetBackdrop}>
-					<View style={styles.sheet}>
-						<Text style={styles.sheetTitle}>{t('nutrition', 'editMeal')}</Text>
-						<TextInput
-							style={styles.input}
-							value={editName}
-							onChangeText={setEditName}
-							placeholder={t('nutrition', 'name')}
-							placeholderTextColor={T.textTertiary}
-						/>
-						<View style={styles.inputRow}>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={editCal}
-								onChangeText={setEditCal}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'kcal')}
-								placeholderTextColor={T.textTertiary}
-							/>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={editP}
-								onChangeText={setEditP}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'protein')}
-								placeholderTextColor={T.textTertiary}
-							/>
-						</View>
-						<View style={styles.inputRow}>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={editC}
-								onChangeText={setEditC}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'carbs')}
-								placeholderTextColor={T.textTertiary}
-							/>
-							<TextInput
-								style={[styles.input, styles.inputHalf]}
-								value={editF}
-								onChangeText={setEditF}
-								keyboardType='numeric'
-								placeholder={t('nutrition', 'fat')}
-								placeholderTextColor={T.textTertiary}
-							/>
-						</View>
-						<TouchableOpacity
-							style={styles.saveBtn}
-							onPress={() => void saveEdit()}
-							disabled={saving}
+				<KeyboardAvoidingView
+					style={styles.sheetBackdrop}
+					behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+					keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
+				>
+					<TouchableOpacity
+						style={StyleSheet.absoluteFill}
+						activeOpacity={1}
+						onPress={() => {
+							Keyboard.dismiss()
+							setEditEntry(null)
+						}}
+					/>
+					<ScrollView
+						keyboardShouldPersistTaps='handled'
+						bounces={false}
+						contentContainerStyle={[
+							styles.sheetScroll,
+							{ paddingBottom: Math.max(12, keyboardPad) },
+						]}
+					>
+						<View
+							style={[
+								styles.sheet,
+								{
+									paddingBottom:
+										16 + (Platform.OS === 'android' ? keyboardPad : 0),
+								},
+							]}
 						>
-							{saving ? (
-								<ActivityIndicator color='#000' />
+							<SheetModalHeader
+								title={t('nutrition', 'mealDetails')}
+								onClose={() => {
+									Keyboard.dismiss()
+									setEditEntry(null)
+								}}
+								closeAccessibilityLabel={t('common', 'cancel')}
+							/>
+
+							{editEntry?.photoUrl ? (
+								<Image
+									source={{ uri: editEntry.photoUrl }}
+									style={styles.detailPhoto}
+								/>
 							) : (
-								<Text style={styles.saveBtnText}>{t('nutrition', 'save')}</Text>
+								<View style={[styles.detailPhoto, styles.detailPhotoFallback]}>
+									<Ionicons
+										name='fast-food-outline'
+										size={28}
+										color={T.textSecondary}
+									/>
+								</View>
 							)}
-						</TouchableOpacity>
-						<TouchableOpacity
-							style={styles.deleteBtn}
-							onPress={() => editEntry && confirmDelete(editEntry)}
-						>
-							<Text style={styles.deleteBtnText}>{t('nutrition', 'delete')}</Text>
-						</TouchableOpacity>
-						<TouchableOpacity onPress={() => setEditEntry(null)}>
-							<Text style={styles.cancelText}>{t('common', 'cancel')}</Text>
-						</TouchableOpacity>
-					</View>
-				</View>
+
+							<View style={styles.detailMacroRow}>
+								<View style={styles.detailMacroCard}>
+									<Text style={styles.detailMacroVal}>
+										{Math.round(n(editCal))}
+									</Text>
+									<Text style={styles.detailMacroLbl}>
+										{t('nutrition', 'kcal')}
+									</Text>
+								</View>
+								<View style={styles.detailMacroCard}>
+									<Text style={[styles.detailMacroVal, { color: '#FF6B6B' }]}>
+										{Math.round(n(editP))}
+									</Text>
+									<Text style={styles.detailMacroLbl}>
+										{t('nutrition', 'protein')}
+									</Text>
+								</View>
+								<View style={styles.detailMacroCard}>
+									<Text style={[styles.detailMacroVal, { color: '#5AC8FA' }]}>
+										{Math.round(n(editC))}
+									</Text>
+									<Text style={styles.detailMacroLbl}>
+										{t('nutrition', 'carbs')}
+									</Text>
+								</View>
+								<View style={styles.detailMacroCard}>
+									<Text style={[styles.detailMacroVal, { color: '#FFD60A' }]}>
+										{Math.round(n(editF))}
+									</Text>
+									<Text style={styles.detailMacroLbl}>
+										{t('nutrition', 'fat')}
+									</Text>
+								</View>
+							</View>
+
+							{editEntry &&
+							Object.keys(editEntry.vitamins || {}).length > 0 ? (
+								<View style={styles.detailVitamins}>
+									<Text style={styles.detailSectionLabel}>
+										{t('nutrition', 'vitamins')}
+									</Text>
+									<View style={styles.vitGrid}>
+										{Object.entries(editEntry.vitamins || {})
+											.filter(([, v]) => n(v) > 0)
+											.sort((a, b) => n(b[1]) - n(a[1]))
+											.map(([key, val]) => {
+												const { label, unitLabel, accent } = vitaminDisplay(
+													key,
+													t as (ns: 'nutrition', key: string) => string,
+												)
+												return (
+													<View key={key} style={styles.vitCard}>
+														<View
+															style={[
+																styles.vitCardInner,
+																{ borderLeftColor: accent },
+															]}
+														>
+															<Text style={styles.vitKey} numberOfLines={1}>
+																{label}
+															</Text>
+															<Text style={styles.vitVal}>
+																{formatVitaminValue(n(val))}
+																{unitLabel ? (
+																	<Text style={styles.vitUnit}>
+																		{' '}
+																		{unitLabel}
+																	</Text>
+																) : null}
+															</Text>
+														</View>
+													</View>
+												)
+											})}
+									</View>
+								</View>
+							) : null}
+
+							<Text style={styles.detailSectionLabel}>
+								{t('nutrition', 'editMeal')}
+							</Text>
+							<TextInput
+								style={styles.input}
+								value={editName}
+								onChangeText={setEditName}
+								placeholder={t('nutrition', 'name')}
+								placeholderTextColor={T.textTertiary}
+							/>
+							<View style={styles.inputRow}>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={editCal}
+									onChangeText={setEditCal}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'kcal')}
+									placeholderTextColor={T.textTertiary}
+								/>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={editP}
+									onChangeText={setEditP}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'protein')}
+									placeholderTextColor={T.textTertiary}
+								/>
+							</View>
+							<View style={styles.inputRow}>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={editC}
+									onChangeText={setEditC}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'carbs')}
+									placeholderTextColor={T.textTertiary}
+								/>
+								<TextInput
+									style={[styles.input, styles.inputHalf]}
+									value={editF}
+									onChangeText={setEditF}
+									keyboardType='numeric'
+									placeholder={t('nutrition', 'fat')}
+									placeholderTextColor={T.textTertiary}
+								/>
+							</View>
+							<TouchableOpacity
+								style={styles.saveBtn}
+								onPress={() => void saveEdit()}
+								disabled={saving}
+							>
+								{saving ? (
+									<ActivityIndicator color='#000' />
+								) : (
+									<Text style={styles.saveBtnText}>
+										{t('nutrition', 'save')}
+									</Text>
+								)}
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={styles.deleteBtn}
+								onPress={() => editEntry && confirmDelete(editEntry)}
+							>
+								<Text style={styles.deleteBtnText}>
+									{t('nutrition', 'delete')}
+								</Text>
+							</TouchableOpacity>
+						</View>
+					</ScrollView>
+				</KeyboardAvoidingView>
 			</Modal>
 
 			<Modal
@@ -908,21 +1615,39 @@ function NutritionTabInner() {
 			>
 				<KeyboardAvoidingView
 					style={styles.sheetBackdrop}
-					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-					keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+					behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+					keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
 				>
 					<TouchableOpacity
-						style={StyleSheet.absoluteFill}
+						style={styles.sheetDismissArea}
 						activeOpacity={1}
-						onPress={() => setTargetsOpen(false)}
+						onPress={() => {
+							Keyboard.dismiss()
+							setTargetsOpen(false)
+						}}
 					/>
-					<ScrollView
-						keyboardShouldPersistTaps='handled'
-						bounces={false}
-						contentContainerStyle={styles.sheetScroll}
+					<View
+						style={[
+							styles.sheet,
+							{
+								paddingBottom:
+									16 + (Platform.OS === 'android' ? keyboardPad : 0),
+							},
+						]}
 					>
-						<View style={styles.sheet}>
-							<Text style={styles.sheetTitle}>{t('nutrition', 'limitsTitle')}</Text>
+						<ScrollView
+							keyboardShouldPersistTaps='handled'
+							bounces={false}
+							showsVerticalScrollIndicator={false}
+						>
+							<SheetModalHeader
+								title={t('nutrition', 'limitsTitle')}
+								onClose={() => {
+									Keyboard.dismiss()
+									setTargetsOpen(false)
+								}}
+								closeAccessibilityLabel={t('common', 'cancel')}
+							/>
 							<Text style={styles.limitsHint}>{t('nutrition', 'limitsHint')}</Text>
 							<View style={styles.inputRow}>
 								<TextInput
@@ -982,10 +1707,17 @@ function NutritionTabInner() {
 									</Text>
 								</TouchableOpacity>
 							) : null}
-						</View>
-					</ScrollView>
+						</ScrollView>
+					</View>
 				</KeyboardAvoidingView>
 			</Modal>
+
+			<PremiumGateModal
+				visible={premiumGateOpen}
+				onClose={() => setPremiumGateOpen(false)}
+				featureIcon='restaurant-outline'
+				featureColor='#34C759'
+			/>
 		</SafeAreaView>
 	)
 }
@@ -1001,139 +1733,237 @@ export default function NutritionTab() {
 function makeNutritionStyles(T: AppColors) {
 	return StyleSheet.create({
 	safe: { flex: 1, backgroundColor: T.background },
-	scroll: { paddingHorizontal: 22, paddingBottom: 120 },
-	header: { marginTop: 8, marginBottom: 8 },
-	kicker: {
-		fontSize: 34,
-		fontWeight: '700',
-		color: T.text,
-		letterSpacing: -0.6,
+	scroll: { paddingHorizontal: 14, paddingBottom: 120 },
+	header: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingHorizontal: 0,
+		paddingTop: 20,
+		paddingBottom: 16,
 	},
-	date: {
-		marginTop: 4,
+	title: { fontSize: 28, fontWeight: 'bold', color: T.text },
+	subtitle: {
 		fontSize: 15,
 		color: T.textSecondary,
+		marginTop: 4,
 		textTransform: 'capitalize',
 	},
+	quotaBadge: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 5,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderRadius: 16,
+		backgroundColor: `${T.primary}1F`,
+		borderWidth: 1,
+		borderColor: `${T.primary}33`,
+	},
+	quotaBadgeMuted: {
+		backgroundColor: T.card,
+		borderColor: T.border,
+	},
+	quotaText: {
+		fontSize: 14,
+		fontWeight: '700',
+		color: T.primary,
+		fontVariant: ['tabular-nums'],
+	},
 	errorBox: {
-		marginTop: 12,
-		padding: 12,
-		borderRadius: 12,
-		backgroundColor: 'rgba(255,59,48,0.12)',
+		marginBottom: 12,
+		padding: 14,
+		borderRadius: 16,
+		backgroundColor: `${T.error}1F`,
+		borderWidth: 1,
+		borderColor: `${T.error}40`,
 	},
 	errorText: { color: T.error, fontWeight: '600', fontSize: 14 },
 	errorHint: { color: T.textSecondary, fontSize: 12, marginTop: 4 },
-	calorieBlock: {
+	calorieCard: {
+		flexDirection: 'row',
 		alignItems: 'center',
-		marginTop: 28,
+		justifyContent: 'space-between',
+		backgroundColor: T.card,
+		borderRadius: 28,
+		paddingVertical: 22,
+		paddingHorizontal: 20,
 		marginBottom: 12,
+		borderWidth: 1,
+		borderColor: T.border,
+		...softCardShadow,
+	},
+	calorieTextCol: {
+		flex: 1,
+		paddingRight: 12,
 	},
 	limitsHint: {
 		fontSize: 13,
 		color: T.textSecondary,
-		marginBottom: 14,
+		marginBottom: 12,
 		lineHeight: 18,
 	},
 	resetTargetsText: {
 		color: T.info,
-		fontSize: 15,
+		fontSize: 14,
 		fontWeight: '500',
 	},
 	remainNum: {
-		fontSize: 44,
-		fontWeight: '700',
+		fontSize: 40,
+		fontWeight: '800',
 		color: T.text,
 		letterSpacing: -1,
 	},
 	remainLabel: {
-		fontSize: 13,
-		color: T.textSecondary,
-		marginTop: 4,
-		textAlign: 'center',
+		fontSize: 15,
+		fontWeight: '600',
+		color: T.text,
+		marginTop: 2,
 	},
-	calorieTrack: {
-		marginTop: 18,
-		width: '100%',
-		height: 8,
-		borderRadius: 4,
-		backgroundColor: T.track,
-		overflow: 'hidden',
-	},
-	calorieFill: {
-		height: '100%',
-		borderRadius: 4,
-		backgroundColor: T.primary,
+	ringCenter: {
+		width: 44,
+		height: 44,
+		borderRadius: 22,
+		backgroundColor: T.card,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	goalHint: {
-		marginTop: 10,
+		marginTop: 8,
 		fontSize: 12,
 		color: T.textTertiary,
-		textAlign: 'center',
 	},
 	profileHint: {
 		textAlign: 'center',
 		color: T.warning,
 		fontSize: 13,
 		marginBottom: 12,
-		paddingHorizontal: 12,
+		paddingHorizontal: 8,
 	},
-	macros: {
+	macroRow: {
 		flexDirection: 'row',
-		marginTop: 20,
+		gap: 10,
 		marginBottom: 8,
 	},
-	macroCol: { flex: 1, marginHorizontal: 7 },
-	macroLabel: {
+	macroCard: {
+		flex: 1,
+		backgroundColor: T.card,
+		borderRadius: 24,
+		paddingTop: 14,
+		paddingBottom: 12,
+		paddingHorizontal: 8,
+		borderWidth: 1,
+		borderColor: T.border,
+		alignItems: 'center',
+		minHeight: 168,
+		...softCardShadow,
+	},
+	macroRingCenter: {
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	macroCardValue: {
+		marginTop: 10,
+		fontSize: 22,
+		fontWeight: '800',
+		color: T.text,
+		letterSpacing: -0.5,
+	},
+	macroCardUnit: {
+		fontSize: 13,
+		fontWeight: '600',
+		color: T.textSecondary,
+	},
+	macroCardLabel: {
+		marginTop: 2,
+		fontSize: 11,
+		fontWeight: '500',
+		color: T.textSecondary,
+		textAlign: 'center',
+		lineHeight: 14,
+		minHeight: 28,
+	},
+	macroGoalHint: {
+		marginTop: 2,
+		fontSize: 10,
+		fontWeight: '500',
+		color: T.textTertiary,
+		textAlign: 'center',
+		fontVariant: ['tabular-nums'],
+	},
+	macroCardIconWrap: {
+		marginTop: 10,
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	section: { marginTop: 14 },
+	vitGrid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		marginTop: 4,
+		marginHorizontal: -4,
+	},
+	vitCard: {
+		width: '50%',
+		paddingHorizontal: 4,
+		marginBottom: 8,
+	},
+	vitCardInner: {
+		backgroundColor: T.card,
+		borderRadius: 18,
+		paddingVertical: 12,
+		paddingHorizontal: 12,
+		borderWidth: 1,
+		borderColor: T.border,
+		borderLeftWidth: 3,
+		...softCardShadow,
+	},
+	vitKey: {
 		fontSize: 12,
 		color: T.textSecondary,
-		marginBottom: 8,
 		fontWeight: '500',
 	},
-	macroTrack: {
-		height: 6,
-		borderRadius: 3,
-		backgroundColor: T.track,
-		overflow: 'hidden',
-	},
-	macroFill: { height: '100%', borderRadius: 3 },
-	macroValue: {
-		marginTop: 8,
-		fontSize: 13,
+	vitVal: {
+		marginTop: 3,
+		fontSize: 15,
 		color: T.text,
-		fontWeight: '600',
+		fontWeight: '700',
 	},
-	macroTarget: { color: T.textTertiary, fontWeight: '400' },
-	vitamins: { marginTop: 28 },
-	vitRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
-	vitChip: {
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 10,
-		backgroundColor: T.track,
-		borderWidth: StyleSheet.hairlineWidth,
-		borderColor: 'rgba(255,255,255,0.08)',
-		marginRight: 8,
-		marginBottom: 8,
+	vitUnit: {
+		fontSize: 11,
+		fontWeight: '500',
+		color: T.textSecondary,
 	},
-	vitKey: { fontSize: 11, color: T.textSecondary, textTransform: 'capitalize' },
-	vitVal: { fontSize: 14, color: T.text, fontWeight: '600', marginTop: 2 },
 	mealsHead: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		marginTop: 32,
-		marginBottom: 14,
+		marginBottom: 12,
+		paddingHorizontal: 4,
 	},
 	sectionTitle: {
-		fontSize: 18,
-		fontWeight: '600',
+		fontSize: 20,
+		fontWeight: '700',
 		color: T.text,
-		letterSpacing: -0.2,
+		marginBottom: 10,
+		marginLeft: 4,
 	},
-	mealCount: { fontSize: 14, color: T.textTertiary },
+	mealCount: { fontSize: 13, color: T.textTertiary, fontWeight: '600' },
 	empty: {
 		alignItems: 'center',
-		paddingVertical: 36,
+		paddingVertical: 32,
+		backgroundColor: T.card,
+		borderRadius: 24,
+		borderWidth: 1,
+		borderColor: T.border,
+		marginBottom: 8,
+		...softCardShadow,
 	},
 	emptyTitle: {
 		fontSize: 16,
@@ -1142,48 +1972,131 @@ function makeNutritionStyles(T: AppColors) {
 		marginTop: 8,
 	},
 	emptyBody: {
-		fontSize: 14,
+		fontSize: 13,
 		color: T.textSecondary,
 		textAlign: 'center',
-		lineHeight: 20,
+		lineHeight: 19,
 		maxWidth: 260,
-		marginTop: 8,
+		marginTop: 6,
+		paddingHorizontal: 16,
 	},
 	mealRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingVertical: 12,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: 'rgba(255,255,255,0.06)',
+		backgroundColor: T.card,
+		borderRadius: 22,
+		padding: 12,
+		marginBottom: 10,
+		borderWidth: 1,
+		borderColor: T.border,
+		...softCardShadow,
 	},
 	thumb: {
-		width: 52,
-		height: 52,
-		borderRadius: 12,
+		width: 64,
+		height: 64,
+		borderRadius: 16,
 		backgroundColor: T.cardLight,
-		marginRight: 14,
+		marginRight: 12,
 	},
 	thumbFallback: { alignItems: 'center', justifyContent: 'center' },
-	mealMeta: { flex: 1 },
-	mealName: { fontSize: 16, fontWeight: '600', color: T.text },
-	mealMacros: { marginTop: 4, fontSize: 12, color: T.textSecondary },
-	mealCal: { fontSize: 16, fontWeight: '600', color: T.text, marginLeft: 8 },
+	mealMeta: { flex: 1, paddingRight: 6 },
+	mealName: { fontSize: 15, fontWeight: '700', color: T.text, lineHeight: 20 },
+	mealTime: { marginTop: 2, fontSize: 12, color: T.textTertiary },
+	mealStatsRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		flexWrap: 'wrap',
+		gap: 10,
+		marginTop: 8,
+	},
+	mealStat: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+	mealCal: { fontSize: 13, fontWeight: '700', color: T.text },
+	mealMacroVal: { fontSize: 12, fontWeight: '600', color: T.textSecondary },
 	overlay: {
 		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.72)',
+		backgroundColor: T.overlay,
 		alignItems: 'center',
 		justifyContent: 'center',
 	},
 	overlayText: {
 		color: T.text,
-		fontSize: 16,
+		fontSize: 15,
 		fontWeight: '500',
-		marginTop: 16,
+		marginTop: 14,
 	},
+	confirmBackdrop: {
+		flex: 1,
+		backgroundColor: T.overlay,
+		justifyContent: 'center',
+		paddingHorizontal: 18,
+		paddingVertical: 28,
+	},
+	confirmCard: {
+		backgroundColor: T.modalSurface,
+		borderRadius: 20,
+		borderWidth: 1,
+		borderColor: T.border,
+		paddingHorizontal: 14,
+		paddingTop: 12,
+		paddingBottom: 14,
+		maxHeight: '88%',
+	},
+	confirmHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		marginBottom: 10,
+	},
+	confirmTitle: {
+		flex: 1,
+		fontSize: 18,
+		fontWeight: '700',
+		color: T.text,
+		paddingRight: 8,
+	},
+	confirmScroll: {
+		paddingBottom: 8,
+	},
+	confirmPhoto: {
+		width: '100%',
+		height: 160,
+		borderRadius: 14,
+		backgroundColor: T.cardLight,
+		marginBottom: 12,
+		borderWidth: 1,
+		borderColor: T.border,
+	},
+	confirmName: {
+		fontSize: 20,
+		fontWeight: '700',
+		color: T.text,
+		textAlign: 'center',
+		marginBottom: 4,
+	},
+	confirmConfidence: {
+		fontSize: 12,
+		color: T.textSecondary,
+		textAlign: 'center',
+		marginBottom: 12,
+		fontWeight: '600',
+	},
+	confirmBtn: {
+		marginTop: 8,
+		backgroundColor: T.primary,
+		borderRadius: 14,
+		paddingVertical: 14,
+		alignItems: 'center',
+	},
+	confirmBtnText: { color: '#000', fontWeight: '700', fontSize: 16 },
+	discardBtn: { alignItems: 'center', paddingVertical: 10 },
+	discardBtnText: { color: T.textSecondary, fontSize: 14, fontWeight: '500' },
 	sheetBackdrop: {
 		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.55)',
+		backgroundColor: T.overlay,
 		justifyContent: 'flex-end',
+	},
+	sheetDismissArea: {
+		flex: 1,
 	},
 	sheetScroll: {
 		flexGrow: 1,
@@ -1193,42 +2106,112 @@ function makeNutritionStyles(T: AppColors) {
 		backgroundColor: T.modalSurface,
 		borderTopLeftRadius: 20,
 		borderTopRightRadius: 20,
-		padding: 22,
-		paddingBottom: 36,
+		paddingHorizontal: 16,
+		paddingTop: 12,
+		paddingBottom: 20,
+		borderTopWidth: 1,
+		borderColor: T.border,
+	},
+	sheetHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		marginBottom: 10,
+		minHeight: 36,
+	},
+	sheetClose: {
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		backgroundColor: T.cardLight,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	sheetTitle: {
-		fontSize: 20,
+		flex: 1,
+		fontSize: 18,
 		fontWeight: '700',
 		color: T.text,
-		marginBottom: 12,
+		paddingRight: 8,
+	},
+	detailPhoto: {
+		width: '100%',
+		height: 120,
+		borderRadius: 14,
+		backgroundColor: T.cardLight,
+		marginBottom: 10,
+		borderWidth: 1,
+		borderColor: T.border,
+	},
+	detailPhotoFallback: {
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	detailMacroRow: {
+		flexDirection: 'row',
+		marginBottom: 10,
+		marginHorizontal: -3,
+	},
+	detailMacroCard: {
+		flex: 1,
+		marginHorizontal: 3,
+		backgroundColor: T.card,
+		borderRadius: 12,
+		paddingVertical: 8,
+		alignItems: 'center',
+		borderWidth: 1,
+		borderColor: T.border,
+	},
+	detailMacroVal: {
+		fontSize: 14,
+		fontWeight: '700',
+		color: T.text,
+	},
+	detailMacroLbl: {
+		marginTop: 2,
+		fontSize: 10,
+		color: T.textSecondary,
+		fontWeight: '500',
+	},
+	detailVitamins: { marginBottom: 4 },
+	detailSectionLabel: {
+		fontSize: 12,
+		fontWeight: '600',
+		color: T.textSecondary,
+		marginBottom: 6,
+		marginTop: 2,
+		textTransform: 'uppercase',
+		letterSpacing: 0.3,
 	},
 	pickHint: {
-		fontSize: 14,
+		fontSize: 13,
 		color: T.textSecondary,
-		marginBottom: 16,
-		lineHeight: 20,
+		marginBottom: 12,
+		lineHeight: 18,
 	},
 	pickOption: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: T.cardLight,
-		borderRadius: 14,
-		paddingVertical: 14,
-		paddingHorizontal: 14,
-		marginBottom: 10,
+		backgroundColor: T.card,
+		borderRadius: 16,
+		paddingVertical: 12,
+		paddingHorizontal: 12,
+		marginBottom: 8,
+		borderWidth: 1,
+		borderColor: T.border,
 	},
 	pickOptionIcon: {
 		width: 40,
 		height: 40,
 		borderRadius: 20,
-		backgroundColor: 'rgba(52,199,89,0.12)',
+		backgroundColor: `${T.primary}1F`,
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginRight: 12,
 	},
 	pickOptionText: {
 		flex: 1,
-		fontSize: 16,
+		fontSize: 15,
 		fontWeight: '600',
 		color: T.text,
 	},
@@ -1244,74 +2227,91 @@ function makeNutritionStyles(T: AppColors) {
 		height: 46,
 		borderRadius: 23,
 		backgroundColor: T.card,
-		borderWidth: StyleSheet.hairlineWidth,
+		borderWidth: 1,
 		borderColor: T.border,
 		alignItems: 'center',
 		justifyContent: 'center',
 		shadowColor: '#000',
-		shadowOpacity: 0.18,
+		shadowOpacity: 0.12,
+		shadowRadius: 8,
+		shadowOffset: { width: 0, height: 3 },
+		elevation: 4,
+	},
+	historyFab: {
+		width: 46,
+		height: 46,
+		borderRadius: 23,
+		backgroundColor: T.card,
+		borderWidth: 1,
+		borderColor: T.border,
+		alignItems: 'center',
+		justifyContent: 'center',
+		shadowColor: '#000',
+		shadowOpacity: 0.12,
 		shadowRadius: 8,
 		shadowOffset: { width: 0, height: 3 },
 		elevation: 4,
 	},
 	photoFab: {
-		width: 58,
-		height: 58,
-		borderRadius: 29,
-		backgroundColor: T.primary,
+		width: 64,
+		height: 64,
+		borderRadius: 32,
+		backgroundColor: T.text,
 		alignItems: 'center',
 		justifyContent: 'center',
 		shadowColor: '#000',
-		shadowOpacity: 0.28,
-		shadowRadius: 10,
-		shadowOffset: { width: 0, height: 4 },
-		elevation: 6,
+		shadowOpacity: 0.22,
+		shadowRadius: 12,
+		shadowOffset: { width: 0, height: 6 },
+		elevation: 8,
 	},
 	updateBox: {
-		marginTop: 18,
-		padding: 16,
-		borderRadius: 14,
-		backgroundColor: 'rgba(255,149,0,0.12)',
-		borderWidth: StyleSheet.hairlineWidth,
-		borderColor: 'rgba(255,149,0,0.3)',
+		marginBottom: 12,
+		padding: 14,
+		borderRadius: 16,
+		backgroundColor: `${T.warning}1F`,
+		borderWidth: 1,
+		borderColor: `${T.warning}4D`,
 	},
 	updateTitle: {
 		color: T.warning,
 		fontSize: 15,
 		fontWeight: '700',
-		marginBottom: 6,
+		marginBottom: 4,
 	},
 	updateBody: {
 		color: T.textSecondary,
 		fontSize: 13,
-		lineHeight: 19,
+		lineHeight: 18,
 	},
 	input: {
-		backgroundColor: T.border,
+		backgroundColor: T.inputBg,
 		borderRadius: 12,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
+		paddingHorizontal: 12,
+		paddingVertical: 10,
 		color: T.text,
-		fontSize: 16,
-		marginBottom: 10,
+		fontSize: 15,
+		marginBottom: 8,
+		borderWidth: 1,
+		borderColor: T.border,
 	},
-	inputRow: { flexDirection: 'row' },
-	inputHalf: { flex: 1, marginHorizontal: 5 },
+	inputRow: { flexDirection: 'row', marginHorizontal: -4 },
+	inputHalf: { flex: 1, marginHorizontal: 4 },
 	saveBtn: {
-		marginTop: 8,
+		marginTop: 6,
 		backgroundColor: T.primary,
 		borderRadius: 14,
-		paddingVertical: 14,
+		paddingVertical: 12,
 		alignItems: 'center',
 	},
-	saveBtnText: { color: '#000', fontWeight: '700', fontSize: 16 },
-	deleteBtn: { alignItems: 'center', paddingVertical: 8 },
-	deleteBtnText: { color: T.error, fontSize: 15, fontWeight: '500' },
+	saveBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
+	deleteBtn: { alignItems: 'center', paddingVertical: 10 },
+	deleteBtnText: { color: T.error, fontSize: 14, fontWeight: '500' },
 	cancelText: {
 		textAlign: 'center',
 		color: T.textSecondary,
 		paddingVertical: 8,
-		fontSize: 15,
+		fontSize: 14,
 	},
 })
 }

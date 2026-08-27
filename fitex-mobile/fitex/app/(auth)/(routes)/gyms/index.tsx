@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/language-context'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { CardGridSkeleton } from '@/components/ui/skeleton'
 import { formatPrice, getGyms, GymPartner, purchaseMembership } from '@/services/gym-pass'
 import { Ionicons } from '@expo/vector-icons'
@@ -20,7 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const COLORS = {
-	background: '#121212',
+	background: '#222226',
 	card: '#1C1C1E',
 	cardLight: '#2C2C2E',
 	border: '#2C2C2E',
@@ -99,9 +100,11 @@ const PurchaseModal = ({
 		<Modal visible={visible} transparent animationType='slide' onRequestClose={onClose}>
 			<Pressable style={modalStyles.overlay} onPress={onClose}>
 				<Pressable style={modalStyles.sheet} onPress={e => e.stopPropagation()}>
-					<View style={modalStyles.handle} />
-					<Text style={modalStyles.title}>{gym.name}</Text>
-					<Text style={modalStyles.subtitle}>{t('gymPass', 'choosePlan')}</Text>
+					<SheetModalHeader
+						title={gym.name}
+						subtitle={t('gymPass', 'choosePlan')}
+						onClose={onClose}
+					/>
 
 					{gym.membershipPrices?.length > 0 ? (
 						gym.membershipPrices.map(p => {

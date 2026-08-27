@@ -11,6 +11,7 @@ export type AdminUser = {
 	premiumActive: boolean
 	premiumExpiresAt: string | null
 	premiumLifetime: boolean
+	mealPhotoRemaining?: number | null
 	createdAt?: string | null
 }
 
@@ -36,6 +37,17 @@ export async function adminGrantPremium(
 ): Promise<AdminUser> {
 	const { data } = await api.patch<AdminUser>(
 		`/admin/users/${userId}/premium`,
+		body,
+	)
+	return data
+}
+
+export async function adminAdjustMealPhotos(
+	userId: string,
+	body: { add?: number; set?: number },
+): Promise<AdminUser> {
+	const { data } = await api.patch<AdminUser>(
+		`/admin/users/${userId}/meal-photos`,
 		body,
 	)
 	return data

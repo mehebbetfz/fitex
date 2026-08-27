@@ -39,7 +39,7 @@ function fromApp(c: AppColors, isDark: boolean): StatsHistoryTheme {
 		surface: c.card,
 		surfaceElevated: c.card,
 		surfaceMuted: c.cardLight,
-		chipInactive: isDark ? '#1E1E1E' : '#E5E5EA',
+		chipInactive: isDark ? '#2A2A2E' : '#E5E5EA',
 		border: c.border,
 		borderSubtle: c.cardLight,
 		borderHairline: c.cardLight,

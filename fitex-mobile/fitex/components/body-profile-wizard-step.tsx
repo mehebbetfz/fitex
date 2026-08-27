@@ -5,14 +5,12 @@ import {
 	BODY_PROFILE_STEPS,
 	type BodyProfileStep,
 } from '@/constants/body-profile-wizard'
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import React, { useMemo } from 'react'
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-
-const BG = '#0A0A0A'
-const PRIMARY = '#34C759'
-const PRIMARY_SOFT = 'rgba(52, 199, 89, 0.14)'
 
 export type BodyProfileWizardVariant = 'onboarding' | 'edit'
 
@@ -29,16 +27,21 @@ type Props = {
 	onSkip?: () => void
 }
 
-function StepProgressDots({ current, total }: { current: number; total: number }) {
+function StepProgressDots({
+	current,
+	total,
+	styles,
+}: {
+	current: number
+	total: number
+	styles: ReturnType<typeof makeStyles>
+}) {
 	return (
 		<View style={styles.dotsRow}>
 			{Array.from({ length: total }, (_, i) => (
 				<View
 					key={i}
-					style={[
-						styles.dot,
-						i === current ? styles.dotActive : styles.dotIdle,
-					]}
+					style={[styles.dot, i === current ? styles.dotActive : styles.dotIdle]}
 				/>
 			))}
 		</View>
@@ -58,6 +61,8 @@ export function BodyProfileWizardStep({
 	onSkip,
 }: Props) {
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 
 	const heightValues = useMemo(() => intRangeString(100, 250), [])
 	const weightValues = useMemo(() => intRangeString(30, 300), [])
@@ -144,6 +149,9 @@ export function BodyProfileWizardStep({
 
 	const isLast = stepIndex >= totalSteps - 1
 
+	const gradientTop = C.card
+	const gradientMid = C.background
+
 	const picker = (() => {
 		switch (step) {
 			case 'weight':
@@ -212,12 +220,12 @@ export function BodyProfileWizardStep({
 	return (
 		<View style={styles.root}>
 			<LinearGradient
-				colors={['#17171A', '#0D0D0F', BG]}
+				colors={[gradientTop, gradientMid, C.background]}
 				locations={[0, 0.38, 1]}
 				style={StyleSheet.absoluteFill}
 			/>
 			<LinearGradient
-				colors={['rgba(52,199,89,0.07)', 'transparent']}
+				colors={[`${C.primary}12`, 'transparent']}
 				start={{ x: 0.5, y: 0 }}
 				end={{ x: 0.5, y: 0.35 }}
 				style={StyleSheet.absoluteFill}
@@ -229,12 +237,12 @@ export function BodyProfileWizardStep({
 						<Text style={styles.introTitle}>{t('bodyProfile', 'onboardingTitle')}</Text>
 						<Text style={styles.introSub}>{t('bodyProfile', 'onboardingSubtitle')}</Text>
 						<Text style={styles.stepMeta}>{stepProgressText}</Text>
-						<StepProgressDots current={stepIndex} total={totalSteps} />
+						<StepProgressDots current={stepIndex} total={totalSteps} styles={styles} />
 					</View>
 				) : (
 					<View style={styles.topEdit}>
 						<Text style={styles.stepMeta}>{stepProgressText}</Text>
-						<StepProgressDots current={stepIndex} total={totalSteps} />
+						<StepProgressDots current={stepIndex} total={totalSteps} styles={styles} />
 					</View>
 				)}
 
@@ -256,11 +264,7 @@ export function BodyProfileWizardStep({
 							</TouchableOpacity>
 						) : null}
 						<TouchableOpacity
-							style={[
-								styles.cta,
-								styles.ctaGrow,
-								loading && styles.ctaDisabled,
-							]}
+							style={[styles.cta, styles.ctaGrow, loading && styles.ctaDisabled]}
 							onPress={onPrimary}
 							disabled={loading}
 							activeOpacity={0.88}
@@ -290,123 +294,122 @@ export function BodyProfileWizardStep({
 	)
 }
 
-export const bodyProfileWizardStyles = StyleSheet.create({
-	root: {
-		flex: 1,
-		backgroundColor: BG,
-	},
-	layer: {
-		flex: 1,
-		zIndex: 1,
-	},
-	top: {
-		paddingHorizontal: 22,
-		paddingTop: 10,
-		paddingBottom: 14,
-	},
-	topEdit: {
-		paddingHorizontal: 22,
-		paddingTop: 6,
-		paddingBottom: 12,
-	},
-	introTitle: {
-		fontSize: 24,
-		fontWeight: '700',
-		color: '#fff',
-		textAlign: 'center',
-		marginBottom: 8,
-		letterSpacing: 0.3,
-	},
-	introSub: {
-		fontSize: 15,
-		color: '#8E8E93',
-		textAlign: 'center',
-		lineHeight: 22,
-		marginBottom: 12,
-	},
-	stepMeta: {
-		fontSize: 12,
-		color: '#636366',
-		textAlign: 'center',
-		fontWeight: '600',
-		letterSpacing: 0.8,
-		textTransform: 'uppercase',
-		marginBottom: 10,
-	},
-	dotsRow: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		alignItems: 'center',
-		gap: 7,
-		marginTop: 2,
-	},
-	dot: {
-		height: 6,
-		borderRadius: 3,
-	},
-	dotIdle: {
-		width: 6,
-		backgroundColor: 'rgba(255,255,255,0.12)',
-	},
-	dotActive: {
-		width: 22,
-		backgroundColor: PRIMARY,
-	},
-	centerBlock: {
-		flex: 1,
-		justifyContent: 'center',
-		paddingHorizontal: 16,
-		minHeight: 300,
-	},
-	stepTitle: {
-		fontSize: 30,
-		fontWeight: '700',
-		color: '#fff',
-		textAlign: 'center',
-		marginBottom: 22,
-		letterSpacing: 0.4,
-	},
-	footer: {
-		paddingHorizontal: 20,
-		paddingBottom: 28,
-		paddingTop: 8,
-	},
-	footerRow: {
-		width: '100%',
-		flexDirection: 'row',
-		alignItems: 'stretch',
-		gap: 12,
-	},
-	backBtn: {
-		minWidth: 104,
-		paddingVertical: 15,
-		alignItems: 'center',
-		justifyContent: 'center',
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.14)',
-		backgroundColor: 'rgba(255,255,255,0.04)',
-	},
-	backText: { fontSize: 16, color: '#AEAEB2', fontWeight: '600' },
-	cta: {
-		backgroundColor: PRIMARY,
-		paddingVertical: 17,
-		borderRadius: 16,
-		alignItems: 'center',
-		justifyContent: 'center',
-		minHeight: 56,
-	},
-	/** Рядом с «Назад» или на всю ширину, если «Назад» нет */
-	ctaGrow: {
-		flex: 1,
-	},
-	ctaDisabled: { opacity: 0.65 },
-	ctaText: { fontSize: 17, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
-	skip: {
-		paddingVertical: 18,
-		alignItems: 'center',
-	},
-	skipText: { fontSize: 15, color: '#8E8E93', fontWeight: '500' },
-})
-
-const styles = bodyProfileWizardStyles
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		root: {
+			flex: 1,
+			backgroundColor: C.background,
+		},
+		layer: {
+			flex: 1,
+			zIndex: 1,
+		},
+		top: {
+			paddingHorizontal: 22,
+			paddingTop: 10,
+			paddingBottom: 14,
+		},
+		topEdit: {
+			paddingHorizontal: 22,
+			paddingTop: 6,
+			paddingBottom: 12,
+		},
+		introTitle: {
+			fontSize: 24,
+			fontWeight: '700',
+			color: C.text,
+			textAlign: 'center',
+			marginBottom: 8,
+			letterSpacing: 0.3,
+		},
+		introSub: {
+			fontSize: 15,
+			color: C.textSecondary,
+			textAlign: 'center',
+			lineHeight: 22,
+			marginBottom: 12,
+		},
+		stepMeta: {
+			fontSize: 12,
+			color: C.textTertiary,
+			textAlign: 'center',
+			fontWeight: '600',
+			letterSpacing: 0.8,
+			textTransform: 'uppercase',
+			marginBottom: 10,
+		},
+		dotsRow: {
+			flexDirection: 'row',
+			justifyContent: 'center',
+			alignItems: 'center',
+			gap: 7,
+			marginTop: 2,
+		},
+		dot: {
+			height: 6,
+			borderRadius: 3,
+		},
+		dotIdle: {
+			width: 6,
+			backgroundColor: C.track,
+		},
+		dotActive: {
+			width: 22,
+			backgroundColor: C.primary,
+		},
+		centerBlock: {
+			flex: 1,
+			justifyContent: 'center',
+			paddingHorizontal: 16,
+			minHeight: 300,
+		},
+		stepTitle: {
+			fontSize: 30,
+			fontWeight: '700',
+			color: C.text,
+			textAlign: 'center',
+			marginBottom: 22,
+			letterSpacing: 0.4,
+		},
+		footer: {
+			paddingHorizontal: 20,
+			paddingBottom: 28,
+			paddingTop: 8,
+		},
+		footerRow: {
+			width: '100%',
+			flexDirection: 'row',
+			alignItems: 'stretch',
+			gap: 12,
+		},
+		backBtn: {
+			minWidth: 104,
+			paddingVertical: 15,
+			alignItems: 'center',
+			justifyContent: 'center',
+			borderRadius: 14,
+			borderWidth: 1,
+			borderColor: C.border,
+			backgroundColor: C.card,
+		},
+		backText: { fontSize: 16, color: C.textSecondary, fontWeight: '600' },
+		cta: {
+			backgroundColor: C.primary,
+			paddingVertical: 17,
+			borderRadius: 16,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 56,
+		},
+		ctaGrow: {
+			flex: 1,
+		},
+		ctaDisabled: { opacity: 0.65 },
+		ctaText: { fontSize: 17, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
+		skip: {
+			paddingVertical: 18,
+			alignItems: 'center',
+		},
+		skipText: { fontSize: 15, color: C.textSecondary, fontWeight: '500' },
+	})
+}

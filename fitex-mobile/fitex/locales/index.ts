@@ -1,4 +1,18 @@
-﻿export type Language = 'ru' | 'en' | 'az'
+﻿export type { Language, CoreLanguage } from './languages'
+export {
+	LANGUAGE_CODES,
+	LANGUAGE_NAMES,
+	LANGUAGE_FLAGS,
+	DATE_LOCALES,
+	RTL_LANGUAGES,
+	CORE_LANGUAGES,
+	isLanguage,
+	isRtlLanguage,
+	dateLocaleFor,
+} from './languages'
+import type { Language } from './languages'
+import { LANGUAGE_CODES } from './languages'
+import { GENERATED_PACKS } from './packs'
 
 export interface Translations {
   splash: {
@@ -45,6 +59,27 @@ export interface Translations {
     confirmExercise: string
     exercisesFor: string
     selectedExercise: string
+    restToggle: string
+    restOn: string
+    restOff: string
+    restTimer: string
+    restSkip: string
+    restAdd15: string
+    restMinus15: string
+    restSetDuration: string
+    restDone: string
+    restStart: string
+    restReset: string
+    restBetweenSets: string
+    restBetweenExercises: string
+    nextExercise: string
+    exercisesList: string
+    mediaBoth: string
+    mediaVideo: string
+    mediaPhotos: string
+    mediaHidden: string
+    focusMode: string
+    listMode: string
   }
   exercises: {
     title: string
@@ -87,6 +122,8 @@ export interface Translations {
     repsShort: string
     volumeLabel: string
     maxLabel: string
+    favorites: string
+    favoritesEmpty: string
   }
   templates: {
     title: string
@@ -225,6 +262,7 @@ export interface Translations {
     feature3: string
     feature4: string
     feature5: string
+    feature6: string
     cancelAnytime: string
   }
   sync: {
@@ -537,6 +575,7 @@ export interface Translations {
     featureRecovery: string
     featureRating: string
     featureLeaderboard: string
+    featureFood: string
     cta: string
     later: string
   }
@@ -752,6 +791,8 @@ export interface Translations {
   }
   history: {
     title: string
+    tabWorkouts: string
+    tabFood: string
     filterByMuscle: string
     allMuscles: string
     exercises: string
@@ -762,6 +803,12 @@ export interface Translations {
     startFirst: string
     noWorkoutsFilter: string
     workoutsLoading: string
+    foodLoading: string
+    noFood: string
+    noFoodBody: string
+    meal1: string
+    meal2: string
+    meal5: string
     workout1: string
     workout2: string
     workout5: string
@@ -800,6 +847,17 @@ export interface Translations {
     exportError: string
     workoutReminderTitle: string
 		workoutReminderBody: string
+		restSection: string
+		restEnabledDefault: string
+		restEnabledDefaultSubtitle: string
+		restBetweenSets: string
+		restBetweenSetsSubtitle: string
+		restBetweenExercises: string
+		restBetweenExercisesSubtitle: string
+		restPickDuration: string
+		recoveryDurationSection: string
+		recoveryDurationSubtitle: string
+		recoveryDurationHours: string
 	}
 	nutrition: {
 		today: string
@@ -807,27 +865,41 @@ export interface Translations {
 		over: string
 		leftKcal: string
 		overKcal: string
+		eaten: string
 		leftProtein: string
 		overProtein: string
+		leftCarbs: string
+		overCarbs: string
+		leftFat: string
+		overFat: string
 		kcal: string
 		g: string
+		calories: string
 		protein: string
 		carbs: string
 		fat: string
 		vitamins: string
 		meals: string
+		foodIntake: string
 		emptyTitle: string
 		emptyBody: string
 		addMeal: string
 		addMealHint: string
 		camera: string
 		gallery: string
+		cameraFrameHint: string
+		cameraCapture: string
 		analyzing: string
 		analyzeError: string
+		analysisResult: string
+		confirmMeal: string
+		discardMeal: string
 		loadError: string
 		permissionTitle: string
 		permissionBody: string
 		editMeal: string
+		mealDetails: string
+		macros: string
 		name: string
 		save: string
 		saveError: string
@@ -841,12 +913,37 @@ export interface Translations {
 		resetLimits: string
 		updateRequiredTitle: string
 		updateRequiredBody: string
+		photoLeft: string
+		photoNeedPremium: string
+		photoLimitReached: string
+		historyFab: string
+		mg: string
+		ug: string
+		vitVitaminC: string
+		vitVitaminA: string
+		vitVitaminD: string
+		vitVitaminB12: string
+		vitVitaminB6: string
+		vitVitaminE: string
+		vitVitaminK: string
+		vitIron: string
+		vitCalcium: string
+		vitMagnesium: string
+		vitPotassium: string
+		vitZinc: string
+		vitSodium: string
+		vitFiber: string
+		vitFolate: string
+		vitPhosphorus: string
+		vitSelenium: string
 	}
 	profile: {
     title: string
     subtitle: string
     ratingEntry: string
     ratingEntrySubtitle: string
+    leaderboardEntry: string
+    leaderboardEntrySubtitle: string
     ratingSocialSection: string
     templatesEntry: string
     templatesEntrySubtitle: string
@@ -940,6 +1037,10 @@ export interface Translations {
     search: string
     searchPlaceholder: string
     empty: string
+    mealPhotos: string
+    mealPhotosAdd: string
+    mealPhotosSet: string
+    mealPhotosHint: string
   }
   trial: {
     badge: string
@@ -1028,6 +1129,27 @@ export const ru: Translations = {
     confirmExercise: 'Подтверждение',
     exercisesFor: 'Упражнения для',
     selectedExercise: 'Выбрано',
+    restToggle: 'Отдых',
+    restOn: 'Вкл',
+    restOff: 'Выкл',
+    restTimer: 'Отдых',
+    restSkip: 'Пропустить',
+    restAdd15: '+15 сек',
+    restMinus15: '−15 сек',
+    restSetDuration: 'Задать время',
+    restDone: 'Отдых окончен',
+    restStart: 'Отдых',
+    restReset: 'Сброс',
+    restBetweenSets: 'Между подходами',
+    restBetweenExercises: 'Между упражнениями',
+    nextExercise: 'След. упражнение',
+    exercisesList: 'Упражнения',
+    mediaBoth: 'Видео и фото',
+    mediaVideo: 'Только видео',
+    mediaPhotos: 'Только фото',
+    mediaHidden: 'Скрыть медиа',
+    focusMode: 'Фокус',
+    listMode: 'Список',
   },
   exercises: {
     title: 'Выберите упражнение',
@@ -1070,6 +1192,8 @@ export const ru: Translations = {
     repsShort: 'пов',
     volumeLabel: 'объём',
     maxLabel: 'макс',
+    favorites: 'Избранное',
+    favoritesEmpty: 'Пока нет избранных — нажмите ★ на упражнении',
   },
   templates: {
     title: 'Шаблоны',
@@ -1208,6 +1332,7 @@ export const ru: Translations = {
     feature3: 'Расширенная аналитика и графики',
     feature4: 'Таблица лидеров — сравни себя с другими',
     feature5: 'Отслеживание восстановления мышц',
+    feature6: 'AI-анализ еды по фото — до 240 раз в месяц',
     cancelAnytime: 'Отмена в любое время',
   },
   sync: {
@@ -1334,7 +1459,7 @@ export const ru: Translations = {
     maxLevel: 'Максимальный уровень достигнут!',
     levelLabel: 'Уровень',
     premiumGateTitle: 'Доступно только Premium',
-    premiumGateSubtitle: 'Рейтинги, уровни, достижения, лидерборд и синхронизация — всё в одной подписке.',
+    premiumGateSubtitle: 'Рейтинги, уровни, достижения, лидерборд, синхронизация и AI-анализ еды — всё в одной подписке.',
     premiumGateBtn: 'Открыть Premium',
     scoreBreakdown: 'Из чего складывается рейтинг',
     workoutPts: 'Тренировки',
@@ -1508,6 +1633,7 @@ export const ru: Translations = {
     featureRecovery: 'Восстановление',
     featureRating: 'Рейтинг',
     featureLeaderboard: 'Лидерборд',
+    featureFood: 'AI-анализ еды',
     cta: 'Получить Premium →',
     later: 'Позже',
   },
@@ -1724,6 +1850,8 @@ export const ru: Translations = {
   },
   history: {
     title: 'Вся история',
+    tabWorkouts: 'Тренировки',
+    tabFood: 'Еда',
     filterByMuscle: 'Фильтровать по мышцам',
     allMuscles: 'Все мышцы',
     exercises: 'упр.',
@@ -1734,6 +1862,12 @@ export const ru: Translations = {
     startFirst: 'Начните свою первую тренировку!',
     noWorkoutsFilter: 'По выбранному фильтру тренировки не найдены',
     workoutsLoading: 'Загрузка тренировок...',
+    foodLoading: 'Загрузка еды...',
+    noFood: 'Нет записей о еде',
+    noFoodBody: 'Сфотографируйте приём пищи — он появится здесь',
+    meal1: 'приём пищи',
+    meal2: 'приёма пищи',
+    meal5: 'приёмов пищи',
     workout1: 'тренировка',
     workout2: 'тренировки',
     workout5: 'тренировок',
@@ -1774,6 +1908,18 @@ export const ru: Translations = {
     workoutReminderTitle: 'Время тренировки!',
 		workoutReminderBody:
 			'Не забудь про сегодняшнюю тренировку — ты уже так близко к цели!',
+		restSection: 'Отдых между подходами',
+		restEnabledDefault: 'Автоотдых на тренировке',
+		restEnabledDefaultSubtitle: 'Таймер включается после каждого подхода',
+		restBetweenSets: 'Между подходами',
+		restBetweenSetsSubtitle: 'Пауза после подхода в том же упражнении',
+		restBetweenExercises: 'Между упражнениями',
+		restBetweenExercisesSubtitle: 'Пауза после последнего подхода упражнения',
+		restPickDuration: 'Длительность',
+		recoveryDurationSection: 'Время восстановления мышц',
+		recoveryDurationSubtitle:
+			'Сколько часов нужно группе до полной готовности. Можно настроить под себя.',
+		recoveryDurationHours: '{hours} ч',
 	},
 	nutrition: {
 		today: 'Сегодня',
@@ -1781,27 +1927,41 @@ export const ru: Translations = {
 		over: 'сверх цели',
 		leftKcal: 'осталось ккал',
 		overKcal: 'сверх ккал',
+		eaten: 'Съедено',
 		leftProtein: 'осталось белков',
 		overProtein: 'сверх белков',
+		leftCarbs: 'осталось углеводов',
+		overCarbs: 'сверх углеводов',
+		leftFat: 'осталось жиров',
+		overFat: 'сверх жиров',
 		kcal: 'ккал',
 		g: 'г',
+		calories: 'Калории',
 		protein: 'Белки',
 		carbs: 'Углеводы',
 		fat: 'Жиры',
 		vitamins: 'Витамины',
 		meals: 'Приёмы пищи',
+		foodIntake: 'Приём пищи',
 		emptyTitle: 'Пока пусто',
 		emptyBody: 'Сфотографируй еду — мы оценим калории и БЖУ',
 		addMeal: 'Добавить еду',
 		addMealHint: 'Сделай фото или выбери из галереи',
 		camera: 'Камера',
 		gallery: 'Галерея',
+		cameraFrameHint: 'Наведите камеру на еду',
+		cameraCapture: 'Сфотографировать',
 		analyzing: 'Анализируем фото…',
 		analyzeError: 'Не удалось разобрать фото',
+		analysisResult: 'Результат анализа',
+		confirmMeal: 'Подтвердить',
+		discardMeal: 'Отклонить',
 		loadError: 'Не удалось загрузить день',
 		permissionTitle: 'Нужен доступ',
 		permissionBody: 'Разрешите камеру или галерею, чтобы добавить еду',
 		editMeal: 'Изменить',
+		mealDetails: 'Блюдо',
+		macros: 'БЖУ',
 		name: 'Название',
 		save: 'Сохранить',
 		saveError: 'Не удалось сохранить',
@@ -1812,18 +1972,42 @@ export const ru: Translations = {
 		editLimits: 'Задать лимиты',
 		editLimitsCustom: 'Мои лимиты',
 		limitsTitle: 'Дневные лимиты',
-		limitsHint:
-			'Укажите свои цели по калориям и БЖУ. Они заменят автоматический расчёт.',
-		resetLimits: 'Вернуть авторасчёт',
+		limitsHint: 'Эти значения заменят авторасчёт на сегодня и дальше',
+		resetLimits: 'Сбросить к авто',
 		updateRequiredTitle: 'Нужно обновить приложение',
 		updateRequiredBody:
 			'Фото еды работает только в новой версии Fitex. Обновите приложение в App Store или Google Play.',
+		photoLeft: 'фото',
+		photoNeedPremium: 'Фото еды доступно только с Premium',
+		photoLimitReached: 'Лимит фото на этот месяц закончился (240)',
+		historyFab: 'История еды',
+		mg: 'мг',
+		ug: 'мкг',
+		vitVitaminC: 'Витамин C',
+		vitVitaminA: 'Витамин A',
+		vitVitaminD: 'Витамин D',
+		vitVitaminB12: 'Витамин B12',
+		vitVitaminB6: 'Витамин B6',
+		vitVitaminE: 'Витамин E',
+		vitVitaminK: 'Витамин K',
+		vitIron: 'Железо',
+		vitCalcium: 'Кальций',
+		vitMagnesium: 'Магний',
+		vitPotassium: 'Калий',
+		vitZinc: 'Цинк',
+		vitSodium: 'Натрий',
+		vitFiber: 'Клетчатка',
+		vitFolate: 'Фолат',
+		vitPhosphorus: 'Фосфор',
+		vitSelenium: 'Селен',
 	},
 	profile: {
     title: 'Профиль',
     subtitle: 'Управляйте аккаунтом',
     ratingEntry: 'Мой рейтинг',
     ratingEntrySubtitle: 'Уровень, достижения и очки',
+    leaderboardEntry: 'Лидерборд',
+    leaderboardEntrySubtitle: 'Рейтинг спортсменов за месяц',
     ratingSocialSection: 'Рейтинг и соцсети',
     templatesEntry: 'Шаблоны тренировок',
     templatesEntrySubtitle: 'Быстрый старт знакомых программ',
@@ -1918,6 +2102,10 @@ export const ru: Translations = {
     search: 'Найти',
     searchPlaceholder: 'Email или имя…',
     empty: 'Введите запрос или нажмите «Найти»',
+    mealPhotos: 'Фото еды',
+    mealPhotosAdd: '+N',
+    mealPhotosSet: 'Задать',
+    mealPhotosHint: 'осталось',
   },
   trial: {
     badge: 'Бесплатный период',
@@ -1956,7 +2144,7 @@ export const ru: Translations = {
       'Подписки не загрузились из App Store. Проверьте интернет, соглашения Paid Apps в App Store Connect и на устройстве: Настройки → App Store → Sandbox (для TestFlight).',
     androidOfferMissing: 'Не найден offer token для подписки в Google Play. Проверьте базовый план в консоли.',
     skipTitle: 'Ограниченный доступ',
-    skipBody: 'Без привязки карты будут доступны только базовые функции. Рейтинг, синхронизация и аналитика — только с подпиской.',
+    skipBody: 'Без привязки карты будут доступны только базовые функции. Рейтинг, синхронизация, аналитика и AI-анализ еды — только с подпиской.',
     skipConfirm: 'Продолжить без карты',
     noReceipt: 'Квитанция о покупке не найдена',
   },
@@ -2007,6 +2195,27 @@ export const en: Translations = {
     confirmExercise: 'Confirm',
     exercisesFor: 'Exercises for',
     selectedExercise: 'Selected',
+    restToggle: 'Rest',
+    restOn: 'On',
+    restOff: 'Off',
+    restTimer: 'Rest',
+    restSkip: 'Skip',
+    restAdd15: '+15 sec',
+    restMinus15: '−15 sec',
+    restSetDuration: 'Set duration',
+    restDone: 'Rest done',
+    restStart: 'Rest',
+    restReset: 'Reset',
+    restBetweenSets: 'Between sets',
+    restBetweenExercises: 'Between exercises',
+    nextExercise: 'Next exercise',
+    exercisesList: 'Exercises',
+    mediaBoth: 'Video & photos',
+    mediaVideo: 'Video only',
+    mediaPhotos: 'Photos only',
+    mediaHidden: 'Hide media',
+    focusMode: 'Focus',
+    listMode: 'List',
   },
   exercises: {
     title: 'Select Exercise',
@@ -2049,6 +2258,8 @@ export const en: Translations = {
     repsShort: 'reps',
     volumeLabel: 'vol',
     maxLabel: 'max',
+    favorites: 'Favorites',
+    favoritesEmpty: 'No favorites yet — tap ★ on an exercise',
   },
   templates: {
     title: 'Templates',
@@ -2187,6 +2398,7 @@ export const en: Translations = {
     feature3: 'Advanced analytics & charts',
     feature4: 'Leaderboard — compete with others',
     feature5: 'Muscle recovery tracking',
+    feature6: 'AI meal photo analysis — up to 240/month',
     cancelAnytime: 'Cancel anytime',
   },
   sync: {
@@ -2313,7 +2525,7 @@ export const en: Translations = {
     maxLevel: 'Maximum level reached!',
     levelLabel: 'Level',
     premiumGateTitle: 'Premium Only',
-    premiumGateSubtitle: 'Ratings, levels, achievements, leaderboard and cloud sync — all in one subscription.',
+    premiumGateSubtitle: 'Ratings, levels, achievements, leaderboard, cloud sync and AI meal analysis — all in one subscription.',
     premiumGateBtn: 'Unlock Premium',
     scoreBreakdown: 'How your rating is calculated',
     workoutPts: 'Workouts',
@@ -2487,6 +2699,7 @@ export const en: Translations = {
     featureRecovery: 'Recovery',
     featureRating: 'Rating',
     featureLeaderboard: 'Leaderboard',
+    featureFood: 'AI meal analysis',
     cta: 'Get Premium →',
     later: 'Maybe later',
   },
@@ -2703,6 +2916,8 @@ export const en: Translations = {
   },
   history: {
     title: 'Full History',
+    tabWorkouts: 'Workouts',
+    tabFood: 'Food',
     filterByMuscle: 'Filter by muscles',
     allMuscles: 'All muscles',
     exercises: 'exercises',
@@ -2713,6 +2928,12 @@ export const en: Translations = {
     startFirst: 'Start your first workout!',
     noWorkoutsFilter: 'No workouts found for selected filter',
     workoutsLoading: 'Loading workouts...',
+    foodLoading: 'Loading meals...',
+    noFood: 'No meals yet',
+    noFoodBody: 'Photograph a meal — it will show up here',
+    meal1: 'meal',
+    meal2: 'meals',
+    meal5: 'meals',
     workout1: 'workout',
     workout2: 'workouts',
     workout5: 'workouts',
@@ -2752,6 +2973,18 @@ export const en: Translations = {
     exportError: 'Failed to export data',
     workoutReminderTitle: 'Time to train!',
 		workoutReminderBody: "Don't skip today's workout — you're so close to your goal!",
+		restSection: 'Rest between sets',
+		restEnabledDefault: 'Auto rest in workouts',
+		restEnabledDefaultSubtitle: 'Start a timer after each completed set',
+		restBetweenSets: 'Between sets',
+		restBetweenSetsSubtitle: 'Pause after a set in the same exercise',
+		restBetweenExercises: 'Between exercises',
+		restBetweenExercisesSubtitle: 'Pause after the last set of an exercise',
+		restPickDuration: 'Duration',
+		recoveryDurationSection: 'Muscle recovery time',
+		recoveryDurationSubtitle:
+			'Hours each muscle group needs to be fully ready. Adjust to your needs.',
+		recoveryDurationHours: '{hours} h',
 	},
 	nutrition: {
 		today: 'Today',
@@ -2759,27 +2992,41 @@ export const en: Translations = {
 		over: 'over',
 		leftKcal: 'kcal left',
 		overKcal: 'kcal over',
+		eaten: 'Eaten',
 		leftProtein: 'protein left',
 		overProtein: 'protein over',
+		leftCarbs: 'carbs left',
+		overCarbs: 'carbs over',
+		leftFat: 'fat left',
+		overFat: 'fat over',
 		kcal: 'kcal',
 		g: 'g',
+		calories: 'Calories',
 		protein: 'Protein',
 		carbs: 'Carbs',
 		fat: 'Fat',
 		vitamins: 'Vitamins',
 		meals: 'Meals',
+		foodIntake: 'Food intake',
 		emptyTitle: 'Nothing yet',
 		emptyBody: 'Snap a meal — we estimate calories and macros',
 		addMeal: 'Add food',
 		addMealHint: 'Take a photo or pick from your library',
 		camera: 'Camera',
 		gallery: 'Gallery',
+		cameraFrameHint: 'Point the camera at your food',
+		cameraCapture: 'Take photo',
 		analyzing: 'Analyzing photo…',
 		analyzeError: 'Could not analyze photo',
+		analysisResult: 'Analysis result',
+		confirmMeal: 'Confirm',
+		discardMeal: 'Discard',
 		loadError: 'Could not load today',
 		permissionTitle: 'Permission needed',
 		permissionBody: 'Allow camera or photos to log food',
 		editMeal: 'Edit meal',
+		mealDetails: 'Meal',
+		macros: 'Macros',
 		name: 'Name',
 		save: 'Save',
 		saveError: 'Could not save',
@@ -2796,12 +3043,37 @@ export const en: Translations = {
 		updateRequiredTitle: 'App update required',
 		updateRequiredBody:
 			'Meal photos need the latest Fitex version. Please update the app in the App Store or Google Play.',
+		photoLeft: 'photos',
+		photoNeedPremium: 'Meal photos require Premium',
+		photoLimitReached: 'Monthly photo limit reached (240)',
+		historyFab: 'Food history',
+		mg: 'mg',
+		ug: 'µg',
+		vitVitaminC: 'Vitamin C',
+		vitVitaminA: 'Vitamin A',
+		vitVitaminD: 'Vitamin D',
+		vitVitaminB12: 'Vitamin B12',
+		vitVitaminB6: 'Vitamin B6',
+		vitVitaminE: 'Vitamin E',
+		vitVitaminK: 'Vitamin K',
+		vitIron: 'Iron',
+		vitCalcium: 'Calcium',
+		vitMagnesium: 'Magnesium',
+		vitPotassium: 'Potassium',
+		vitZinc: 'Zinc',
+		vitSodium: 'Sodium',
+		vitFiber: 'Fiber',
+		vitFolate: 'Folate',
+		vitPhosphorus: 'Phosphorus',
+		vitSelenium: 'Selenium',
 	},
 	profile: {
     title: 'Profile',
     subtitle: 'Manage your account',
     ratingEntry: 'My Rating',
     ratingEntrySubtitle: 'Level, achievements & score',
+    leaderboardEntry: 'Leaderboard',
+    leaderboardEntrySubtitle: 'Monthly athlete rankings',
     ratingSocialSection: 'Rating & social',
     templatesEntry: 'Workout templates',
     templatesEntrySubtitle: 'Quick start for familiar programs',
@@ -2896,6 +3168,10 @@ export const en: Translations = {
     search: 'Search',
     searchPlaceholder: 'Email or name…',
     empty: 'Enter a query or tap Search',
+    mealPhotos: 'Meal photos',
+    mealPhotosAdd: '+N',
+    mealPhotosSet: 'Set',
+    mealPhotosHint: 'left',
   },
   trial: {
     badge: 'Free Trial',
@@ -2934,7 +3210,7 @@ export const en: Translations = {
       'Subscriptions did not load from the store. Check your connection, Paid Apps agreements in App Store Connect, and on device: Settings → App Store → Sandbox (for TestFlight).',
     androidOfferMissing: 'No subscription offer token from Google Play. Check the base plan in Play Console.',
     skipTitle: 'Limited Access',
-    skipBody: 'Without a payment method, only basic features are available. Rating, sync, and advanced analytics require a subscription.',
+    skipBody: 'Without a payment method, only basic features are available. Rating, sync, analytics, and AI meal analysis require a subscription.',
     skipConfirm: 'Continue without card',
     noReceipt: 'No purchase receipt found',
   },
@@ -2985,6 +3261,27 @@ export const az: Translations = {
     confirmExercise: 'Təsdiqlə',
     exercisesFor: 'Hərəkətlər:',
     selectedExercise: 'Seçildi',
+    restToggle: 'İstirahət',
+    restOn: 'Açıq',
+    restOff: 'Bağlı',
+    restTimer: 'İstirahət',
+    restSkip: 'Keç',
+    restAdd15: '+15 san',
+    restMinus15: '−15 san',
+    restSetDuration: 'Vaxt seç',
+    restDone: 'İstirahət bitdi',
+    restStart: 'İstirahət',
+    restReset: 'Sıfırla',
+    restBetweenSets: 'Setlər arası',
+    restBetweenExercises: 'Məşqlər arası',
+    nextExercise: 'Növbəti hərəkət',
+    exercisesList: 'Hərəkətlər',
+    mediaBoth: 'Video və foto',
+    mediaVideo: 'Yalnız video',
+    mediaPhotos: 'Yalnız foto',
+    mediaHidden: 'Medianı gizlət',
+    focusMode: 'Fokus',
+    listMode: 'Siyahı',
   },
   exercises: {
     title: 'Hərəkət seçin',
@@ -3027,6 +3324,8 @@ export const az: Translations = {
     repsShort: 'dəfə',
     volumeLabel: 'həcm',
     maxLabel: 'maks',
+    favorites: 'Seçilmişlər',
+    favoritesEmpty: 'Hələ seçilmiş yoxdur — hərəkətdə ★ düyməsinə basın',
   },
   templates: {
     title: 'Şablonlar',
@@ -3165,6 +3464,7 @@ export const az: Translations = {
     feature3: 'Ətraflı analitika və qrafiklər',
     feature4: 'Liderlik cədvəli — başqalarıyla rəqabət',
     feature5: 'Əzələ bərpasının izlənməsi',
+    feature6: 'AI yemək foto analizi — ayda 240 dəfəyə qədər',
     cancelAnytime: 'İstənilən vaxt ləğv edin',
   },
   sync: {
@@ -3291,7 +3591,7 @@ export const az: Translations = {
     maxLevel: 'Maksimum səviyyəyə çatıldı!',
     levelLabel: 'Səviyyə',
     premiumGateTitle: 'Yalnız Premium üçün',
-    premiumGateSubtitle: 'Reytinq, səviyyələr, nailiyyətlər, liderlik cədvəli və sinxronizasiya — bir abunədə hər şey.',
+    premiumGateSubtitle: 'Reytinq, səviyyələr, nailiyyətlər, liderlik cədvəli, sinxronizasiya və AI yemək analizi — bir abunədə hər şey.',
     premiumGateBtn: 'Premium-u açın',
     scoreBreakdown: 'Reytinq necə hesablanır',
     workoutPts: 'Məşqlər',
@@ -3465,6 +3765,7 @@ export const az: Translations = {
     featureRecovery: 'Bərpa',
     featureRating: 'Reytinq',
     featureLeaderboard: 'Liderlik',
+    featureFood: 'AI yemək analizi',
     cta: 'Premium al →',
     later: 'Sonra',
   },
@@ -3681,6 +3982,8 @@ export const az: Translations = {
   },
   history: {
     title: 'Tam tarixçə',
+    tabWorkouts: 'Məşqlər',
+    tabFood: 'Yemək',
     filterByMuscle: 'Əzələyə görə filtrləyin',
     allMuscles: 'Bütün əzələlər',
     exercises: 'məşq',
@@ -3691,6 +3994,12 @@ export const az: Translations = {
     startFirst: 'İlk məşqinizə başlayın!',
     noWorkoutsFilter: 'Seçilmiş filtrlə məşq tapılmadı',
     workoutsLoading: 'Məşqlər yüklənir...',
+    foodLoading: 'Yeməklər yüklənir...',
+    noFood: 'Yemək qeydi yoxdur',
+    noFoodBody: 'Yemək fotoşəkilini çəkin — burada görünəcək',
+    meal1: 'yemək',
+    meal2: 'yemək',
+    meal5: 'yemək',
     workout1: 'məşq',
     workout2: 'məşq',
     workout5: 'məşq',
@@ -3730,6 +4039,18 @@ export const az: Translations = {
     exportError: 'Məlumatları ixrac etmək mümkün olmadı',
     workoutReminderTitle: 'Məşq vaxtı!',
 		workoutReminderBody: 'Bu günkü məşqi unutma — məqsədə çox yaxınsan!',
+		restSection: 'Setlər arası istirahət',
+		restEnabledDefault: 'Məşqdə avtomatik istirahət',
+		restEnabledDefaultSubtitle: 'Hər setdən sonra taymer başlayır',
+		restBetweenSets: 'Setlər arası',
+		restBetweenSetsSubtitle: 'Eyni məşqdə setdən sonra fasilə',
+		restBetweenExercises: 'Məşqlər arası',
+		restBetweenExercisesSubtitle: 'Məşqin son setindən sonra fasilə',
+		restPickDuration: 'Müddət',
+		recoveryDurationSection: 'Əzələ bərpa vaxtı',
+		recoveryDurationSubtitle:
+			'Hər əzələ qrupunun tam hazır olması üçün saat sayı. İstəyə görə dəyişin.',
+		recoveryDurationHours: '{hours} saat',
 	},
 	nutrition: {
 		today: 'Bu gün',
@@ -3737,27 +4058,41 @@ export const az: Translations = {
 		over: 'artıq',
 		leftKcal: 'kkal qalıb',
 		overKcal: 'kkal artıq',
+		eaten: 'Yeyilib',
 		leftProtein: 'zülal qalıb',
 		overProtein: 'zülal artıq',
+		leftCarbs: 'karbohidrat qalıb',
+		overCarbs: 'karbohidrat artıq',
+		leftFat: 'yağ qalıb',
+		overFat: 'yağ artıq',
 		kcal: 'kkal',
 		g: 'q',
+		calories: 'Kaloriya',
 		protein: 'Zülal',
 		carbs: 'Karbohidrat',
 		fat: 'Yağ',
 		vitamins: 'Vitaminlər',
 		meals: 'Yeməklər',
+		foodIntake: 'Qida qəbulu',
 		emptyTitle: 'Hələ boşdur',
 		emptyBody: 'Yeməyi çək — kalori və BJU qiymətləndirəcəyik',
 		addMeal: 'Yemək əlavə et',
 		addMealHint: 'Foto çək və ya qalereyadan seç',
 		camera: 'Kamera',
 		gallery: 'Qalereya',
+		cameraFrameHint: 'Kameranı yeməyə yönəldin',
+		cameraCapture: 'Foto çək',
 		analyzing: 'Foto təhlil olunur…',
 		analyzeError: 'Fotonu təhlil etmək mümkün olmadı',
+		analysisResult: 'Təhlil nəticəsi',
+		confirmMeal: 'Təsdiqlə',
+		discardMeal: 'Rədd et',
 		loadError: 'Günü yükləmək mümkün olmadı',
 		permissionTitle: 'İcazə lazımdır',
 		permissionBody: 'Yemək əlavə etmək üçün kamera və ya foto icazəsi verin',
 		editMeal: 'Redaktə',
+		mealDetails: 'Yemək',
+		macros: 'BJU',
 		name: 'Ad',
 		save: 'Saxla',
 		saveError: 'Saxlamaq mümkün olmadı',
@@ -3774,12 +4109,37 @@ export const az: Translations = {
 		updateRequiredTitle: 'Tətbiqi yeniləmək lazımdır',
 		updateRequiredBody:
 			'Yemək fotoları yalnız yeni Fitex versiyasında işləyir. App Store və ya Google Play-də tətbiqi yeniləyin.',
+		photoLeft: 'foto',
+		photoNeedPremium: 'Yemək fotosu yalnız Premium ilə mümkündür',
+		photoLimitReached: 'Bu ay üçün foto limiti bitib (240)',
+		historyFab: 'Yemək tarixçəsi',
+		mg: 'mq',
+		ug: 'mkq',
+		vitVitaminC: 'Vitamin C',
+		vitVitaminA: 'Vitamin A',
+		vitVitaminD: 'Vitamin D',
+		vitVitaminB12: 'Vitamin B12',
+		vitVitaminB6: 'Vitamin B6',
+		vitVitaminE: 'Vitamin E',
+		vitVitaminK: 'Vitamin K',
+		vitIron: 'Dəmir',
+		vitCalcium: 'Kalsium',
+		vitMagnesium: 'Maqnezium',
+		vitPotassium: 'Kalium',
+		vitZinc: 'Sink',
+		vitSodium: 'Natrium',
+		vitFiber: 'Lif',
+		vitFolate: 'Folat',
+		vitPhosphorus: 'Fosfor',
+		vitSelenium: 'Selen',
 	},
 	profile: {
     title: 'Profil',
     subtitle: 'Hesabınızı idarə edin',
     ratingEntry: 'Mənim reytinqim',
     ratingEntrySubtitle: 'Səviyyə, nailiyyətlər və bal',
+    leaderboardEntry: 'Liderlik lövhəsi',
+    leaderboardEntrySubtitle: 'Aylıq idmançı reytinqi',
     ratingSocialSection: 'Reytinq və sosial şəbəkələr',
     templatesEntry: 'Məşq şablonları',
     templatesEntrySubtitle: 'Tanış proqramlara sürətli start',
@@ -3874,6 +4234,10 @@ export const az: Translations = {
     search: 'Axtar',
     searchPlaceholder: 'Email və ya ad…',
     empty: 'Sorğu yazın və ya Axtar düyməsinə basın',
+    mealPhotos: 'Yemək fotoları',
+    mealPhotosAdd: '+N',
+    mealPhotosSet: 'Təyin et',
+    mealPhotosHint: 'qalıb',
   },
   trial: {
     badge: 'Pulsuz Sınaq',
@@ -3897,7 +4261,7 @@ export const az: Translations = {
     termsLink: 'İstifadə Şərtləri',
     privacyLink: 'Məxfilik Siyasəti',
     skipTitle: 'Məhdud Giriş',
-    skipBody: 'Ödəniş metodu olmadan yalnız əsas funksiyalar mövcuddur. Reytinq, sinxronizasiya və analitika üçün abunəlik tələb olunur.',
+    skipBody: 'Ödəniş metodu olmadan yalnız əsas funksiyalar mövcuddur. Reytinq, sinxronizasiya, analitika və AI yemək analizi üçün abunəlik tələb olunur.',
     skipConfirm: 'Kartsız davam et',
     noReceipt: 'Alış qəbzi tapılmadı',
     timelineCard: 'Bu gün',
@@ -3918,16 +4282,13 @@ export const az: Translations = {
   },
 }
 
-export const translations: Record<Language, Translations> = { ru, en, az }
-
-export const LANGUAGE_NAMES: Record<Language, string> = {
-  ru: 'Русский',
-  en: 'English',
-  az: 'Azərbaycanca',
-}
-
-export const LANGUAGE_FLAGS: Record<Language, string> = {
-  ru: '🇷🇺',
-  en: '🇬🇧',
-  az: '🇦🇿',
-}
+export const translations: Record<Language, Translations> = (() => {
+	const core = { ru, en, az } as Record<Language, Translations>
+	// Generated packs (machine-translated from EN) — fall back to EN if missing
+	const packCodes = LANGUAGE_CODES.filter(c => c !== 'ru' && c !== 'en' && c !== 'az')
+	for (const code of packCodes) {
+		const pack = GENERATED_PACKS[code as keyof typeof GENERATED_PACKS]
+		core[code] = (pack as Translations | undefined) ?? en
+	}
+	return core
+})()

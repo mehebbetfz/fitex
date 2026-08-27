@@ -5,6 +5,7 @@ import { premiumGrantFields } from 'src/common/premium-grant'
 import { Subscription, SubscriptionDocument } from 'src/models/subscription.schema'
 import { User, UserDocument } from 'src/models/user.schema'
 import { IapService } from '../iap/iap.service'
+import { AdminNotificationService } from '../admin-notification/admin-notification.service'
 
 @Injectable()
 export class SubscriptionService {
@@ -12,9 +13,16 @@ export class SubscriptionService {
 		@InjectModel(Subscription.name) private subModel: Model<SubscriptionDocument>,
 		@InjectModel(User.name) private userModel: Model<UserDocument>,
 		private iapService: IapService,
+		private adminNotification: AdminNotificationService,
 	) {}
 
 	async verifyAndActivate(userId: string, receipt: string, platform: 'ios' | 'android') {
+		const userBefore = await this.userModel.findById(userId).lean()
+		const wasPremiumActive =
+			!!userBefore?.isPremium &&
+			(!userBefore.premiumExpiresAt ||
+				new Date(userBefore.premiumExpiresAt).getTime() > Date.now())
+
 		const verification = await this.iapService.verifyReceipt(receipt, platform)
 		if (!verification.valid) {
 			throw new BadRequestException(
@@ -89,6 +97,14 @@ export class SubscriptionService {
 		await this.userModel.findByIdAndUpdate(userId, {
 			$set: premiumGrantFields(expirationDate),
 		})
+
+		if (!wasPremiumActive && userBefore) {
+			this.adminNotification.notifyPremiumPurchase(userBefore, {
+				productId: verification.productId,
+				platform,
+				expiresAt: expirationDate,
+			})
+		}
 
 		return {
 			success: true,

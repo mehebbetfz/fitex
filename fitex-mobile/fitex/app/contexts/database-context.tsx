@@ -60,8 +60,27 @@ import React, {
 	useRef,
 	useState,
 } from 'react'
-import { Alert } from 'react-native'
-import { hasActivePremium, useAuth } from './auth-context'
+import { Alert, InteractionManager } from 'react-native'
+
+const MERGE_CHUNK = 12
+let syncQueue: Promise<void> = Promise.resolve()
+
+function enqueueSync(task: () => Promise<void>): Promise<void> {
+	const run = syncQueue.then(task, task)
+	syncQueue = run.then(
+		() => undefined,
+		() => undefined,
+	)
+	return run
+}
+
+function yieldToUI(): Promise<void> {
+	return new Promise(resolve => {
+		InteractionManager.runAfterInteractions(() => {
+			setTimeout(resolve, 0)
+		})
+	})
+}
 
 interface DatabaseContextType {
 	isInitialized: boolean
@@ -300,68 +319,59 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 		[],
 	)
 
-	const { user } = useAuth()
-
-	// Добавить в DatabaseProvider после useAuth():
-	const hasSyncedOnStartup = useRef(false)
-
-	// Отправка несинхронизированных данных — вызывается при старте
+	// Отправка несинхронизированных данных — вызывается при старте (без блокировки UI)
 	const syncUnsyncedData = useCallback(async (isPremium: boolean) => {
 		if (!isPremium) return
 
 		const networkState = await Network.getNetworkStateAsync()
 		if (!networkState.isConnected || !networkState.isInternetReachable) return
 
-		try {
-			const unsyncedWorkouts = await getWorkouts(undefined, undefined, {
-				synced: false,
-			})
-			const unsyncedMeasurements = await getBodyMeasurements({ synced: false })
-			const unsyncedRecords = await getPersonalRecords({ synced: false })
+		return enqueueSync(async () => {
+			try {
+				const unsyncedWorkouts = await getWorkouts(undefined, undefined, {
+					synced: false,
+				})
+				const unsyncedMeasurements = await getBodyMeasurements({ synced: false })
+				const unsyncedRecords = await getPersonalRecords({ synced: false })
 
-			const hasUnsynced =
-				unsyncedWorkouts.length > 0 ||
-				unsyncedMeasurements.length > 0 ||
-				unsyncedRecords.length > 0
+				const hasUnsynced =
+					unsyncedWorkouts.length > 0 ||
+					unsyncedMeasurements.length > 0 ||
+					unsyncedRecords.length > 0
 
-			if (!hasUnsynced) return
+				if (!hasUnsynced) return
 
-			setIsLoading(true)
+				await api.post('/sync/upload', {
+					workouts: unsyncedWorkouts,
+					bodyMeasurements: unsyncedMeasurements,
+					personalRecords: unsyncedRecords,
+				})
 
-			await api.post('/sync/upload', {
-				workouts: unsyncedWorkouts,
-				bodyMeasurements: unsyncedMeasurements,
-				personalRecords: unsyncedRecords,
-			})
+				await markAsSynced(
+					'workouts',
+					unsyncedWorkouts
+						.map(w => w.id)
+						.filter((id): id is number => id !== undefined),
+				)
+				await markAsSynced(
+					'body_measurements',
+					unsyncedMeasurements
+						.map(m => m.id)
+						.filter((id): id is number => id !== undefined),
+				)
+				await markAsSynced(
+					'personal_records',
+					unsyncedRecords
+						.map(r => r.id)
+						.filter((id): id is number => id !== undefined),
+				)
 
-			await markAsSynced(
-				'workouts',
-				unsyncedWorkouts
-					.map(w => w.id)
-					.filter((id): id is number => id !== undefined),
-			)
-			await markAsSynced(
-				'body_measurements',
-				unsyncedMeasurements
-					.map(m => m.id)
-					.filter((id): id is number => id !== undefined),
-			)
-			await markAsSynced(
-				'personal_records',
-				unsyncedRecords
-					.map(r => r.id)
-					.filter((id): id is number => id !== undefined),
-			)
-
-			console.log('Auto-sync completed')
-		} catch (error) {
-			console.error('Auto-sync error:', error)
-		} finally {
-			setIsLoading(false)
-		}
+				console.log('Auto-sync completed')
+			} catch (error) {
+				console.error('Auto-sync error:', error)
+			}
+		})
 	}, [])
-
-	// DatabaseContext.tsx
 
 	const mergeServerData = useCallback(
 		async (serverData: {
@@ -370,193 +380,202 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 			personalRecords?: any[]
 		}) => {
 			const db = openDatabase()
+			const workouts = serverData.workouts ?? []
+			const measurements = serverData.bodyMeasurements ?? []
+			const records = serverData.personalRecords ?? []
 
-			await db.withTransactionAsync(async () => {
-				// ===== ТРЕНИРОВКИ =====
-				for (const serverWorkout of serverData.workouts ?? []) {
-					const localId = serverWorkout.localId
-
-					if (serverWorkout.isDeleted) {
-						await db.runAsync('DELETE FROM workouts WHERE id = ?', localId)
-						continue
+			const processChunk = async <T,>(
+				items: T[],
+				handler: (item: T) => Promise<void>,
+			) => {
+				for (let i = 0; i < items.length; i += MERGE_CHUNK) {
+					const chunk = items.slice(i, i + MERGE_CHUNK)
+					await db.withTransactionAsync(async () => {
+						for (const item of chunk) {
+							await handler(item)
+						}
+					})
+					if (i + MERGE_CHUNK < items.length) {
+						await yieldToUI()
 					}
+				}
+			}
 
-					const local = await db.getFirstAsync<{ id: number; synced: number }>(
-						'SELECT id, synced FROM workouts WHERE id = ?',
-						localId,
-					)
+			await processChunk(workouts, async (serverWorkout: any) => {
+				const localId = serverWorkout.localId
 
-					if (!local) {
-						// Записи нет локально — вставляем с сервера
-						await db.runAsync(
-							`
+				if (serverWorkout.isDeleted) {
+					await db.runAsync('DELETE FROM workouts WHERE id = ?', localId)
+					return
+				}
+
+				const local = await db.getFirstAsync<{ id: number; synced: number }>(
+					'SELECT id, synced FROM workouts WHERE id = ?',
+					localId,
+				)
+
+				if (!local) {
+					await db.runAsync(
+						`
           INSERT INTO workouts
             (id, date, time, duration, type, muscle_groups, exercises_count, sets_count, volume, notes, rating, synced)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         `,
-							[
-								localId,
-								serverWorkout.date,
-								serverWorkout.time,
-								serverWorkout.duration,
-								serverWorkout.type,
-								serverWorkout.muscleGroups ?? serverWorkout.muscle_groups,
-								serverWorkout.exercisesCount ?? serverWorkout.exercises_count,
-								serverWorkout.setsCount ?? serverWorkout.sets_count,
-								serverWorkout.volume,
-								serverWorkout.notes ?? null,
-								serverWorkout.rating ?? null,
-							],
-						)
-					} else if (local.synced === 1) {
-						// Локальная версия уже синхронизирована — обновляем данными с сервера
-						await db.runAsync(
-							`
+						[
+							localId,
+							serverWorkout.date,
+							serverWorkout.time,
+							serverWorkout.duration,
+							serverWorkout.type,
+							serverWorkout.muscleGroups ?? serverWorkout.muscle_groups,
+							serverWorkout.exercisesCount ?? serverWorkout.exercises_count,
+							serverWorkout.setsCount ?? serverWorkout.sets_count,
+							serverWorkout.volume,
+							serverWorkout.notes ?? null,
+							serverWorkout.rating ?? null,
+						],
+					)
+				} else if (local.synced === 1) {
+					await db.runAsync(
+						`
           UPDATE workouts SET
             date = ?, time = ?, duration = ?, type = ?,
             muscle_groups = ?, exercises_count = ?, sets_count = ?,
             volume = ?, notes = ?, rating = ?, synced = 1
           WHERE id = ?
         `,
-							[
-								serverWorkout.date,
-								serverWorkout.time,
-								serverWorkout.duration,
-								serverWorkout.type,
-								serverWorkout.muscleGroups ?? serverWorkout.muscle_groups,
-								serverWorkout.exercisesCount ?? serverWorkout.exercises_count,
-								serverWorkout.setsCount ?? serverWorkout.sets_count,
-								serverWorkout.volume,
-								serverWorkout.notes ?? null,
-								serverWorkout.rating ?? null,
-								localId,
-							],
-						)
-					}
-					// synced === 0 — локальные изменения не трогаем, они уйдут в upload
-				}
-
-				// ===== ЗАМЕРЫ ТЕЛА =====
-				for (const serverMeasurement of serverData.bodyMeasurements ?? []) {
-					const localId = serverMeasurement.localId
-
-					if (serverMeasurement.isDeleted) {
-						await db.runAsync(
-							'DELETE FROM body_measurements WHERE id = ?',
+						[
+							serverWorkout.date,
+							serverWorkout.time,
+							serverWorkout.duration,
+							serverWorkout.type,
+							serverWorkout.muscleGroups ?? serverWorkout.muscle_groups,
+							serverWorkout.exercisesCount ?? serverWorkout.exercises_count,
+							serverWorkout.setsCount ?? serverWorkout.sets_count,
+							serverWorkout.volume,
+							serverWorkout.notes ?? null,
+							serverWorkout.rating ?? null,
 							localId,
-						)
-						continue
-					}
+						],
+					)
+				}
+			})
 
-					const local = await db.getFirstAsync<{ id: number; synced: number }>(
-						'SELECT id, synced FROM body_measurements WHERE id = ?',
+			await processChunk(measurements, async (serverMeasurement: any) => {
+				const localId = serverMeasurement.localId
+
+				if (serverMeasurement.isDeleted) {
+					await db.runAsync(
+						'DELETE FROM body_measurements WHERE id = ?',
 						localId,
 					)
+					return
+				}
 
-					if (!local) {
-						await db.runAsync(
-							`
+				const local = await db.getFirstAsync<{ id: number; synced: number }>(
+					'SELECT id, synced FROM body_measurements WHERE id = ?',
+					localId,
+				)
+
+				if (!local) {
+					await db.runAsync(
+						`
           INSERT INTO body_measurements (id, name, value, unit, date, trend, goal, synced)
           VALUES (?, ?, ?, ?, ?, ?, ?, 1)
         `,
-							[
-								localId,
-								serverMeasurement.name,
-								serverMeasurement.value,
-								serverMeasurement.unit,
-								serverMeasurement.date,
-								serverMeasurement.trend,
-								serverMeasurement.goal ?? null,
-							],
-						)
-					} else if (local.synced === 1) {
-						await db.runAsync(
-							`
+						[
+							localId,
+							serverMeasurement.name,
+							serverMeasurement.value,
+							serverMeasurement.unit,
+							serverMeasurement.date,
+							serverMeasurement.trend,
+							serverMeasurement.goal ?? null,
+						],
+					)
+				} else if (local.synced === 1) {
+					await db.runAsync(
+						`
           UPDATE body_measurements SET
             name = ?, value = ?, unit = ?, date = ?, trend = ?, goal = ?, synced = 1
           WHERE id = ?
         `,
-							[
-								serverMeasurement.name,
-								serverMeasurement.value,
-								serverMeasurement.unit,
-								serverMeasurement.date,
-								serverMeasurement.trend,
-								serverMeasurement.goal ?? null,
-								localId,
-							],
-						)
-					}
+						[
+							serverMeasurement.name,
+							serverMeasurement.value,
+							serverMeasurement.unit,
+							serverMeasurement.date,
+							serverMeasurement.trend,
+							serverMeasurement.goal ?? null,
+							localId,
+						],
+					)
+				}
+			})
+
+			await processChunk(records, async (serverRecord: any) => {
+				const localId = serverRecord.localId
+
+				if (serverRecord.isDeleted) {
+					await db.runAsync('DELETE FROM personal_records WHERE id = ?', localId)
+					return
 				}
 
-				// ===== ЛИЧНЫЕ РЕКОРДЫ =====
-				for (const serverRecord of serverData.personalRecords ?? []) {
-					const localId = serverRecord.localId
+				const local = await db.getFirstAsync<{ id: number; synced: number }>(
+					'SELECT id, synced FROM personal_records WHERE id = ?',
+					localId,
+				)
 
-					if (serverRecord.isDeleted) {
-						await db.runAsync(
-							'DELETE FROM personal_records WHERE id = ?',
-							localId,
-						)
-						continue
-					}
-
-					const local = await db.getFirstAsync<{ id: number; synced: number }>(
-						'SELECT id, synced FROM personal_records WHERE id = ?',
-						localId,
-					)
-
-					if (!local) {
-						await db.runAsync(
-							`
+				if (!local) {
+					await db.runAsync(
+						`
           INSERT INTO personal_records
             (id, exercise, weight, date, trend, category, notes, previous_record, improvement, synced)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         `,
-							[
-								localId,
-								serverRecord.exercise,
-								serverRecord.weight,
-								serverRecord.date,
-								serverRecord.trend,
-								serverRecord.category,
-								serverRecord.notes ?? null,
-								serverRecord.previousRecord ??
-									serverRecord.previous_record ??
-									null,
-								serverRecord.improvement ?? null,
-							],
-						)
-					} else if (local.synced === 1) {
-						await db.runAsync(
-							`
+						[
+							localId,
+							serverRecord.exercise,
+							serverRecord.weight,
+							serverRecord.date,
+							serverRecord.trend,
+							serverRecord.category,
+							serverRecord.notes ?? null,
+							serverRecord.previousRecord ??
+								serverRecord.previous_record ??
+								null,
+							serverRecord.improvement ?? null,
+						],
+					)
+				} else if (local.synced === 1) {
+					await db.runAsync(
+						`
           UPDATE personal_records SET
             exercise = ?, weight = ?, date = ?, trend = ?, category = ?,
             notes = ?, previous_record = ?, improvement = ?, synced = 1
           WHERE id = ?
         `,
-							[
-								serverRecord.exercise,
-								serverRecord.weight,
-								serverRecord.date,
-								serverRecord.trend,
-								serverRecord.category,
-								serverRecord.notes ?? null,
-								serverRecord.previousRecord ??
-									serverRecord.previous_record ??
-									null,
-								serverRecord.improvement ?? null,
-								localId,
-							],
-						)
-					}
+						[
+							serverRecord.exercise,
+							serverRecord.weight,
+							serverRecord.date,
+							serverRecord.trend,
+							serverRecord.category,
+							serverRecord.notes ?? null,
+							serverRecord.previousRecord ??
+								serverRecord.previous_record ??
+								null,
+							serverRecord.improvement ?? null,
+							localId,
+						],
+					)
 				}
 			})
 		},
 		[],
 	)
 
-	// Полная двусторонняя синхронизация — при логине или смене аккаунта
+	// Полная двусторонняя синхронизация — без блокирующего isLoading
 	const performInitialSync = useCallback(
 		async (isPremium: boolean) => {
 			if (!isPremium) return
@@ -564,84 +583,89 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 			const networkState = await Network.getNetworkStateAsync()
 			if (!networkState.isConnected) return
 
-			try {
-				setIsLoading(true)
+			return enqueueSync(async () => {
+				try {
+					const { data: serverData } = await api.get('/sync/download')
+					await mergeServerData(serverData)
+					await yieldToUI()
 
-				// Шаг 1: Скачиваем всё с сервера и мержим
-				const { data: serverData } = await api.get('/sync/download')
-				await mergeServerData(serverData)
-
-				// Шаг 2: Отправляем локальные несинхронизированные данные
-				const unsyncedWorkouts = await getWorkouts(undefined, undefined, {
-					synced: false,
-				})
-				const unsyncedMeasurements = await getBodyMeasurements({
-					synced: false,
-				})
-				const unsyncedRecords = await getPersonalRecords({ synced: false })
-
-				const hasUnsynced =
-					unsyncedWorkouts.length > 0 ||
-					unsyncedMeasurements.length > 0 ||
-					unsyncedRecords.length > 0
-
-				if (hasUnsynced) {
-					await api.post('/sync/upload', {
-						workouts: unsyncedWorkouts,
-						bodyMeasurements: unsyncedMeasurements,
-						personalRecords: unsyncedRecords,
+					const unsyncedWorkouts = await getWorkouts(undefined, undefined, {
+						synced: false,
 					})
+					const unsyncedMeasurements = await getBodyMeasurements({
+						synced: false,
+					})
+					const unsyncedRecords = await getPersonalRecords({ synced: false })
 
-					await markAsSynced(
-						'workouts',
-						unsyncedWorkouts
-							.map(w => w.id)
-							.filter((id): id is number => id !== undefined),
-					)
-					await markAsSynced(
-						'body_measurements',
-						unsyncedMeasurements
-							.map(m => m.id)
-							.filter((id): id is number => id !== undefined),
-					)
-					await markAsSynced(
-						'personal_records',
-						unsyncedRecords
-							.map(r => r.id)
-							.filter((id): id is number => id !== undefined),
-					)
+					const hasUnsynced =
+						unsyncedWorkouts.length > 0 ||
+						unsyncedMeasurements.length > 0 ||
+						unsyncedRecords.length > 0
+
+					if (hasUnsynced) {
+						await api.post('/sync/upload', {
+							workouts: unsyncedWorkouts,
+							bodyMeasurements: unsyncedMeasurements,
+							personalRecords: unsyncedRecords,
+						})
+
+						await markAsSynced(
+							'workouts',
+							unsyncedWorkouts
+								.map(w => w.id)
+								.filter((id): id is number => id !== undefined),
+						)
+						await markAsSynced(
+							'body_measurements',
+							unsyncedMeasurements
+								.map(m => m.id)
+								.filter((id): id is number => id !== undefined),
+						)
+						await markAsSynced(
+							'personal_records',
+							unsyncedRecords
+								.map(r => r.id)
+								.filter((id): id is number => id !== undefined),
+						)
+					}
+
+					await yieldToUI()
+					await refreshAllData()
+					await saveSyncMeta('success', {
+						workouts: unsyncedWorkouts.length,
+						measurements: unsyncedMeasurements.length,
+						records: unsyncedRecords.length,
+					})
+				} catch (error) {
+					console.error('Initial sync error:', error)
+					await saveSyncMeta('error', {
+						workouts: 0,
+						measurements: 0,
+						records: 0,
+					})
 				}
-
-			// Шаг 3: Обновляем UI
-			await refreshAllData()
-			await saveSyncMeta('success', {
-				workouts: unsyncedWorkouts.length,
-				measurements: unsyncedMeasurements.length,
-				records: unsyncedRecords.length,
 			})
-		} catch (error) {
-			console.error('Initial sync error:', error)
-			await saveSyncMeta('error', { workouts: 0, measurements: 0, records: 0 })
-		} finally {
-			setIsLoading(false)
-		}
-	},
-	[mergeServerData, refreshAllData],
-)
+		},
+		[mergeServerData, refreshAllData],
+	)
 
 	const pullServerDataSilent = useCallback(
 		async (isPremium: boolean) => {
 			if (!isPremium) return
 			const networkState = await Network.getNetworkStateAsync()
 			if (!networkState.isConnected || !networkState.isInternetReachable) return
-			try {
-				const { data: serverData } = await api.get('/sync/download')
-				await mergeServerData(serverData)
-			} catch (e) {
-				console.warn('[Sync] pullServerDataSilent failed', e)
-			}
+			return enqueueSync(async () => {
+				try {
+					const { data: serverData } = await api.get('/sync/download')
+					await mergeServerData(serverData)
+					await yieldToUI()
+					await refreshAllData()
+				} catch (e) {
+					console.warn('[Sync] pullServerDataSilent failed', e)
+				}
+			})
 		},
-		[mergeServerData],
+		[mergeServerData, refreshAllData],
 	)
 
 	// Ручная синхронизация (кнопка в профиле)
@@ -661,63 +685,68 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 				return
 			}
 
-			setIsLoading(true)
-			try {
-				// Скачиваем и мержим
-				const { data: serverData } = await api.get('/sync/download')
-				await mergeServerData(serverData)
+			return enqueueSync(async () => {
+				setIsLoading(true)
+				try {
+					const { data: serverData } = await api.get('/sync/download')
+					await mergeServerData(serverData)
+					await yieldToUI()
 
-				// Загружаем все локальные данные на сервер
-				const allWorkouts = await getWorkouts()
-				const allMeasurements = await getBodyMeasurements()
-				const allRecords = await getPersonalRecords()
+					const allWorkouts = await getWorkouts()
+					const allMeasurements = await getBodyMeasurements()
+					const allRecords = await getPersonalRecords()
 
-				await api.post('/sync/upload', {
-					workouts: allWorkouts,
-					bodyMeasurements: allMeasurements,
-					personalRecords: allRecords,
-				})
+					await api.post('/sync/upload', {
+						workouts: allWorkouts,
+						bodyMeasurements: allMeasurements,
+						personalRecords: allRecords,
+					})
 
-				// Помечаем всё как синхронизированное
-				await markAsSynced(
-					'workouts',
-					allWorkouts
-						.map(w => w.id)
-						.filter((id): id is number => id !== undefined),
-				)
-				await markAsSynced(
-					'body_measurements',
-					allMeasurements
-						.map(m => m.id)
-						.filter((id): id is number => id !== undefined),
-				)
-				await markAsSynced(
-					'personal_records',
-					allRecords
-						.map(r => r.id)
-						.filter((id): id is number => id !== undefined),
-				)
+					await markAsSynced(
+						'workouts',
+						allWorkouts
+							.map(w => w.id)
+							.filter((id): id is number => id !== undefined),
+					)
+					await markAsSynced(
+						'body_measurements',
+						allMeasurements
+							.map(m => m.id)
+							.filter((id): id is number => id !== undefined),
+					)
+					await markAsSynced(
+						'personal_records',
+						allRecords
+							.map(r => r.id)
+							.filter((id): id is number => id !== undefined),
+					)
 
-			await refreshAllData()
-			await saveSyncMeta('success', {
-				workouts: allWorkouts.length,
-				measurements: allMeasurements.length,
-				records: allRecords.length,
+					await yieldToUI()
+					await refreshAllData()
+					await saveSyncMeta('success', {
+						workouts: allWorkouts.length,
+						measurements: allMeasurements.length,
+						records: allRecords.length,
+					})
+					Alert.alert('Синхронизация завершена')
+				} catch (error) {
+					console.error('Sync error', error)
+					await saveSyncMeta('error', {
+						workouts: 0,
+						measurements: 0,
+						records: 0,
+					})
+					Alert.alert(
+						'Ошибка синхронизации',
+						'Не удалось синхронизировать данные',
+					)
+				} finally {
+					setIsLoading(false)
+				}
 			})
-			Alert.alert('Синхронизация завершена')
-		} catch (error) {
-			console.error('Sync error', error)
-			await saveSyncMeta('error', { workouts: 0, measurements: 0, records: 0 })
-			Alert.alert(
-				'Ошибка синхронизации',
-				'Не удалось синхронизировать данные',
-			)
-		} finally {
-			setIsLoading(false)
-		}
-	},
-	[mergeServerData, refreshAllData],
-)
+		},
+		[mergeServerData, refreshAllData],
+	)
 
 	const importServerData = useCallback(
 		async (serverData: {
@@ -1111,12 +1140,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
 		initializeDatabase()
 	}, [initializeDatabase])
 
-	// Автосинхронизация при первом входе (после инициализации БД и появления user)
-	useEffect(() => {
-		if (!user || !isInitialized || hasSyncedOnStartup.current) return
-		hasSyncedOnStartup.current = true
-		performInitialSync(hasActivePremium(user))
-	}, [user?.id, isInitialized, performInitialSync])
+	// Автосинхронизацию делает только SyncInitializer (без дубля и без блокировки UI)
 
 	// Обновляем статистику при изменении тренировок
 	useEffect(() => {

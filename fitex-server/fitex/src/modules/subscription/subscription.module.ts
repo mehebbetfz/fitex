@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { Subscription, SubscriptionSchema } from 'src/models/subscription.schema'
 import { User, UserSchema } from 'src/models/user.schema'
 import { IapModule } from '../iap/iap.module'
+import { AdminNotificationModule } from '../admin-notification/admin-notification.module'
 import { UserModule } from '../user/user.module'
 import { AppleStoreWebhookService } from './apple-store-webhook.service'
 import { GooglePlayRtdnService } from './google-play-rtdn.service'
@@ -18,6 +19,7 @@ import { SubscriptionWebhookController } from './subscription-webhook.controller
 		]),
 		UserModule,
 		IapModule,
+		AdminNotificationModule,
 	],
 	controllers: [SubscriptionController, SubscriptionWebhookController],
 	providers: [SubscriptionService, AppleStoreWebhookService, GooglePlayRtdnService],

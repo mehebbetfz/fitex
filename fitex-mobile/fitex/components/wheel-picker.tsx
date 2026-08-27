@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import type { AppColors } from '@/constants/app-theme'
+import { useAppTheme } from '@/contexts/theme-context'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
 	NativeScrollEvent,
 	NativeSyntheticEvent,
@@ -29,6 +31,8 @@ export function WheelPicker({
 	formatLabel,
 	syncKey = 0,
 }: Props) {
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const pad = (WHEEL_PICKER_LIST_HEIGHT - ITEM_HEIGHT) / 2
 	const scrollRef = useRef<ScrollView>(null)
 
@@ -92,51 +96,53 @@ export function WheelPicker({
 	)
 }
 
-const styles = StyleSheet.create({
-	card: {
-		borderRadius: 22,
-		overflow: 'hidden',
-		backgroundColor: '#141416',
-		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.06)',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 10 },
-				shadowOpacity: 0.35,
-				shadowRadius: 20,
-			},
-			android: { elevation: 8 },
-		}),
-	},
-	cardInner: {
-		position: 'relative',
-		height: WHEEL_PICKER_LIST_HEIGHT,
-	},
-	list: { flexGrow: 0, height: WHEEL_PICKER_LIST_HEIGHT },
-	item: {
-		height: ITEM_HEIGHT,
-		justifyContent: 'center',
-		alignItems: 'center',
-		paddingHorizontal: 12,
-	},
-	itemText: {
-		fontSize: 22,
-		fontWeight: '600',
-		color: '#FFF',
-		textAlign: 'center',
-		letterSpacing: 0.2,
-	},
-	selectionOverlay: {
-		...StyleSheet.absoluteFillObject,
-		justifyContent: 'center',
-		paddingHorizontal: 18,
-	},
-	selectionFrame: {
-		height: ITEM_HEIGHT,
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: 'rgba(52, 199, 89, 0.5)',
-		backgroundColor: 'rgba(52, 199, 89, 0.08)',
-	},
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		card: {
+			borderRadius: 22,
+			overflow: 'hidden',
+			backgroundColor: C.card,
+			borderWidth: 1,
+			borderColor: C.border,
+			...Platform.select({
+				ios: {
+					shadowColor: '#000',
+					shadowOffset: { width: 0, height: 10 },
+					shadowOpacity: 0.12,
+					shadowRadius: 20,
+				},
+				android: { elevation: 4 },
+			}),
+		},
+		cardInner: {
+			position: 'relative',
+			height: WHEEL_PICKER_LIST_HEIGHT,
+		},
+		list: { flexGrow: 0, height: WHEEL_PICKER_LIST_HEIGHT },
+		item: {
+			height: ITEM_HEIGHT,
+			justifyContent: 'center',
+			alignItems: 'center',
+			paddingHorizontal: 12,
+		},
+		itemText: {
+			fontSize: 22,
+			fontWeight: '600',
+			color: C.text,
+			textAlign: 'center',
+			letterSpacing: 0.2,
+		},
+		selectionOverlay: {
+			...StyleSheet.absoluteFillObject,
+			justifyContent: 'center',
+			paddingHorizontal: 18,
+		},
+		selectionFrame: {
+			height: ITEM_HEIGHT,
+			borderRadius: 14,
+			borderWidth: 1,
+			borderColor: `${C.primary}80`,
+			backgroundColor: `${C.primary}14`,
+		},
+	})
+}

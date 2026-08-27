@@ -20,7 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 const C = {
 	primary: '#34C759',
-	background: '#121212',
+	background: '#222226',
 	card: '#1C1C1E',
 	border: '#2C2C2E',
 	text: '#FFFFFF',

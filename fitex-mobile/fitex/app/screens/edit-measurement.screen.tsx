@@ -218,7 +218,7 @@ export default function EditMeasurementScreen() {
 }
 
 const s = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#121212' },
+	container: { flex: 1, backgroundColor: '#222226' },
 	center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 	header: {
 		flexDirection: 'row',

@@ -1,9 +1,11 @@
 import { useDatabase } from '@/app/contexts/database-context'
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import type { AppColors, ThemePreference } from '@/constants/app-theme'
-import { Language, LANGUAGE_NAMES } from '@/locales'
+import { LANGUAGE_CODES, LANGUAGE_FLAGS, LANGUAGE_NAMES, Language } from '@/locales'
+import { translateGroupName } from '@/constants/exercise-i18n'
 import {
 	exportAllDataToCsv,
 	exportWorkoutsToCsv,
@@ -19,6 +21,24 @@ import {
 	toggleWorkoutReminders,
 	type AppNotificationSettings,
 } from '@/services/notifications'
+import {
+	DEFAULT_REST_SETTINGS,
+	REST_DURATION_OPTIONS,
+	formatRestSeconds,
+	loadRestSettings,
+	saveRestSettings,
+	type RestSettings,
+} from '@/services/rest-settings'
+import {
+	DEFAULT_RECOVERY_SETTINGS,
+	RECOVERY_DURATION_OPTIONS,
+	RECOVERY_MUSCLE_GROUPS,
+	formatRecoveryHours,
+	loadRecoverySettings,
+	saveRecoverySettings,
+	type RecoverySettings,
+} from '@/services/recovery-settings'
+import { recalculateAllRecovery } from '@/scripts/database'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -150,6 +170,33 @@ function makeStyles(C: AppColors) {
 		langOptionTextSelected: {
 			color: C.primary,
 			fontWeight: '600',
+		},
+		chipRow: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			gap: 8,
+			paddingHorizontal: 4,
+			marginBottom: 8,
+		},
+		chip: {
+			paddingHorizontal: 12,
+			paddingVertical: 8,
+			borderRadius: 999,
+			borderWidth: 1,
+			borderColor: C.border,
+			backgroundColor: C.card,
+		},
+		chipOn: {
+			borderColor: C.primary,
+			backgroundColor: `${C.primary}22`,
+		},
+		chipText: {
+			color: C.textSecondary,
+			fontWeight: '600',
+			fontSize: 13,
+		},
+		chipTextOn: {
+			color: C.primary,
 		},
 	})
 }
@@ -305,9 +352,13 @@ function TimePickerModal({
 		<Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
 			<TouchableOpacity style={pickerStyles.overlay} activeOpacity={1} onPress={onClose}>
 				<TouchableOpacity activeOpacity={1}>
-					<View style={pickerStyles.container}>
-						<Text style={pickerStyles.title}>{t('settings', 'notifTimeLabel')}</Text>
-						<View style={pickerStyles.pickers}>
+						<View style={pickerStyles.container}>
+							<SheetModalHeader
+								title={t('settings', 'notifTimeLabel')}
+								onClose={onClose}
+								showHandle={false}
+							/>
+							<View style={pickerStyles.pickers}>
 							<View style={pickerStyles.pickerCol}>
 								<Text style={pickerStyles.pickerLabel}>{t('profile', 'hours')}</Text>
 								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
@@ -390,6 +441,10 @@ export default function SettingsScreen() {
 	const premium = user ? hasActivePremium(user) : false
 
 	const [notif, setNotif] = useState<AppNotificationSettings>(DEFAULT_APP_SETTINGS)
+	const [rest, setRest] = useState<RestSettings>(DEFAULT_REST_SETTINGS)
+	const [recoveryHours, setRecoveryHours] = useState<RecoverySettings>(
+		DEFAULT_RECOVERY_SETTINGS,
+	)
 	const [togglingWorkout, setTogglingWorkout] = useState(false)
 	const [togglingRecovery, setTogglingRecovery] = useState(false)
 	const [showTimePicker, setShowTimePicker] = useState(false)
@@ -399,7 +454,23 @@ export default function SettingsScreen() {
 
 	useEffect(() => {
 		loadAppNotificationSettings().then(setNotif)
+		loadRestSettings().then(setRest)
+		loadRecoverySettings().then(setRecoveryHours)
 	}, [])
+
+	const updateRest = async (partial: Partial<RestSettings>) => {
+		const next = await saveRestSettings(partial)
+		setRest(next)
+	}
+
+	const updateRecoveryHours = async (group: string, hours: number) => {
+		const next = await saveRecoverySettings({ [group]: hours })
+		setRecoveryHours(next)
+		await recalculateAllRecovery(next)
+		if (notif.recoveryReady) {
+			void syncRecoveryReadyNotifications()
+		}
+	}
 
 	const workoutCopy = useCallback(
 		() => ({
@@ -647,6 +718,114 @@ export default function SettingsScreen() {
 					/>
 				</View>
 
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>{t('settings', 'restSection')}</Text>
+					<SettingsItem
+						{...itemProps}
+						icon='timer-outline'
+						title={t('settings', 'restEnabledDefault')}
+						subtitle={t('settings', 'restEnabledDefaultSubtitle')}
+						onPress={() => {}}
+						showChevron={false}
+						rightElement={
+							<Switch
+								value={rest.enabledByDefault}
+								onValueChange={v => void updateRest({ enabledByDefault: v })}
+								trackColor={{
+									false: colors.border,
+									true: `${colors.primary}80`,
+								}}
+								thumbColor={
+									rest.enabledByDefault ? colors.primary : colors.textSecondary
+								}
+							/>
+						}
+					/>
+					<Text style={[styles.settingsSubtitle, { marginLeft: 4, marginBottom: 8 }]}>
+						{t('settings', 'restBetweenSets')} · {formatRestSeconds(rest.betweenSetsSec)}
+					</Text>
+					<Text style={[styles.settingsSubtitle, { marginLeft: 4, marginBottom: 6 }]}>
+						{t('settings', 'restBetweenSetsSubtitle')}
+					</Text>
+					<View style={styles.chipRow}>
+						{REST_DURATION_OPTIONS.map(sec => {
+							const on = rest.betweenSetsSec === sec
+							return (
+								<TouchableOpacity
+									key={`sets-${sec}`}
+									style={[styles.chip, on && styles.chipOn]}
+									onPress={() => void updateRest({ betweenSetsSec: sec })}
+								>
+									<Text style={[styles.chipText, on && styles.chipTextOn]}>
+										{formatRestSeconds(sec)}
+									</Text>
+								</TouchableOpacity>
+							)
+						})}
+					</View>
+					<Text style={[styles.settingsSubtitle, { marginLeft: 4, marginTop: 8, marginBottom: 8 }]}>
+						{t('settings', 'restBetweenExercises')} ·{' '}
+						{formatRestSeconds(rest.betweenExercisesSec)}
+					</Text>
+					<Text style={[styles.settingsSubtitle, { marginLeft: 4, marginBottom: 6 }]}>
+						{t('settings', 'restBetweenExercisesSubtitle')}
+					</Text>
+					<View style={styles.chipRow}>
+						{REST_DURATION_OPTIONS.map(sec => {
+							const on = rest.betweenExercisesSec === sec
+							return (
+								<TouchableOpacity
+									key={`ex-${sec}`}
+									style={[styles.chip, on && styles.chipOn]}
+									onPress={() => void updateRest({ betweenExercisesSec: sec })}
+								>
+									<Text style={[styles.chipText, on && styles.chipTextOn]}>
+										{formatRestSeconds(sec)}
+									</Text>
+								</TouchableOpacity>
+							)
+						})}
+					</View>
+				</View>
+
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>
+						{t('settings', 'recoveryDurationSection')}
+					</Text>
+					<Text style={[styles.settingsSubtitle, { marginLeft: 4, marginBottom: 12 }]}>
+						{t('settings', 'recoveryDurationSubtitle')}
+					</Text>
+					{RECOVERY_MUSCLE_GROUPS.map(group => {
+						const current = recoveryHours.hoursByGroup[group] ?? 72
+						return (
+							<View key={group} style={{ marginBottom: 12 }}>
+								<Text
+									style={[styles.settingsSubtitle, { marginLeft: 4, marginBottom: 8 }]}
+								>
+									{translateGroupName(group, language ?? 'ru')} ·{' '}
+									{formatRecoveryHours(current)}
+								</Text>
+								<View style={styles.chipRow}>
+									{RECOVERY_DURATION_OPTIONS.map(hours => {
+										const on = current === hours
+										return (
+											<TouchableOpacity
+												key={`${group}-${hours}`}
+												style={[styles.chip, on && styles.chipOn]}
+												onPress={() => void updateRecoveryHours(group, hours)}
+											>
+												<Text style={[styles.chipText, on && styles.chipTextOn]}>
+													{formatRecoveryHours(hours)}
+												</Text>
+											</TouchableOpacity>
+										)
+									})}
+								</View>
+							</View>
+						)
+					})}
+				</View>
+
 				{premium ? (
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>{t('settings', 'cloud')}</Text>
@@ -725,34 +904,45 @@ export default function SettingsScreen() {
 						onPress={() => setShowLanguageModal(false)}
 					/>
 					<View style={styles.langSheet}>
-						<View style={styles.langSheetHandle} />
-						<Text style={styles.langSheetTitle}>{t('settings', 'language')}</Text>
-						{(['ru', 'en', 'az'] as Language[]).map((lang, index, arr) => {
-							const selected = lang === language
-							return (
-								<TouchableOpacity
-									key={lang}
-									style={[
-										styles.langOption,
-										index === arr.length - 1 && styles.langOptionLast,
-									]}
-									onPress={() => void handleLanguageChange(lang)}
-									activeOpacity={0.7}
-								>
-									<Text
+						<SheetModalHeader
+							title={t('settings', 'language')}
+							onClose={() => setShowLanguageModal(false)}
+						/>
+						<ScrollView
+							style={{ maxHeight: 420 }}
+							showsVerticalScrollIndicator={false}
+						>
+							{LANGUAGE_CODES.map((lang, index, arr) => {
+								const selected = lang === language
+								return (
+									<TouchableOpacity
+										key={lang}
 										style={[
-											styles.langOptionText,
-											selected && styles.langOptionTextSelected,
+											styles.langOption,
+											index === arr.length - 1 && styles.langOptionLast,
 										]}
+										onPress={() => void handleLanguageChange(lang)}
+										activeOpacity={0.7}
 									>
-										{LANGUAGE_NAMES[lang]}
-									</Text>
-									{selected ? (
-										<Ionicons name='checkmark' size={20} color={colors.primary} />
-									) : null}
-								</TouchableOpacity>
-							)
-						})}
+										<Text style={{ fontSize: 18, marginRight: 10 }}>
+											{LANGUAGE_FLAGS[lang]}
+										</Text>
+										<Text
+											style={[
+												styles.langOptionText,
+												selected && styles.langOptionTextSelected,
+												{ flex: 1 },
+											]}
+										>
+											{LANGUAGE_NAMES[lang]}
+										</Text>
+										{selected ? (
+											<Ionicons name='checkmark' size={20} color={colors.primary} />
+										) : null}
+									</TouchableOpacity>
+								)
+							})}
+						</ScrollView>
 					</View>
 				</View>
 			</Modal>

@@ -6,6 +6,7 @@ import { PassportModule } from '@nestjs/passport'
 import { User, UserSchema } from 'src/models/user.schema'
 import { JwtStrategy } from 'src/strategies/jwt.strategy'
 import { EmailModule } from '../email/email.module'
+import { AdminNotificationModule } from '../admin-notification/admin-notification.module'
 import { UserModule } from '../user/user.module'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
@@ -26,6 +27,7 @@ import { AvatarStorageService } from './avatar-storage.service'
 		MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 		UserModule,
 		EmailModule,
+		AdminNotificationModule,
 	],
 	controllers: [AuthController],
 	providers: [AuthService, AvatarStorageService, JwtStrategy],

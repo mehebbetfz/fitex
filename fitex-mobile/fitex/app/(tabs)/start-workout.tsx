@@ -173,7 +173,7 @@ export default function ProfileTab() {
 
 	// Цветовая палитра для темной темы
 	const colors = {
-		background: '#121212',
+		background: '#222226',
 		surface: '#1E1E1E',
 		surfaceLight: '#2A2A2A',
 		textPrimary: '#FFFFFF',
@@ -416,7 +416,7 @@ export default function ProfileTab() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#121212',
+		backgroundColor: '#222226',
 	},
 	header: {
 		paddingHorizontal: 10,

@@ -21,7 +21,7 @@ import { formatApiError } from '@/services/api'
 // Цветовая схема из history.tsx
 const COLORS = {
 	primary: '#34C759',
-	background: '#121212',
+	background: '#222226',
 	card: '#1C1C1E',
 	border: '#2C2C2E',
 	text: '#FFFFFF',

@@ -1,4 +1,5 @@
 import type { AppColors } from '@/constants/app-theme'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import * as db from '@/scripts/database'
@@ -677,27 +678,12 @@ export default function MeasurementsHistoryScreen() {
 						onPress={() => setModalVisible(false)}
 					/>
 					<View style={styles.modalContent}>
-						<View style={styles.sheetHandle} />
 						{selectedMeasurement && (
 							<>
-								<View style={styles.modalHeader}>
-									<View style={styles.modalIconWrap}>
-										<Ionicons
-											name={
-												(MEASUREMENT_ICONS[selectedMeasurement.name] ??
-													'body') as any
-											}
-											size={18}
-											color={C.primary}
-										/>
-									</View>
-									<Text style={styles.modalTitle}>
-										{selectedMeasurement.name}
-									</Text>
-									<TouchableOpacity onPress={() => setModalVisible(false)}>
-										<Ionicons name='close' size={22} color={C.textSecondary} />
-									</TouchableOpacity>
-								</View>
+								<SheetModalHeader
+									title={selectedMeasurement.name}
+									onClose={() => setModalVisible(false)}
+								/>
 
 								<View style={styles.modalStatsRow}>
 									<View style={styles.modalStat}>

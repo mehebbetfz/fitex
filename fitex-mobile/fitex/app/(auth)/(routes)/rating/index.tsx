@@ -1,16 +1,18 @@
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import SharedPremiumGate from '@/app/components/premium-gate'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { getMilestoneAchievementCopy } from '@/services/achievement-milestones-extra'
-import { Achievement, computeRating, LEVELS, RatingData, Tier, TIERS, TierName } from '@/services/rating'
+import { Achievement, computeRating, LEVELS, RatingData, TIERS, TierName } from '@/services/rating'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Animated,
 	Dimensions,
 	Modal,
-	Pressable,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -21,17 +23,14 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
-const C = {
-	background: '#121212',
-	card: '#1C1C1E',
-	cardLight: '#2C2C2E',
-	border: '#2C2C2E',
-	text: '#FFFFFF',
-	textSecondary: '#8E8E93',
-	primary: '#34C759',
-} as const
+const ACH_COLS = 5
+const ACH_GAP = 8
+/** Inside profile-style card: marginH 10 + padding 16*2 */
+const ACH_BADGE_SIZE = Math.floor(
+	(SCREEN_WIDTH - 20 - 32 - ACH_GAP * (ACH_COLS - 1)) / ACH_COLS,
+)
 
-// ─── Shimmer ──────────────────────────────────────────────────────────────────
+// ─── Shimmer / FadeIn (как на профиле) ───────────────────────────────────────
 
 const useShimmer = () => {
 	const anim = useRef(new Animated.Value(0)).current
@@ -44,7 +43,7 @@ const useShimmer = () => {
 		)
 		loop.start()
 		return () => loop.stop()
-	}, [])
+	}, [anim])
 	return anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] })
 }
 
@@ -53,28 +52,33 @@ const ShimmerBlock = ({ style }: { style: object }) => {
 	return <Animated.View style={[style, { opacity }]} />
 }
 
-// ─── Tier label helper ────────────────────────────────────────────────────────
+const FadeIn = ({ show, children }: { show: boolean; children: React.ReactNode }) => {
+	const anim = useRef(new Animated.Value(0)).current
+	useEffect(() => {
+		if (show) {
+			Animated.timing(anim, { toValue: 1, duration: 300, useNativeDriver: true }).start()
+		}
+	}, [show, anim])
+	return <Animated.View style={{ opacity: anim }}>{children}</Animated.View>
+}
 
 const useTierLabel = () => {
 	const { t } = useLanguage()
-	const tierLabel = useCallback(
+	return useCallback(
 		(name: TierName): string => {
 			const map: Record<TierName, string> = {
 				beginner: t('rating', 'tierBeginner'),
-				bronze:   t('rating', 'tierBronze'),
-				silver:   t('rating', 'tierSilver'),
-				gold:     t('rating', 'tierGold'),
+				bronze: t('rating', 'tierBronze'),
+				silver: t('rating', 'tierSilver'),
+				gold: t('rating', 'tierGold'),
 				platinum: t('rating', 'tierPlatinum'),
-				elite:    t('rating', 'tierElite'),
+				elite: t('rating', 'tierElite'),
 			}
 			return map[name]
 		},
 		[t],
 	)
-	return tierLabel
 }
-
-// ─── Animated progress bar ────────────────────────────────────────────────────
 
 const ProgressBar = ({
 	percent,
@@ -85,6 +89,7 @@ const ProgressBar = ({
 	color: string
 	height?: number
 }) => {
+	const { colors: C } = useAppTheme()
 	const anim = useRef(new Animated.Value(0)).current
 	useEffect(() => {
 		Animated.timing(anim, {
@@ -92,48 +97,66 @@ const ProgressBar = ({
 			duration: 900,
 			useNativeDriver: false,
 		}).start()
-	}, [percent])
+	}, [anim, percent])
 
 	const width = anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] })
 
 	return (
-		<View style={{ height, backgroundColor: C.cardLight, borderRadius: height / 2, overflow: 'hidden' }}>
-			<Animated.View style={{ height, width, backgroundColor: color, borderRadius: height / 2 }} />
+		<View
+			style={{
+				height,
+				backgroundColor: C.cardLight,
+				borderRadius: height / 2,
+				overflow: 'hidden',
+			}}
+		>
+			<Animated.View
+				style={{ height, width, backgroundColor: color, borderRadius: height / 2 }}
+			/>
 		</View>
 	)
 }
 
-// ─── Tier icon (SVG-based via Ionicons) ───────────────────────────────────────
-
 const TIER_ICONS: Record<TierName, { name: string; color: string }> = {
-	beginner: { name: 'trophy',    color: '#8E8E93' },
-	bronze:   { name: 'trophy',   color: '#CD7F32' },
-	silver:   { name: 'trophy',   color: '#C0C0C0' },
-	gold:     { name: 'trophy',  color: '#FFD700' },
+	beginner: { name: 'trophy', color: '#8E8E93' },
+	bronze: { name: 'trophy', color: '#CD7F32' },
+	silver: { name: 'trophy', color: '#C0C0C0' },
+	gold: { name: 'trophy', color: '#FFD700' },
 	platinum: { name: 'trophy', color: '#5AC8FA' },
-	elite:    { name: 'trophy',          color: '#FF9500' },
+	elite: { name: 'trophy', color: '#FF9500' },
 }
 
-// ─── Level card ───────────────────────────────────────────────────────────────
-
-// Dots showing levels within the current tier
-const TierLevelDots = ({ tierName, currentLevel }: { tierName: TierName; currentLevel: number }) => {
+const TierLevelDots = ({
+	tierName,
+	currentLevel,
+}: {
+	tierName: TierName
+	currentLevel: number
+}) => {
+	const { colors: C } = useAppTheme()
 	const tierLevels = LEVELS.filter(l => l.tierName === tierName)
 	const tier = TIERS.find(t => t.name === tierName)!
 	return (
-		<View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: 10 }}>
+		<View
+			style={{
+				flexDirection: 'row',
+				alignItems: 'center',
+				gap: 4,
+				flexWrap: 'wrap',
+				marginTop: 12,
+			}}
+		>
 			{tierLevels.map(lv => {
-				const done    = lv.level < currentLevel
-				const active  = lv.level === currentLevel
+				const done = lv.level < currentLevel
+				const active = lv.level === currentLevel
 				return (
 					<View
 						key={lv.level}
 						style={{
-							width: active ? 24 : 8, height: 8,
+							width: active ? 24 : 8,
+							height: 8,
 							borderRadius: 4,
-							backgroundColor: done || active
-								? tier.color
-								: '#2C2C2E',
+							backgroundColor: done || active ? tier.color : C.cardLight,
 							opacity: active ? 1 : done ? 0.7 : 0.3,
 						}}
 					/>
@@ -143,43 +166,41 @@ const TierLevelDots = ({ tierName, currentLevel }: { tierName: TierName; current
 	)
 }
 
+/** Главный блок уровня — как userCard / premiumStatusBlock на профиле */
 const LevelCard = ({ data }: { data: RatingData }) => {
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const tierLabel = useTierLabel()
-	const { tier, nextTier, totalScore, currentLevel, nextLevel, levelProgressPercent } = data
+	const { tier, totalScore, currentLevel, nextLevel, levelProgressPercent } = data
 	const icon = TIER_ICONS[tier.name]
 
 	return (
-		<View style={[styles.card, { borderColor: `${tier.color}40`, borderWidth: 1.5 }]}>
-			{/* Top row: icon + level number + score badge */}
+		<View style={[styles.heroCard, { borderColor: `${tier.color}44` }]}>
 			<View style={styles.levelCardHeader}>
-				<View style={[styles.tierIconWrap, { backgroundColor: `${tier.color}15`, borderColor: `${tier.color}40` }]}>
+				<View
+					style={[
+						styles.tierIconWrap,
+						{ backgroundColor: `${tier.color}18`, borderColor: `${tier.color}40` },
+					]}
+				>
 					<Ionicons name={icon.name as any} size={32} color={icon.color} />
 				</View>
-				<View style={{ flex: 1, marginLeft: 14 }}>
-					{/* Big level number */}
-					<View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-						<Text style={[styles.levelNum, { color: tier.color }]}>
-							{t('rating', 'levelLabel')} {currentLevel.level}
-						</Text>
-						<Text style={styles.levelTotal}>/50</Text>
-					</View>
+				<View style={{ flex: 1, marginLeft: 16 }}>
+					<Text style={[styles.levelNum, { color: tier.color }]}>
+						{t('rating', 'levelLabel')} {currentLevel.level}
+						<Text style={styles.levelTotal}> /50</Text>
+					</Text>
 					<Text style={[styles.tierName, { color: tier.color }]}>
 						{tierLabel(tier.name)}
 					</Text>
 					<Text style={styles.scoreText}>
-						{totalScore.toLocaleString()} {t('rating', 'pts')}
-					</Text>
-				</View>
-				<View style={[styles.scoreBadge, { backgroundColor: `${tier.color}20` }]}>
-					<Text style={[styles.scoreBadgeText, { color: tier.color }]}>
-						{t('rating', 'totalScore')}
+						{totalScore.toLocaleString()} {t('rating', 'pts')} · {t('rating', 'totalScore')}
 					</Text>
 				</View>
 			</View>
 
-			{/* Level progress bar */}
-			<View style={{ marginTop: 14 }}>
+			<View style={{ marginTop: 16 }}>
 				<ProgressBar percent={levelProgressPercent} color={tier.color} height={10} />
 				<View style={styles.progressLabelRow}>
 					<Text style={styles.progressLabel}>{levelProgressPercent}%</Text>
@@ -196,26 +217,34 @@ const LevelCard = ({ data }: { data: RatingData }) => {
 				</View>
 			</View>
 
-			{/* Tier-level dots */}
 			<TierLevelDots tierName={tier.name} currentLevel={currentLevel.level} />
 
-			{/* Tier ladder */}
 			<View style={styles.tierLadder}>
 				{TIERS.map((t2, i) => {
-					const isActive  = t2.name === tier.name
-					const isPassed  = i < TIERS.findIndex(x => x.name === tier.name)
+					const isActive = t2.name === tier.name
+					const isPassed = i < TIERS.findIndex(x => x.name === tier.name)
 					const ic = TIER_ICONS[t2.name]
 					return (
 						<View key={t2.name} style={styles.tierStep}>
-							<View style={[
-								styles.tierStepIcon,
-								isActive && { borderColor: ic.color, backgroundColor: `${ic.color}15` },
-								isPassed && { borderColor: ic.color + '70', backgroundColor: `${ic.color}08` },
-							]}>
+							<View
+								style={[
+									styles.tierStepIcon,
+									isActive && {
+										borderColor: ic.color,
+										backgroundColor: `${ic.color}15`,
+									},
+									isPassed && {
+										borderColor: ic.color + '70',
+										backgroundColor: `${ic.color}08`,
+									},
+								]}
+							>
 								<Ionicons
 									name={ic.name as any}
 									size={isActive ? 18 : 13}
-									color={isActive ? ic.color : isPassed ? ic.color + 'AA' : '#444'}
+									color={
+										isActive ? ic.color : isPassed ? ic.color + 'AA' : C.textTertiary
+									}
 								/>
 							</View>
 							{i < TIERS.length - 1 && (
@@ -234,117 +263,126 @@ const LevelCard = ({ data }: { data: RatingData }) => {
 	)
 }
 
-// ─── Score breakdown card ─────────────────────────────────────────────────────
-
 const BREAKDOWN_ICONS: { icon: string; color: string }[] = [
-	{ icon: 'barbell-outline',     color: '#34C759' },
-	{ icon: 'layers-outline',      color: '#5AC8FA' },
+	{ icon: 'barbell-outline', color: '#34C759' },
+	{ icon: 'layers-outline', color: '#5AC8FA' },
 	{ icon: 'trending-up-outline', color: '#FF9F0A' },
-	{ icon: 'flame-outline',       color: '#FF6B35' },
-	{ icon: 'trophy-outline',      color: '#FFD700' },
-	{ icon: 'timer-outline',       color: '#AF52DE' },
+	{ icon: 'flame-outline', color: '#FF6B35' },
+	{ icon: 'trophy-outline', color: '#FFD700' },
+	{ icon: 'timer-outline', color: '#AF52DE' },
 ]
 
-const ScoreBreakdownCard = ({ data }: { data: RatingData }) => {
+/** Разбивка очков — как settingsItem на профиле */
+const ScoreBreakdownSection = ({ data }: { data: RatingData }) => {
 	const { t } = useLanguage()
-	const { scoreBreakdown, tier } = data
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
+	const { scoreBreakdown } = data
 
 	const rows = [
 		{ label: t('rating', 'workoutPts'), value: scoreBreakdown.workoutPts, ...BREAKDOWN_ICONS[0] },
-		{ label: t('rating', 'setPts'),     value: scoreBreakdown.setPts,     ...BREAKDOWN_ICONS[1] },
-		{ label: t('rating', 'volumePts'),  value: scoreBreakdown.volumePts,  ...BREAKDOWN_ICONS[2] },
-		{ label: t('rating', 'streakPts'),  value: scoreBreakdown.streakPts,  ...BREAKDOWN_ICONS[3] },
-		{ label: t('rating', 'prPts'),      value: scoreBreakdown.prPts,      ...BREAKDOWN_ICONS[4] },
+		{ label: t('rating', 'setPts'), value: scoreBreakdown.setPts, ...BREAKDOWN_ICONS[1] },
+		{ label: t('rating', 'volumePts'), value: scoreBreakdown.volumePts, ...BREAKDOWN_ICONS[2] },
+		{ label: t('rating', 'streakPts'), value: scoreBreakdown.streakPts, ...BREAKDOWN_ICONS[3] },
+		{ label: t('rating', 'prPts'), value: scoreBreakdown.prPts, ...BREAKDOWN_ICONS[4] },
 		{ label: t('rating', 'durationBonus'), value: scoreBreakdown.durationBonus, ...BREAKDOWN_ICONS[5] },
 	]
 
-	const maxVal = Math.max(...rows.map(r => r.value), 1)
-
 	return (
-		<View style={styles.card}>
+		<View style={styles.section}>
 			<Text style={styles.sectionTitle}>{t('rating', 'scoreBreakdown')}</Text>
-			<View style={{ marginTop: 12, gap: 10 }}>
-				{rows.map(row => (
-					<View key={row.label} style={styles.breakdownRow}>
-						<View style={[styles.breakdownIconWrap, { backgroundColor: `${row.color}15` }]}>
-							<Ionicons name={row.icon as any} size={15} color={row.color} />
-						</View>
-						<Text style={styles.breakdownLabel}>{row.label}</Text>
-						<View style={{ flex: 1, marginHorizontal: 10 }}>
-							<ProgressBar percent={(row.value / maxVal) * 100} color={row.color} height={6} />
-						</View>
-						<Text style={[styles.breakdownValue, { color: row.color }]}>
-							{row.value}
-						</Text>
+			{rows.map(row => (
+				<View key={row.label} style={styles.settingsItem}>
+					<View style={[styles.settingsIcon, { backgroundColor: `${row.color}20` }]}>
+						<Ionicons name={row.icon as any} size={22} color={row.color} />
 					</View>
-				))}
-			</View>
+					<View style={styles.settingsContent}>
+						<Text style={styles.settingsTitle}>{row.label}</Text>
+						<View style={{ marginTop: 8 }}>
+							<ProgressBar
+								percent={
+									Math.max(...rows.map(r => r.value), 1) > 0
+										? (row.value / Math.max(...rows.map(r => r.value), 1)) * 100
+										: 0
+								}
+								color={row.color}
+								height={6}
+							/>
+						</View>
+					</View>
+					<Text style={[styles.rowValue, { color: row.color }]}>{row.value}</Text>
+				</View>
+			))}
 		</View>
 	)
 }
 
-// ─── Category grid ────────────────────────────────────────────────────────────
-
 const CAT_ICONS: Record<string, { icon: string; color: string }> = {
-	volume:      { icon: 'barbell-outline',     color: '#FF9F0A' },
-	workouts:    { icon: 'fitness-outline',     color: '#34C759' },
-	streak:      { icon: 'flame-outline',       color: '#FF6B35' },
-	sets:        { icon: 'layers-outline',      color: '#5AC8FA' },
-	avgDuration: { icon: 'timer-outline',       color: '#AF52DE' },
-	records:     { icon: 'trophy-outline',      color: '#FFD700' },
+	volume: { icon: 'barbell-outline', color: '#FF9F0A' },
+	workouts: { icon: 'fitness-outline', color: '#34C759' },
+	streak: { icon: 'flame-outline', color: '#FF6B35' },
+	sets: { icon: 'layers-outline', color: '#5AC8FA' },
+	avgDuration: { icon: 'timer-outline', color: '#AF52DE' },
+	records: { icon: 'trophy-outline', color: '#FFD700' },
 }
 
-const CategoryGrid = ({ data }: { data: RatingData }) => {
+/** Категории — секция + строки как на профиле (stats / settings) */
+const CategorySection = ({ data }: { data: RatingData }) => {
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const tierLabel = useTierLabel()
 	const { stats, prCount, categoryTiers } = data
 
 	const categories = [
-		{ key: 'volume',      label: t('rating', 'catVolume'),   value: `${stats.total_volume.toLocaleString()} ${t('rating', 'kg')}` },
-		{ key: 'workouts',    label: t('rating', 'catWorkouts'), value: String(stats.total_workouts) },
-		{ key: 'streak',      label: t('rating', 'catStreak'),   value: `${stats.streak_days} ${t('rating', 'days')}` },
-		{ key: 'sets',        label: t('rating', 'catSets'),     value: String(stats.total_sets) },
-		{ key: 'avgDuration', label: t('rating', 'catDuration'), value: `${stats.avg_duration} ${t('rating', 'min')}` },
-		{ key: 'records',     label: t('rating', 'catRecords'),  value: String(prCount) },
+		{
+			key: 'volume',
+			label: t('rating', 'catVolume'),
+			value: `${stats.total_volume.toLocaleString()} ${t('rating', 'kg')}`,
+		},
+		{
+			key: 'workouts',
+			label: t('rating', 'catWorkouts'),
+			value: String(stats.total_workouts),
+		},
+		{
+			key: 'streak',
+			label: t('rating', 'catStreak'),
+			value: `${stats.streak_days} ${t('rating', 'days')}`,
+		},
+		{ key: 'sets', label: t('rating', 'catSets'), value: String(stats.total_sets) },
+		{
+			key: 'avgDuration',
+			label: t('rating', 'catDuration'),
+			value: `${stats.avg_duration} ${t('rating', 'min')}`,
+		},
+		{ key: 'records', label: t('rating', 'catRecords'), value: String(prCount) },
 	]
 
 	return (
-		<View>
-			<Text style={[styles.sectionTitle, { paddingHorizontal: 20 }]}>
-				{t('rating', 'categories')}
-			</Text>
-			<View style={styles.categoryGrid}>
-				{categories.map(cat => {
-					const tier = categoryTiers[cat.key]
-					const ic = CAT_ICONS[cat.key]
-					return (
-						<View
-							key={cat.key}
-							style={[
-								styles.categoryCard,
-								{ borderColor: `${tier.color}30`, borderWidth: 1 },
-							]}
-						>
-							<View style={[styles.catIconWrap, { backgroundColor: `${ic.color}15` }]}>
-								<Ionicons name={ic.icon as any} size={20} color={ic.color} />
-							</View>
-							<Text style={styles.categoryLabel}>{cat.label}</Text>
-							<Text style={styles.categoryValue}>{cat.value}</Text>
-							<View style={[styles.tierBadge, { backgroundColor: `${tier.color}20` }]}>
-								<Ionicons name={TIER_ICONS[tier.name].name as any} size={10} color={tier.color} />
-								<Text style={[styles.tierBadgeText, { color: tier.color }]}>
-									{' '}{tierLabel(tier.name)}
-								</Text>
-							</View>
+		<View style={styles.section}>
+			<Text style={styles.sectionTitle}>{t('rating', 'categories')}</Text>
+			{categories.map(cat => {
+				const tier = categoryTiers[cat.key]
+				const ic = CAT_ICONS[cat.key]
+				return (
+					<View key={cat.key} style={styles.settingsItem}>
+						<View style={[styles.settingsIcon, { backgroundColor: `${ic.color}20` }]}>
+							<Ionicons name={ic.icon as any} size={22} color={ic.color} />
 						</View>
-					)
-				})}
-			</View>
+						<View style={styles.settingsContent}>
+							<Text style={styles.settingsTitle}>{cat.label}</Text>
+							<Text style={styles.settingsSubtitle}>
+								{tierLabel(tier.name)}
+							</Text>
+						</View>
+						<Text style={styles.rowValue}>{cat.value}</Text>
+					</View>
+				)
+			})}
 		</View>
 	)
 }
-
-// ─── Achievement badge ────────────────────────────────────────────────────────
 
 const AchievementBadge = ({
 	achievement,
@@ -353,6 +391,8 @@ const AchievementBadge = ({
 	achievement: Achievement
 	onPress: (a: Achievement) => void
 }) => {
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const scale = useRef(new Animated.Value(1)).current
 
 	const handlePress = () => {
@@ -368,14 +408,17 @@ const AchievementBadge = ({
 				style={[
 					styles.achievementBadge,
 					achievement.earned ? styles.achievementEarned : styles.achievementLocked,
-					achievement.earned && { borderColor: `${achievement.iconColor}50`, backgroundColor: `${achievement.iconColor}12` },
+					achievement.earned && {
+						borderColor: `${achievement.iconColor}50`,
+						backgroundColor: `${achievement.iconColor}12`,
+					},
 					{ transform: [{ scale }] },
 				]}
 			>
 				<Ionicons
 					name={achievement.icon as any}
 					size={Math.round(ACH_BADGE_SIZE * 0.44)}
-					color={achievement.earned ? achievement.iconColor : '#444'}
+					color={achievement.earned ? achievement.iconColor : C.textTertiary}
 				/>
 				{achievement.earned && (
 					<View style={styles.achievementCheck}>
@@ -394,16 +437,14 @@ const AchievementBadge = ({
 	)
 }
 
-// ─── Achievements section ─────────────────────────────────────────────────────
-
 const AchievementsSection = ({ data }: { data: RatingData }) => {
 	const { t, language } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const [selected, setSelected] = useState<Achievement | null>(null)
 	const { achievements } = data
-
 	const earnedCount = achievements.filter(a => a.earned).length
 
-	// Sort: earned first, then by progress % descending, show top 20
 	const preview = [...achievements]
 		.sort((a, b) => {
 			if (a.earned !== b.earned) return a.earned ? -1 : 1
@@ -416,14 +457,14 @@ const AchievementsSection = ({ data }: { data: RatingData }) => {
 		if (m) return m
 		return {
 			title: t('rating', `ach_${id}_title` as Parameters<typeof t>[1]),
-			desc:  t('rating', `ach_${id}_desc`  as Parameters<typeof t>[1]),
+			desc: t('rating', `ach_${id}_desc` as Parameters<typeof t>[1]),
 		}
 	}
 
 	return (
-		<View>
-			<View style={styles.achievementsHeader}>
-				<Text style={[styles.sectionTitle, { paddingHorizontal: 0 }]}>
+		<View style={styles.section}>
+			<View style={styles.sectionHead}>
+				<Text style={[styles.sectionTitle, { marginLeft: 0, marginBottom: 0 }]}>
 					{t('rating', 'achievements')}
 				</Text>
 				<Text style={styles.achievementsCount}>
@@ -431,305 +472,504 @@ const AchievementsSection = ({ data }: { data: RatingData }) => {
 				</Text>
 			</View>
 
-			<View style={styles.achievementsGrid5}>
-				{preview.map(a => (
-					<AchievementBadge key={a.id} achievement={a} onPress={setSelected} />
-				))}
+			<View style={styles.blockCard}>
+				<View style={styles.achievementsGrid5}>
+					{preview.map(a => (
+						<AchievementBadge key={a.id} achievement={a} onPress={setSelected} />
+					))}
+				</View>
 			</View>
 
-			{/* View All button */}
 			<TouchableOpacity
-				style={styles.viewAllBtn}
+				style={styles.settingsItem}
 				onPress={() => router.push('/(auth)/(routes)/achievements')}
 				activeOpacity={0.7}
 			>
-				<Ionicons name='ribbon-outline' size={16} color={C.primary} />
-				<Text style={styles.viewAllText}>{t('rating', 'viewAll')}</Text>
-				<Ionicons name='chevron-forward' size={14} color={C.primary} />
+				<View style={[styles.settingsIcon, { backgroundColor: `${C.primary}20` }]}>
+					<Ionicons name='ribbon-outline' size={22} color={C.primary} />
+				</View>
+				<View style={styles.settingsContent}>
+					<Text style={styles.settingsTitle}>{t('rating', 'viewAll')}</Text>
+					<Text style={styles.settingsSubtitle}>
+						{earnedCount}/{achievements.length} {t('rating', 'earned')}
+					</Text>
+				</View>
+				<Ionicons name='chevron-forward' size={20} color={C.textSecondary} />
 			</TouchableOpacity>
 
-			{/* Detail modal */}
 			<Modal
 				visible={!!selected}
 				transparent
-				animationType='fade'
+				animationType='slide'
 				onRequestClose={() => setSelected(null)}
 			>
-				<Pressable style={styles.modalOverlay} onPress={() => setSelected(null)}>
-					<Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
-						{selected && (() => {
-							const info = getAchievementInfo(selected.id)
-							return (
-								<>
-									<View style={[styles.modalIconWrap, { backgroundColor: selected.earned ? `${selected.iconColor}15` : C.cardLight, borderColor: selected.earned ? `${selected.iconColor}40` : C.border }]}>
-										<Ionicons
-											name={selected.icon as any}
-											size={44}
-											color={selected.earned ? selected.iconColor : '#555'}
+				<View style={styles.sheetBackdrop}>
+					<TouchableOpacity
+						style={StyleSheet.absoluteFill}
+						activeOpacity={1}
+						onPress={() => setSelected(null)}
+					/>
+					<View style={styles.sheet}>
+						{selected &&
+							(() => {
+								const info = getAchievementInfo(selected.id)
+								return (
+									<>
+										<SheetModalHeader
+											title={info.title}
+											onClose={() => setSelected(null)}
 										/>
-									</View>
-									<Text style={styles.modalTitle}>{info.title}</Text>
-									<Text style={styles.modalDesc}>{info.desc}</Text>
-									{selected.earned ? (
-										<View style={styles.modalEarnedTag}>
-											<Ionicons name='checkmark-circle' size={16} color={C.primary} />
-											<Text style={[styles.modalEarnedText, { color: C.primary }]}>
-												{t('rating', 'earned')}
-											</Text>
-										</View>
-									) : (
-										<View style={{ width: '100%', marginTop: 16 }}>
-											<Text style={[styles.progressLabel, { marginBottom: 6 }]}>
-												{selected.progressPercent}%
-											</Text>
-											<ProgressBar
-												percent={selected.progressPercent}
-												color={selected.iconColor}
-												height={8}
+										<View
+											style={[
+												styles.modalIconWrap,
+												{
+													backgroundColor: selected.earned
+														? `${selected.iconColor}15`
+														: C.cardLight,
+													borderColor: selected.earned
+														? `${selected.iconColor}40`
+														: C.border,
+												},
+											]}
+										>
+											<Ionicons
+												name={selected.icon as any}
+												size={44}
+												color={
+													selected.earned ? selected.iconColor : C.textTertiary
+												}
 											/>
 										</View>
-									)}
-									<TouchableOpacity
-										style={[styles.modalClose, { backgroundColor: selected.earned ? selected.iconColor : C.primary }]}
-										onPress={() => setSelected(null)}
-									>
-										<Text style={styles.modalCloseText}>OK</Text>
-									</TouchableOpacity>
-								</>
-							)
-						})()}
-					</Pressable>
-				</Pressable>
+										<Text style={styles.modalDesc}>{info.desc}</Text>
+										{selected.earned ? (
+											<View style={styles.modalEarnedTag}>
+												<Ionicons
+													name='checkmark-circle'
+													size={16}
+													color={C.primary}
+												/>
+												<Text style={[styles.modalEarnedText, { color: C.primary }]}>
+													{t('rating', 'earned')}
+												</Text>
+											</View>
+										) : (
+											<View style={{ width: '100%', marginTop: 16 }}>
+												<Text style={[styles.progressLabel, { marginBottom: 6 }]}>
+													{selected.progressPercent}%
+												</Text>
+												<ProgressBar
+													percent={selected.progressPercent}
+													color={selected.iconColor}
+													height={8}
+												/>
+											</View>
+										)}
+									</>
+								)
+							})()}
+					</View>
+				</View>
 			</Modal>
 		</View>
 	)
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-const RatingSkeleton = () => (
-	<View style={{ gap: 16 }}>
-		<ShimmerBlock style={{ height: 160, borderRadius: 16, backgroundColor: C.card }} />
-		<ShimmerBlock style={{ height: 180, borderRadius: 16, backgroundColor: C.card }} />
-		<View style={styles.categoryGrid}>
-			{[...Array(6)].map((_, i) => (
-				<ShimmerBlock key={i} style={{ height: 110, borderRadius: 12, backgroundColor: C.card, flex: 1 }} />
-			))}
+const RatingSkeleton = () => {
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
+	return (
+		<View>
+			<View style={[styles.heroCard, { borderColor: C.border }]}>
+				<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+					<ShimmerBlock
+						style={{
+							width: 70,
+							height: 70,
+							borderRadius: 35,
+							backgroundColor: C.cardLight,
+							marginRight: 16,
+						}}
+					/>
+					<View style={{ flex: 1, gap: 10 }}>
+						<ShimmerBlock
+							style={{
+								height: 20,
+								width: 120,
+								borderRadius: 6,
+								backgroundColor: C.cardLight,
+							}}
+						/>
+						<ShimmerBlock
+							style={{
+								height: 14,
+								width: 160,
+								borderRadius: 4,
+								backgroundColor: C.cardLight,
+							}}
+						/>
+					</View>
+				</View>
+				<ShimmerBlock
+					style={{
+						height: 10,
+						width: '100%',
+						borderRadius: 5,
+						backgroundColor: C.cardLight,
+						marginTop: 16,
+					}}
+				/>
+			</View>
+			<View style={styles.section}>
+				<ShimmerBlock
+					style={{
+						height: 18,
+						width: 140,
+						borderRadius: 5,
+						backgroundColor: C.cardLight,
+						marginBottom: 12,
+						marginLeft: 8,
+					}}
+				/>
+				{[0, 1, 2].map(i => (
+					<View key={i} style={[styles.settingsItem, { marginBottom: 8 }]}>
+						<ShimmerBlock
+							style={{
+								width: 44,
+								height: 44,
+								borderRadius: 22,
+								backgroundColor: C.cardLight,
+								marginRight: 12,
+							}}
+						/>
+						<View style={{ flex: 1, gap: 8 }}>
+							<ShimmerBlock
+								style={{
+									height: 14,
+									width: 140,
+									borderRadius: 4,
+									backgroundColor: C.cardLight,
+								}}
+							/>
+							<ShimmerBlock
+								style={{
+									height: 11,
+									width: 90,
+									borderRadius: 4,
+									backgroundColor: C.cardLight,
+								}}
+							/>
+						</View>
+					</View>
+				))}
+			</View>
 		</View>
-	</View>
-)
-
-// ─── Premium gate ─────────────────────────────────────────────────────────────
-// ─── Main screen ──────────────────────────────────────────────────────────────
+	)
+}
 
 export default function RatingScreen() {
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const { user } = useAuth()
 	const premium = hasActivePremium(user)
 	const [data, setData] = useState<RatingData | null>(null)
 	const [loading, setLoading] = useState(true)
-
-	const fadeAnim = useRef(new Animated.Value(0)).current
 
 	const load = useCallback(async () => {
 		setLoading(true)
 		try {
 			const result = await computeRating()
 			setData(result)
-			Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start()
 		} finally {
 			setLoading(false)
 		}
 	}, [])
 
-	useEffect(() => { load() }, [load])
+	useEffect(() => {
+		load()
+	}, [load])
 
 	if (!premium) return <SharedPremiumGate featureIcon='ribbon-outline' featureColor='#FFD700' />
 
 	return (
-		<SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-			{/* Header */}
-			<View style={styles.header}>
-				<TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-					<Ionicons name='chevron-back' size={26} color={C.text} />
-				</TouchableOpacity>
-				<Text style={styles.headerTitle}>{t('rating', 'title')}</Text>
-				<TouchableOpacity
-					style={styles.achBtn}
-					onPress={() => router.push('/(auth)/(routes)/achievements')}
-				>
-					<Ionicons name='ribbon-outline' size={22} color={C.primary} />
-				</TouchableOpacity>
-			</View>
-
+		<SafeAreaView style={styles.container} edges={['top']}>
 			<ScrollView
-				contentContainerStyle={styles.scrollContent}
 				showsVerticalScrollIndicator={false}
+				contentContainerStyle={styles.scrollContent}
 			>
+				{/* Header — как на профиле: крупный title + subtitle + back */}
+				<View style={styles.header}>
+					<View style={styles.headerLeft}>
+						<TouchableOpacity
+							onPress={() => router.back()}
+							style={styles.backBtn}
+							hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+						>
+							<Ionicons name='chevron-back' size={26} color={C.text} />
+						</TouchableOpacity>
+						<View style={{ flex: 1, paddingRight: 8 }}>
+							<Text style={styles.title}>{t('rating', 'title')}</Text>
+							<Text style={styles.subtitle}>{t('rating', 'ratingSubtitle')}</Text>
+						</View>
+					</View>
+					<TouchableOpacity
+						style={styles.headerPill}
+						onPress={() => router.push('/(auth)/(routes)/achievements')}
+						activeOpacity={0.7}
+					>
+						<Ionicons name='ribbon-outline' size={16} color={C.primary} />
+					</TouchableOpacity>
+				</View>
+
 				{loading || !data ? (
 					<RatingSkeleton />
 				) : (
-					<Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
+					<FadeIn show={!loading && !!data}>
 						<LevelCard data={data} />
-						<ScoreBreakdownCard data={data} />
-						<CategoryGrid data={data} />
-						<View style={[styles.card, { paddingTop: 12 }]}>
-							<AchievementsSection data={data} />
-						</View>
-					</Animated.View>
+						<CategorySection data={data} />
+						<ScoreBreakdownSection data={data} />
+						<AchievementsSection data={data} />
+					</FadeIn>
 				)}
-
-				<View style={{ height: 40 }} />
 			</ScrollView>
 		</SafeAreaView>
 	)
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		container: { flex: 1, backgroundColor: C.background },
+		scrollContent: { paddingBottom: 40 },
+		header: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			paddingHorizontal: 10,
+			paddingTop: 12,
+			paddingBottom: 16,
+		},
+		headerLeft: {
+			flex: 1,
+			flexDirection: 'row',
+			alignItems: 'flex-start',
+			gap: 2,
+		},
+		backBtn: {
+			width: 36,
+			height: 36,
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginTop: 2,
+			marginLeft: -6,
+		},
+		title: { fontSize: 28, fontWeight: 'bold', color: C.text },
+		subtitle: { fontSize: 15, color: C.textSecondary, marginTop: 4 },
+		headerPill: {
+			width: 40,
+			height: 40,
+			borderRadius: 20,
+			alignItems: 'center',
+			justifyContent: 'center',
+			backgroundColor: `${C.primary}15`,
+			borderWidth: 1,
+			borderColor: `${C.primary}25`,
+		},
 
-const CARD_GAP = 10
-const CATEGORY_COLS = 3
-const CATEGORY_CARD_WIDTH = (SCREEN_WIDTH - 40 - CARD_GAP * (CATEGORY_COLS - 1)) / CATEGORY_COLS
+		heroCard: {
+			backgroundColor: C.card,
+			borderRadius: 20,
+			padding: 20,
+			marginHorizontal: 10,
+			marginBottom: 16,
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		levelCardHeader: { flexDirection: 'row', alignItems: 'center' },
+		tierIconWrap: {
+			width: 70,
+			height: 70,
+			borderRadius: 35,
+			alignItems: 'center',
+			justifyContent: 'center',
+			borderWidth: 1.5,
+		},
+		levelNum: { fontSize: 22, fontWeight: '700', letterSpacing: 0.2 },
+		levelTotal: { fontSize: 15, color: C.textSecondary, fontWeight: '600' },
+		tierName: { fontSize: 15, fontWeight: '600', marginTop: 2 },
+		scoreText: { fontSize: 13, color: C.textSecondary, marginTop: 4 },
+		progressLabelRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			marginTop: 8,
+		},
+		progressLabel: { fontSize: 12, color: C.textSecondary },
 
-const ACH_COLS = 5
-const ACH_GAP  = 8
-// card horizontal padding = 16, scroll horizontal padding = 20
-const ACH_BADGE_SIZE = Math.floor((SCREEN_WIDTH - 40 - 32 - ACH_GAP * (ACH_COLS - 1)) / ACH_COLS)
+		tierLadder: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			marginTop: 18,
+			justifyContent: 'space-between',
+		},
+		tierStep: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+		tierStepIcon: {
+			width: 30,
+			height: 30,
+			borderRadius: 15,
+			alignItems: 'center',
+			justifyContent: 'center',
+			borderWidth: 1.5,
+			borderColor: C.border,
+		},
+		tierConnector: { flex: 1, height: 2, marginHorizontal: 2 },
 
-const styles = StyleSheet.create({
-	safeArea: { flex: 1, backgroundColor: C.background },
-	header: {
-		flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-		paddingHorizontal: 16, paddingVertical: 12,
-	},
-	backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-	achBtn:  { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-	headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
-	scrollContent: { paddingHorizontal: 20, paddingTop: 4 },
+		section: { marginTop: 10 },
+		sectionHead: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			marginBottom: 12,
+			paddingHorizontal: 8,
+		},
+		sectionTitle: {
+			fontSize: 18,
+			fontWeight: '600',
+			color: C.text,
+			marginBottom: 12,
+			marginLeft: 8,
+		},
 
-	card: { backgroundColor: C.card, borderRadius: 16, padding: 16 },
+		settingsItem: {
+			flexDirection: 'row',
+			backgroundColor: C.card,
+			borderRadius: 16,
+			padding: 16,
+			marginBottom: 8,
+			marginHorizontal: 10,
+			alignItems: 'center',
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		settingsIcon: {
+			width: 44,
+			height: 44,
+			borderRadius: 22,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginRight: 12,
+		},
+		settingsContent: { flex: 1 },
+		settingsTitle: { fontSize: 16, fontWeight: '500', color: C.text },
+		settingsSubtitle: { fontSize: 13, color: C.textSecondary, marginTop: 2 },
+		rowValue: { fontSize: 15, fontWeight: '700', color: C.text, marginLeft: 8 },
 
-	// Level card
-	levelCardHeader: { flexDirection: 'row', alignItems: 'center' },
-	tierIconWrap: {
-		width: 60, height: 60, borderRadius: 16,
-		alignItems: 'center', justifyContent: 'center',
-		borderWidth: 1.5,
-	},
-	levelNum:  { fontSize: 26, fontWeight: '900', letterSpacing: 0.5 },
-	levelTotal: { fontSize: 14, color: C.textSecondary, fontWeight: '600' },
-	tierName:  { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, marginTop: 1 },
-	levelName: { fontSize: 22, fontWeight: '800', letterSpacing: 1 },
-	scoreText: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
-	scoreBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-	scoreBadgeText: { fontSize: 11, fontWeight: '600' },
-	progressLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-	progressLabel: { fontSize: 11, color: C.textSecondary },
+		blockCard: {
+			backgroundColor: C.card,
+			borderRadius: 20,
+			padding: 16,
+			marginHorizontal: 10,
+			marginBottom: 8,
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		achievementsCount: { fontSize: 13, color: C.textSecondary, fontWeight: '500' },
+		achievementsGrid5: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			gap: ACH_GAP,
+			justifyContent: 'flex-start',
+		},
+		achievementBadge: {
+			width: ACH_BADGE_SIZE,
+			height: ACH_BADGE_SIZE,
+			borderRadius: 14,
+			alignItems: 'center',
+			justifyContent: 'center',
+			position: 'relative',
+		},
+		achievementEarned: {
+			backgroundColor: `${C.primary}26`,
+			borderWidth: 1.5,
+			borderColor: `${C.primary}66`,
+		},
+		achievementLocked: {
+			backgroundColor: C.cardLight,
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		achievementCheck: {
+			position: 'absolute',
+			top: 2,
+			right: 2,
+			width: 14,
+			height: 14,
+			borderRadius: 7,
+			backgroundColor: C.primary,
+			alignItems: 'center',
+			justifyContent: 'center',
+		},
+		achievementProgressRing: {
+			position: 'absolute',
+			bottom: 0,
+			right: 0,
+			backgroundColor: C.card,
+			borderRadius: 8,
+			paddingHorizontal: 3,
+			paddingVertical: 1,
+		},
+		achievementProgressText: {
+			fontSize: 8,
+			color: C.textSecondary,
+			fontWeight: '600',
+		},
 
-	// Tier ladder
-	tierLadder: {
-		flexDirection: 'row', alignItems: 'center', marginTop: 18, justifyContent: 'space-between',
-	},
-	tierStep: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-	tierStepIcon: {
-		width: 30, height: 30, borderRadius: 9,
-		alignItems: 'center', justifyContent: 'center',
-		borderWidth: 1.5, borderColor: '#333',
-	},
-	tierConnector: { flex: 1, height: 2, marginHorizontal: 2 },
-
-	// Score breakdown
-	sectionTitle: { fontSize: 15, fontWeight: '700', color: C.text },
-	breakdownRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-	breakdownIconWrap: {
-		width: 28, height: 28, borderRadius: 8,
-		alignItems: 'center', justifyContent: 'center',
-	},
-	breakdownLabel: { fontSize: 13, color: C.textSecondary, width: 105 },
-	breakdownValue: { fontSize: 13, fontWeight: '700', width: 36, textAlign: 'right' },
-
-	// Category grid
-	categoryGrid: {
-		flexDirection: 'row', flexWrap: 'wrap', gap: CARD_GAP,
-		paddingHorizontal: 0, marginTop: 12,
-	},
-	categoryCard: {
-		width: CATEGORY_CARD_WIDTH, backgroundColor: C.card, borderRadius: 12,
-		padding: 10, alignItems: 'center', gap: 4,
-	},
-	catIconWrap: {
-		width: 36, height: 36, borderRadius: 10,
-		alignItems: 'center', justifyContent: 'center', marginBottom: 2,
-	},
-	categoryLabel: { fontSize: 11, color: C.textSecondary, textAlign: 'center' },
-	categoryValue: { fontSize: 13, fontWeight: '700', color: C.text, textAlign: 'center' },
-	tierBadge: { flexDirection: 'row', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginTop: 2, alignItems: 'center' },
-	tierBadgeText: { fontSize: 10, fontWeight: '600' },
-
-	// Achievements
-	achievementsHeader: {
-		flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14,
-	},
-	achievementsCount: { fontSize: 12, color: C.textSecondary },
-	achievementsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-	achievementsGrid5: {
-		flexDirection: 'row', flexWrap: 'wrap', gap: 8,
-		justifyContent: 'flex-start',
-	},
-	achievementBadge: {
-		width: ACH_BADGE_SIZE, height: ACH_BADGE_SIZE, borderRadius: 14,
-		alignItems: 'center', justifyContent: 'center', position: 'relative',
-	},
-	achievementEarned: {
-		backgroundColor: 'rgba(52,199,89,0.15)',
-		borderWidth: 1.5, borderColor: 'rgba(52,199,89,0.4)',
-	},
-	achievementLocked: {
-		backgroundColor: C.cardLight, borderWidth: 1, borderColor: C.border,
-	},
-	achievementCheck: {
-		position: 'absolute', top: 2, right: 2,
-		width: 14, height: 14, borderRadius: 7,
-		backgroundColor: C.primary,
-		alignItems: 'center', justifyContent: 'center',
-	},
-	achievementProgressRing: {
-		position: 'absolute', bottom: 0, right: 0,
-		backgroundColor: C.card, borderRadius: 8,
-		paddingHorizontal: 3, paddingVertical: 1,
-	},
-	achievementProgressText: { fontSize: 8, color: C.textSecondary, fontWeight: '600' },
-
-	// View All
-	viewAllBtn: {
-		flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-		gap: 6, marginTop: 16, paddingVertical: 12,
-		backgroundColor: `${C.primary}12`, borderRadius: 12,
-		borderWidth: 1, borderColor: `${C.primary}30`,
-	},
-	viewAllText: { fontSize: 14, fontWeight: '700', color: C.primary },
-
-	// Modal
-	modalOverlay: {
-		flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
-		alignItems: 'center', justifyContent: 'center', padding: 32,
-	},
-	modalCard: {
-		backgroundColor: C.card, borderRadius: 20, padding: 28,
-		alignItems: 'center', width: '100%', maxWidth: 320,
-	},
-	modalIconWrap: {
-		width: 80, height: 80, borderRadius: 20,
-		alignItems: 'center', justifyContent: 'center',
-		borderWidth: 1.5, marginBottom: 14,
-	},
-	modalTitle: { fontSize: 20, fontWeight: '800', color: C.text, textAlign: 'center' },
-	modalDesc: { fontSize: 14, color: C.textSecondary, textAlign: 'center', marginTop: 8 },
-	modalEarnedTag: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 },
-	modalEarnedText: { fontSize: 14, fontWeight: '700' },
-	modalClose: {
-		marginTop: 24, borderRadius: 12,
-		paddingHorizontal: 40, paddingVertical: 12,
-	},
-	modalCloseText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-})
+		sheetBackdrop: {
+			flex: 1,
+			backgroundColor: C.overlay,
+			justifyContent: 'flex-end',
+		},
+		sheet: {
+			backgroundColor: C.modalSurface,
+			borderTopLeftRadius: 20,
+			borderTopRightRadius: 20,
+			padding: 22,
+			paddingBottom: 36,
+			alignItems: 'center',
+		},
+		sheetHandle: {
+			alignSelf: 'center',
+			width: 36,
+			height: 4,
+			borderRadius: 2,
+			backgroundColor: C.border,
+			marginBottom: 14,
+		},
+		modalIconWrap: {
+			width: 80,
+			height: 80,
+			borderRadius: 20,
+			alignItems: 'center',
+			justifyContent: 'center',
+			borderWidth: 1.5,
+			marginBottom: 14,
+		},
+		modalTitle: {
+			fontSize: 20,
+			fontWeight: '700',
+			color: C.text,
+			textAlign: 'center',
+		},
+		modalDesc: {
+			fontSize: 14,
+			color: C.textSecondary,
+			textAlign: 'center',
+			marginTop: 8,
+		},
+		modalEarnedTag: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			marginTop: 16,
+		},
+		modalEarnedText: { fontSize: 14, fontWeight: '700' },
+	})
+}

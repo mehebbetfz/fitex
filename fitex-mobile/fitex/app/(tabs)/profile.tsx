@@ -629,6 +629,13 @@ export default function ProfileScreen() {
 							iconColor='#FFD700'
 						/>
 						<SettingsItem
+							icon='podium-outline'
+							title={t('profile', 'leaderboardEntry')}
+							subtitle={t('profile', 'leaderboardEntrySubtitle')}
+							onPress={() => router.push('/(auth)/(routes)/leaderboard')}
+							iconColor={colors.accent}
+						/>
+						<SettingsItem
 							icon='copy-outline'
 							title={t('profile', 'templatesEntry')}
 							subtitle={t('profile', 'templatesEntrySubtitle')}

@@ -61,6 +61,32 @@ export class EmailService {
 		}
 	}
 
+	async trySendAdminAlert(
+		to: string[],
+		subject: string,
+		html: string,
+	): Promise<boolean> {
+		if (!this.transporter) {
+			this.logger.warn('Skip admin alert email: SMTP not configured')
+			return false
+		}
+		if (!to.length) return false
+		try {
+			const from = process.env.SMTP_FROM || `FitEx <${process.env.SMTP_USER}>`
+			await this.transporter.sendMail({
+				from,
+				to: to.join(', '),
+				subject,
+				html,
+			})
+			this.logger.log(`Admin alert sent to ${to.join(', ')}`)
+			return true
+		} catch (err) {
+			this.logger.error('Failed to send admin alert email:', err)
+			return false
+		}
+	}
+
 	async sendVerificationCode(to: string, code: string): Promise<void> {
 		if (!this.transporter) {
 			throw new Error('SMTP is not configured')

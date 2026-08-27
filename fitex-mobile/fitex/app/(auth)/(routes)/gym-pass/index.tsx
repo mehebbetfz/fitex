@@ -1,5 +1,6 @@
 import { useAuth } from '@/app/contexts/auth-context'
 import { useLanguage } from '@/contexts/language-context'
+import { dateLocaleFor } from '@/locales'
 import { PassCardSkeleton } from '@/components/ui/skeleton'
 import {
 	formatPrice,
@@ -23,7 +24,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const COLORS = {
-	background: '#121212',
+	background: '#222226',
 	card: '#1C1C1E',
 	cardLight: '#2C2C2E',
 	border: '#2C2C2E',
@@ -53,11 +54,14 @@ const MembershipCard = ({
 	const gym = membership.gymId as any
 	const planKey = PLAN_KEY_MAP[membership.planType] ?? 'plan_month'
 
-	const validUntil = new Date(membership.endDate).toLocaleDateString(language, {
-		day: '2-digit',
-		month: '2-digit',
-		year: 'numeric',
-	})
+	const validUntil = new Date(membership.endDate).toLocaleDateString(
+		dateLocaleFor(language),
+		{
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+		},
+	)
 
 	const daysLeft = Math.max(
 		0,
@@ -147,8 +151,15 @@ const VisitRow = ({ visit }: { visit: GymVisit }) => {
 	const { language } = useLanguage()
 	const gym = visit.gymId as any
 	const date = new Date(visit.checkInTime)
-	const dateStr = date.toLocaleDateString(language, { day: '2-digit', month: '2-digit', year: 'numeric' })
-	const timeStr = date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })
+	const dateStr = date.toLocaleDateString(dateLocaleFor(language), {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+	})
+	const timeStr = date.toLocaleTimeString(dateLocaleFor(language), {
+		hour: '2-digit',
+		minute: '2-digit',
+	})
 
 	return (
 		<View style={styles.visitRow}>

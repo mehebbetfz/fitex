@@ -8,6 +8,7 @@ import { Model } from 'mongoose'
 import { UpdateProfileDto } from 'src/dtos/update-profile.dto'
 import { User, UserDocument } from 'src/models/user.schema'
 import { EmailService } from '../email/email.service'
+import { AdminNotificationService } from '../admin-notification/admin-notification.service'
 import { AvatarStorageService } from './avatar-storage.service'
 
 @Injectable()
@@ -19,6 +20,7 @@ export class AuthService {
 		private jwtService: JwtService,
 		private emailService: EmailService,
 		private avatarStorage: AvatarStorageService,
+		private adminNotification: AdminNotificationService,
 	) {
 		this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 	}
@@ -37,6 +39,11 @@ export class AuthService {
 
 	private generateCode(): string {
 		return Math.floor(100000 + Math.random() * 900000).toString()
+	}
+
+	private notifyAdminNewUser(user: UserDocument): void {
+		if (user.provider === 'demo') return
+		this.adminNotification.notifyNewUser(user)
 	}
 
 	async registerWithEmail(
@@ -73,6 +80,7 @@ export class AuthService {
 			existing.emailVerificationToken = undefined
 			existing.emailVerificationExpires = undefined
 			await existing.save()
+			this.notifyAdminNewUser(existing)
 			const session = await this.login(existing)
 			return { ...session, requiresVerification: false }
 		}
@@ -117,6 +125,7 @@ export class AuthService {
 		user.emailVerificationToken = undefined
 		user.emailVerificationExpires = undefined
 		await user.save()
+		this.notifyAdminNewUser(user)
 		const session = await this.login(user)
 		return { ...session, requiresVerification: false }
 	}
@@ -137,6 +146,7 @@ export class AuthService {
 		user.emailVerificationToken = undefined
 		user.emailVerificationExpires = undefined
 		await user.save()
+		this.notifyAdminNewUser(user)
 		return await this.login(user)
 	}
 
@@ -250,6 +260,7 @@ export class AuthService {
 					avatarUrl: picture,
 				})
 				await user.save()
+				this.notifyAdminNewUser(user)
 			}
 			return user
 		} catch (error) {
@@ -299,6 +310,7 @@ export class AuthService {
 					lastName: fullName?.familyName || '',
 				})
 				await user.save()
+				this.notifyAdminNewUser(user)
 			}
 
 			// Опционально: если нужен refresh_token — можно обменять code

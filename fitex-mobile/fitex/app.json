@@ -47,6 +47,7 @@
 			}
 		},
 		"android": {
+			"softwareKeyboardLayoutMode": "resize",
 			"adaptiveIcon": {
 				"foregroundImage": "./assets/images/android-icon-foreground.png",
 				"monochromeImage": "./assets/images/android-icon-monochrome.png",
@@ -77,6 +78,14 @@
 					"cameraPermission": "Fitex uses the camera for your profile picture and meal photos."
 				}
 			],
+			[
+				"expo-camera",
+				{
+					"cameraPermission": "Fitex uses the camera to photograph meals for calorie analysis.",
+					"microphonePermission": false,
+					"recordAudioAndroid": false
+				}
+			],
 			"expo-secure-store",
 			"expo-sqlite",
 			"expo-video",
@@ -96,7 +105,8 @@
 					"color": "#34C759",
 					"sounds": []
 				}
-			]
+			],
+			"expo-av"
 		],
 		"extra": {
 			"router": {

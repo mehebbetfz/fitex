@@ -1,4 +1,5 @@
 import type { AppColors } from '@/constants/app-theme'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useAppTheme } from '@/contexts/theme-context'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -156,15 +157,12 @@ export default function DailyLeadersModal({
 						end={{ x: 1, y: 0 }}
 						style={styles.sheetGlow}
 					/>
-					<View style={styles.sheetHeader}>
-						<View style={styles.sheetIconWrap}>
-							<Ionicons name='podium' size={26} color={GOLD} />
-						</View>
-						<View style={{ flex: 1 }}>
-							<Text style={styles.sheetTitle}>{t('leaderboard', 'dailyLeadersTitle')}</Text>
-							<Text style={styles.sheetSub}>{t('leaderboard', 'dailyLeadersSubtitle')}</Text>
-						</View>
-					</View>
+					<SheetModalHeader
+						title={t('leaderboard', 'dailyLeadersTitle')}
+						subtitle={t('leaderboard', 'dailyLeadersSubtitle')}
+						onClose={onClose}
+						showHandle={false}
+					/>
 
 					<ScrollView
 						style={styles.scroll}

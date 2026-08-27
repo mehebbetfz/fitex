@@ -88,7 +88,32 @@ export function PageListSkeleton({
 /** Podium / top section + list (leaderboard-style) */
 export function LeaderboardSkeleton({ color = DEFAULT_BG }: { color?: string }) {
 	return (
-		<View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 8 }}>
+		<View style={{ flex: 1, paddingHorizontal: 10, paddingTop: 8 }}>
+			{/* my rank placeholder */}
+			<View style={[styles.rowCard, { borderColor: color, marginBottom: 12, minHeight: 88 }]}>
+				<View style={{ flex: 1, gap: 10 }}>
+					<ShimmerBlock color={color} style={{ height: 10, width: 72, borderRadius: 4 }} />
+					<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+						<ShimmerBlock color={color} style={{ width: 28, height: 14, borderRadius: 4 }} />
+						<ShimmerBlock
+							color={color}
+							style={{ width: 44, height: 44, borderRadius: 22 }}
+						/>
+						<View style={{ flex: 1, gap: 8 }}>
+							<ShimmerBlock
+								color={color}
+								style={{ height: 14, width: '55%', borderRadius: 6 }}
+							/>
+							<ShimmerBlock
+								color={color}
+								style={{ height: 12, width: '40%', borderRadius: 5 }}
+							/>
+						</View>
+						<ShimmerBlock color={color} style={{ height: 16, width: 40, borderRadius: 5 }} />
+					</View>
+				</View>
+			</View>
+
 			<View style={styles.podium}>
 				{[0.72, 1, 0.72].map((scale, i) => (
 					<View key={i} style={[styles.podiumCol, { transform: [{ scale }] }]}>
@@ -107,7 +132,43 @@ export function LeaderboardSkeleton({ color = DEFAULT_BG }: { color?: string }) 
 					</View>
 				))}
 			</View>
-			<PageListSkeleton rows={8} pad={0} color={color} />
+
+			<ShimmerBlock
+				color={color}
+				style={{ height: 18, width: 140, borderRadius: 6, marginBottom: 12, marginLeft: 4 }}
+			/>
+
+			<View style={{ gap: 12 }}>
+				{Array.from({ length: 8 }).map((_, i) => (
+					<View
+						key={i}
+						style={[styles.rowCard, { height: 72, borderColor: color }]}
+					>
+						<ShimmerBlock
+							color={color}
+							style={{ width: 28, height: 14, borderRadius: 4 }}
+						/>
+						<ShimmerBlock
+							color={color}
+							style={{ width: 44, height: 44, borderRadius: 22 }}
+						/>
+						<View style={{ flex: 1, gap: 8 }}>
+							<ShimmerBlock
+								color={color}
+								style={{ height: 14, width: '62%', borderRadius: 6 }}
+							/>
+							<ShimmerBlock
+								color={color}
+								style={{ height: 12, width: '40%', borderRadius: 5 }}
+							/>
+						</View>
+						<ShimmerBlock
+							color={color}
+							style={{ height: 16, width: 40, borderRadius: 5 }}
+						/>
+					</View>
+				))}
+			</View>
 		</View>
 	)
 }

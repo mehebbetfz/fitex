@@ -1,3 +1,4 @@
+import { dateLocaleFor } from '@/locales'
 import {
 	statsHistoryColorsFromTheme,
 	statsHistoryThemeFromApp,
@@ -7,6 +8,7 @@ import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import { translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
 import ActivityHeatmap from '@/components/activity-heatmap'
+import FoodHistoryPanel from '@/components/food-history-panel'
 import {
 	aggregateSetsByDay,
 	buildHeatmapGrid,
@@ -17,9 +19,9 @@ import * as Haptics from 'expo-haptics'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-	ActivityIndicator,
 	Animated,
 	FlatList,
+	Modal,
 	Platform,
 	RefreshControl,
 	StyleSheet,
@@ -28,6 +30,7 @@ import {
 	View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useDatabase } from '../contexts/database-context'
 
 // Количество тренировок для загрузки за раз
@@ -91,14 +94,16 @@ const useShimmer = () => {
 		)
 		loop.start()
 		return () => loop.stop()
-	}, [])
-	return anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] })
+	}, [anim])
+	return anim.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.75] })
 }
 
 const ShimmerBlock = ({ style }: { style: any }) => {
 	const opacity = useShimmer()
 	return <Animated.View style={[style, { opacity }]} />
 }
+
+const SKELETON_CARDS = [1, 2, 3, 4]
 
 // ── Скелетон карточки тренировки ──
 const WorkoutCardSkeleton = () => {
@@ -109,48 +114,28 @@ const WorkoutCardSkeleton = () => {
 	)
 	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
 	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
+	const sk = colors.skeleton
 	return (
 		<View style={styles.workoutCard}>
 			<View style={styles.workoutHeader}>
-				<View>
+				<View style={{ flex: 1, gap: 6 }}>
 					<ShimmerBlock
-						style={[
-							styles.workoutDate,
-							{ width: 120, height: 20, backgroundColor: COLORS.cardLight },
-						]}
+						style={{ width: 130, height: 16, borderRadius: 5, backgroundColor: sk }}
 					/>
 					<ShimmerBlock
-						style={[
-							styles.workoutSubDate,
-							{
-								width: 100,
-								height: 14,
-								marginTop: 2,
-								backgroundColor: COLORS.cardLight,
-							},
-						]}
+						style={{ width: 110, height: 12, borderRadius: 4, backgroundColor: sk }}
 					/>
 				</View>
 				<ShimmerBlock
-					style={[
-						styles.workoutTypeBadge,
-						{ width: 72, height: 26, backgroundColor: COLORS.cardLight },
-					]}
+					style={{ width: 68, height: 24, borderRadius: 8, backgroundColor: sk }}
 				/>
 			</View>
 
-			<View style={styles.muscleGroups}>
-				{[1, 2, 3].map(i => (
+			<View style={[styles.muscleGroups, { marginBottom: 10 }]}>
+				{[56, 46, 64].map((w, i) => (
 					<ShimmerBlock
 						key={i}
-						style={[
-							styles.muscleTag,
-							{
-								width: i === 1 ? 56 : i === 2 ? 46 : 64,
-								height: 22,
-								backgroundColor: COLORS.cardLight,
-							},
-						]}
+						style={{ width: w, height: 22, borderRadius: 8, backgroundColor: sk }}
 					/>
 				))}
 			</View>
@@ -159,20 +144,10 @@ const WorkoutCardSkeleton = () => {
 				{[1, 2, 3, 4].map(i => (
 					<View key={i} style={styles.statCell}>
 						<ShimmerBlock
-							style={{
-								width: 14,
-								height: 14,
-								borderRadius: 4,
-								backgroundColor: COLORS.cardLight,
-							}}
+							style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: sk }}
 						/>
 						<ShimmerBlock
-							style={{
-								flex: 1,
-								height: 14,
-								borderRadius: 4,
-								backgroundColor: COLORS.cardLight,
-							}}
+							style={{ flex: 1, height: 12, borderRadius: 4, backgroundColor: sk }}
 						/>
 					</View>
 				))}
@@ -182,22 +157,12 @@ const WorkoutCardSkeleton = () => {
 }
 
 // ── Скелетон для подгрузки ──
-const LoadingFooter = () => {
-	const { colors, resolved } = useAppTheme()
-	const T = useMemo(
-		() => statsHistoryThemeFromApp(colors, resolved),
-		[colors, resolved],
-	)
-	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
-	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
-	const { t } = useLanguage()
-	return (
-		<View style={styles.loadingFooter}>
-			<ActivityIndicator size='small' color={COLORS.primary} />
-			<Text style={styles.loadingFooterText}>{t('history', 'workoutsLoading')}</Text>
-		</View>
-	)
-}
+const LoadingFooter = () => (
+	<View>
+		<WorkoutCardSkeleton />
+		<WorkoutCardSkeleton />
+	</View>
+)
 
 // ── Скелетон для первой загрузки ──
 const InitialLoadingSkeleton = () => {
@@ -208,45 +173,63 @@ const InitialLoadingSkeleton = () => {
 	)
 	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
 	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
+	const sk = colors.skeleton
 	return (
 		<SafeAreaView style={styles.container} edges={['top']}>
 			<View style={styles.header}>
-				<View>
-					<ShimmerBlock
-						style={[
-							styles.title,
-							{ width: 180, height: 30, backgroundColor: COLORS.cardLight },
-						]}
-					/>
-					<ShimmerBlock
-						style={[
-							styles.countPill,
-							{
-								width: 120,
-								height: 30,
-								marginTop: 10,
-								backgroundColor: COLORS.cardLight,
-							},
-						]}
-					/>
-				</View>
+				<ShimmerBlock
+					style={{ width: 160, height: 24, borderRadius: 6, backgroundColor: sk }}
+				/>
+				<ShimmerBlock
+					style={{
+						width: 100,
+						height: 13,
+						borderRadius: 4,
+						backgroundColor: sk,
+						marginTop: 8,
+					}}
+				/>
+			</View>
+
+			<View style={styles.tabsRow}>
+				<ShimmerBlock
+					style={{
+						flex: 1,
+						height: 40,
+						borderRadius: 12,
+						backgroundColor: sk,
+					}}
+				/>
+				<ShimmerBlock
+					style={{
+						flex: 1,
+						height: 40,
+						borderRadius: 12,
+						backgroundColor: sk,
+					}}
+				/>
 			</View>
 
 			<View style={styles.filtersSection}>
 				<ShimmerBlock
-					style={[
-						styles.filtersTitle,
-						{ width: 150, height: 20, backgroundColor: COLORS.cardLight },
-					]}
+					style={{
+						width: 140,
+						height: 16,
+						borderRadius: 5,
+						backgroundColor: sk,
+						marginBottom: 10,
+					}}
 				/>
 				<View style={styles.filtersContainer}>
-					{[1, 2, 3, 4, 5].map(i => (
+					{[72, 96, 68, 84, 70].map((w, i) => (
 						<ShimmerBlock
 							key={i}
-							style={[
-								styles.filterButton,
-								{ width: i === 2 ? 100 : i === 4 ? 80 : 70, paddingVertical: 12 },
-							]}
+							style={{
+								width: w,
+								height: 30,
+								borderRadius: 18,
+								backgroundColor: sk,
+							}}
 						/>
 					))}
 				</View>
@@ -254,7 +237,7 @@ const InitialLoadingSkeleton = () => {
 
 			<FlatList
 				style={styles.listFlex}
-				data={[1, 2, 3]}
+				data={SKELETON_CARDS}
 				renderItem={() => <WorkoutCardSkeleton />}
 				keyExtractor={item => item.toString()}
 				contentContainerStyle={styles.listContent}
@@ -273,9 +256,26 @@ export default function FullHistoryScreen() {
 	const COLORS = useMemo(() => statsHistoryColorsFromTheme(T), [T])
 	const styles = useMemo(() => makeStyles(T, COLORS), [T, COLORS])
 	const router = useRouter()
-	const params = useLocalSearchParams<{ muscleGroup?: string | string[] }>()
+	const params = useLocalSearchParams<{
+		muscleGroup?: string | string[]
+		tab?: string | string[]
+	}>()
 	const { t, language } = useLanguage()
-	const { workouts: allWorkouts, refreshWorkouts } = useDatabase()
+	const { workouts: allWorkouts, refreshWorkouts, isInitialized } = useDatabase()
+
+	type HistoryTab = 'workouts' | 'food'
+	const tabFromParams = useMemo((): HistoryTab => {
+		const raw = params.tab
+		const value = Array.isArray(raw) ? raw[0] : raw
+		return value === 'food' ? 'food' : 'workouts'
+	}, [params.tab])
+	const [activeTab, setActiveTab] = useState<HistoryTab>(tabFromParams)
+	const [foodCount, setFoodCount] = useState(0)
+	const [showActivityModal, setShowActivityModal] = useState(false)
+
+	useEffect(() => {
+		setActiveTab(tabFromParams)
+	}, [tabFromParams])
 
 	// Состояния для пагинации
 	const [displayedWorkouts, setDisplayedWorkouts] = useState<Workout[]>([])
@@ -295,15 +295,27 @@ export default function FullHistoryScreen() {
 		return trimmed ? trimmed : null
 	}, [params.muscleGroup])
 
-	// Первоначальная загрузка
+	// Первоначальная загрузка — ждём инициализации БД
 	useEffect(() => {
+		if (!isInitialized) return
+		let cancelled = false
 		const loadInitialData = async () => {
 			setIsInitialLoading(true)
-			await refreshWorkouts()
-			setIsInitialLoading(false)
+			try {
+				await refreshWorkouts()
+			} finally {
+				if (!cancelled) setIsInitialLoading(false)
+			}
 		}
-		loadInitialData()
-	}, [])
+		void loadInitialData()
+		return () => {
+			cancelled = true
+		}
+	}, [isInitialized, refreshWorkouts])
+
+	// Пока БД ещё не готова — тоже скелетон
+	const showWorkoutsSkeleton =
+		activeTab === 'workouts' && (!isInitialized || isInitialLoading)
 
 	// Фильтр с экрана восстановления
 	useEffect(() => {
@@ -321,15 +333,23 @@ export default function FullHistoryScreen() {
 		}, [isInitialLoading, refreshWorkouts]),
 	)
 
-	// Фильтрация тренировок
+	// Фильтрация тренировок (новые сверху: date → time → id)
 	const filteredWorkouts = useMemo(() => {
-		if (selectedFilter === 'all') return allWorkouts
-
-		return allWorkouts.filter(workout =>
-			workout.muscle_groups
-				?.split(',')
-				.some(group => group.trim() === selectedFilter),
-		)
+		const list =
+			selectedFilter === 'all'
+				? allWorkouts
+				: allWorkouts.filter(workout =>
+						workout.muscle_groups
+							?.split(',')
+							.some(group => group.trim() === selectedFilter),
+					)
+		return [...list].sort((a, b) => {
+			const dateCmp = (b.date || '').localeCompare(a.date || '')
+			if (dateCmp !== 0) return dateCmp
+			const timeCmp = (b.time || '').localeCompare(a.time || '')
+			if (timeCmp !== 0) return timeCmp
+			return (b.id ?? 0) - (a.id ?? 0)
+		})
 	}, [allWorkouts, selectedFilter])
 
 	const heatmapWeeks = useMemo(() => {
@@ -338,7 +358,7 @@ export default function FullHistoryScreen() {
 	}, [filteredWorkouts])
 
 	const heatmapLocale =
-		language === 'en' ? 'en-US' : language === 'az' ? 'az-AZ' : 'ru-RU'
+		dateLocaleFor(language)
 
 	const formatHeatmapDate = useCallback(
 		(isoDate: string) => {
@@ -531,117 +551,221 @@ export default function FullHistoryScreen() {
 		return translateGroupName(filter, language)
 	}
 
-	// Показываем полный скелетон при первой загрузке
-	if (isInitialLoading) {
+	const getMealWord = (count: number) => {
+		if (language === 'ru') {
+			if (count % 10 === 1 && count % 100 !== 11) return t('history', 'meal1')
+			if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100))
+				return t('history', 'meal2')
+			return t('history', 'meal5')
+		}
+		return count === 1 ? t('history', 'meal1') : t('history', 'meal5')
+	}
+
+	const switchTab = (tab: HistoryTab) => {
+		setActiveTab(tab)
+		router.setParams({ tab })
+	}
+
+	// Показываем полный скелетон при первой загрузке тренировок
+	if (showWorkoutsSkeleton) {
 		return <InitialLoadingSkeleton />
 	}
 
 	return (
 		<SafeAreaView style={styles.container} edges={['top']}>
 			<View style={styles.header}>
-				<View>
+				<View style={styles.headerTextCol}>
 					<Text style={styles.title}>{t('history', 'title')}</Text>
 					<Text style={styles.countSubtitle}>
-						{allWorkouts.length} {getWorkoutWord(allWorkouts.length)}
+						{activeTab === 'workouts'
+							? `${allWorkouts.length} ${getWorkoutWord(allWorkouts.length)}`
+							: `${foodCount} ${getMealWord(foodCount)}`}
 					</Text>
 				</View>
+				{activeTab === 'workouts' ? (
+					<TouchableOpacity
+						style={styles.activityBtn}
+						onPress={() => {
+							void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+							setShowActivityModal(true)
+						}}
+						activeOpacity={0.75}
+						accessibilityLabel={t('history', 'activityTitle')}
+					>
+						<Ionicons name='grid-outline' size={22} color={COLORS.text} />
+					</TouchableOpacity>
+				) : null}
 			</View>
 
-			<ActivityHeatmap
-				weeks={heatmapWeeks}
-				locale={heatmapLocale}
-				title={t('history', 'activityTitle')}
-				lessLabel={t('history', 'less')}
-				moreLabel={t('history', 'more')}
-				daySetsTemplate={t('history', 'daySets')}
-				formatDate={formatHeatmapDate}
-			/>
-
-			{/* Фильтры */}
-			{muscleGroups.length > 1 && (
-				<View style={styles.filtersSection}>
-					<Text style={styles.filtersTitle}>{t('history', 'filterByMuscle')}</Text>
-					<FlatList
-						ref={filterListRef}
-						horizontal
-						data={muscleGroups}
-						renderItem={({ item }) => (
-							<TouchableOpacity
-								activeOpacity={0.85}
-								style={[
-									styles.filterButton,
-									selectedFilter === item && styles.filterButtonActive,
-								]}
-								onPress={() => setSelectedFilter(item)}
-							>
-								<Text
-									style={[
-										styles.filterText,
-										selectedFilter === item && styles.filterTextActive,
-									]}
-								>
-									{getFilterLabel(item)}
-								</Text>
-							</TouchableOpacity>
-						)}
-						keyExtractor={item => item}
-						showsHorizontalScrollIndicator={false}
-						contentContainerStyle={styles.filtersContainer}
-						onScrollToIndexFailed={({ index }) => {
-							filterListRef.current?.scrollToOffset({
-								offset: Math.max(0, index * 88),
-								animated: true,
-							})
-						}}
+			<View style={styles.tabsRow}>
+				<TouchableOpacity
+					style={[styles.tabBtn, activeTab === 'workouts' && styles.tabBtnActive]}
+					onPress={() => switchTab('workouts')}
+					activeOpacity={0.85}
+				>
+					<Ionicons
+						name='barbell-outline'
+						size={16}
+						color={activeTab === 'workouts' ? '#fff' : COLORS.textSecondary}
 					/>
+					<Text
+						style={[styles.tabText, activeTab === 'workouts' && styles.tabTextActive]}
+					>
+						{t('history', 'tabWorkouts')}
+					</Text>
+				</TouchableOpacity>
+				<TouchableOpacity
+					style={[styles.tabBtn, activeTab === 'food' && styles.tabBtnActive]}
+					onPress={() => switchTab('food')}
+					activeOpacity={0.85}
+				>
+					<Ionicons
+						name='restaurant-outline'
+						size={16}
+						color={activeTab === 'food' ? '#fff' : COLORS.textSecondary}
+					/>
+					<Text style={[styles.tabText, activeTab === 'food' && styles.tabTextActive]}>
+						{t('history', 'tabFood')}
+					</Text>
+				</TouchableOpacity>
+			</View>
+
+			{activeTab === 'food' ? (
+				<View style={styles.listFlex}>
+					<FoodHistoryPanel onCountChange={setFoodCount} />
 				</View>
+			) : (
+				<>
+					{muscleGroups.length > 1 && (
+						<View style={styles.filtersSection}>
+							<Text style={styles.filtersTitle}>{t('history', 'filterByMuscle')}</Text>
+							<FlatList
+								ref={filterListRef}
+								horizontal
+								data={muscleGroups}
+								renderItem={({ item }) => (
+									<TouchableOpacity
+										activeOpacity={0.85}
+										style={[
+											styles.filterButton,
+											selectedFilter === item && styles.filterButtonActive,
+										]}
+										onPress={() => setSelectedFilter(item)}
+									>
+										<Text
+											style={[
+												styles.filterText,
+												selectedFilter === item && styles.filterTextActive,
+											]}
+										>
+											{getFilterLabel(item)}
+										</Text>
+									</TouchableOpacity>
+								)}
+								keyExtractor={item => item}
+								showsHorizontalScrollIndicator={false}
+								contentContainerStyle={styles.filtersContainer}
+								onScrollToIndexFailed={({ index }) => {
+									filterListRef.current?.scrollToOffset({
+										offset: Math.max(0, index * 88),
+										animated: true,
+									})
+								}}
+							/>
+						</View>
+					)}
+
+					<FlatList
+						style={styles.listFlex}
+						data={displayedWorkouts}
+						renderItem={renderWorkoutCard}
+						keyExtractor={(item, index) =>
+							item.id != null ? String(item.id) : `w-${index}`
+						}
+						contentContainerStyle={styles.listContent}
+						showsVerticalScrollIndicator={false}
+						onEndReached={loadNextPage}
+						onEndReachedThreshold={0.3}
+						ListFooterComponent={renderFooter}
+						refreshControl={
+							<RefreshControl
+								refreshing={refreshing}
+								onRefresh={onRefresh}
+								tintColor={COLORS.primary}
+								colors={[COLORS.primary]}
+							/>
+						}
+						ListEmptyComponent={
+							<View style={styles.emptyState}>
+								<View style={styles.emptyIconWrap}>
+									<Ionicons name='barbell-outline' size={40} color={COLORS.primary} />
+								</View>
+								<Text style={styles.emptyStateTitle}>{t('history', 'noWorkouts')}</Text>
+								<Text style={styles.emptyStateText}>
+									{selectedFilter === 'all'
+										? t('history', 'startFirst')
+										: t('history', 'noWorkoutsFilter')}
+								</Text>
+							</View>
+						}
+					/>
+				</>
 			)}
 
-			{/* Список тренировок с пагинацией */}
-			<FlatList
-				style={styles.listFlex}
-				data={displayedWorkouts}
-				renderItem={renderWorkoutCard}
-				keyExtractor={(item, index) =>
-					item.id != null ? String(item.id) : `w-${index}`
+			<TouchableOpacity
+				style={styles.addFab}
+				onPress={() => {
+					void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+					if (activeTab === 'food') {
+						router.push({
+							pathname: '/(tabs)/nutrition',
+							params: { add: '1' },
+						})
+					} else {
+						router.push('/workout/create')
+					}
+				}}
+				activeOpacity={0.85}
+				accessibilityLabel={
+					activeTab === 'food'
+						? t('nutrition', 'addMeal')
+						: t('templates', 'startWorkout')
 				}
-				contentContainerStyle={styles.listContent}
-				showsVerticalScrollIndicator={false}
-				onEndReached={loadNextPage}
-				onEndReachedThreshold={0.3} // Срабатывает когда осталось 30% до конца
-				ListFooterComponent={renderFooter}
-				refreshControl={
-					<RefreshControl
-						refreshing={refreshing}
-						onRefresh={onRefresh}
-						tintColor={COLORS.primary}
-						colors={[COLORS.primary]}
+			>
+				<Ionicons name='add' size={32} color={T.background} />
+			</TouchableOpacity>
+
+			<Modal
+				visible={showActivityModal}
+				animationType='slide'
+				transparent
+				onRequestClose={() => setShowActivityModal(false)}
+			>
+				<View style={styles.activityModalRoot}>
+					<TouchableOpacity
+						style={styles.activityModalBackdrop}
+						activeOpacity={1}
+						onPress={() => setShowActivityModal(false)}
 					/>
-				}
-				ListEmptyComponent={
-					<View style={styles.emptyState}>
-						<View style={styles.emptyIconWrap}>
-							<Ionicons name='barbell-outline' size={40} color={COLORS.primary} />
+					<View style={styles.activityModalSheet}>
+						<SheetModalHeader
+							title={t('history', 'activityTitle')}
+							onClose={() => setShowActivityModal(false)}
+						/>
+						<View style={styles.activityModalBody}>
+							<ActivityHeatmap
+								weeks={heatmapWeeks}
+								locale={heatmapLocale}
+								title=''
+								lessLabel={t('history', 'less')}
+								moreLabel={t('history', 'more')}
+								daySetsTemplate={t('history', 'daySets')}
+								formatDate={formatHeatmapDate}
+							/>
 						</View>
-						<Text style={styles.emptyStateTitle}>{t('history', 'noWorkouts')}</Text>
-						<Text style={styles.emptyStateText}>
-							{selectedFilter === 'all'
-								? t('history', 'startFirst')
-								: t('history', 'noWorkoutsFilter')}
-						</Text>
-						{selectedFilter === 'all' ? (
-							<TouchableOpacity
-								style={styles.emptyCta}
-								activeOpacity={0.88}
-								onPress={() => router.push('/workout/create')}
-							>
-								<Text style={styles.emptyCtaText}>{t('progress', 'startFirstWorkoutCta')}</Text>
-								<Ionicons name='arrow-forward' size={18} color='#fff' />
-							</TouchableOpacity>
-						) : null}
 					</View>
-				}
-			/>
+				</View>
+			</Modal>
 		</SafeAreaView>
 	)
 }
@@ -662,6 +786,96 @@ function makeStyles(
 		paddingHorizontal: 10,
 		paddingTop: 16,
 		paddingBottom: 8,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		gap: 12,
+	},
+	headerTextCol: {
+		flex: 1,
+	},
+	activityBtn: {
+		width: 40,
+		height: 40,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: T.chipInactive,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+	},
+	activityModalRoot: {
+		flex: 1,
+		justifyContent: 'flex-end',
+		backgroundColor: 'rgba(0,0,0,0.45)',
+	},
+	activityModalBackdrop: {
+		...StyleSheet.absoluteFillObject,
+	},
+	activityModalSheet: {
+		backgroundColor: T.background,
+		borderTopLeftRadius: 20,
+		borderTopRightRadius: 20,
+		paddingBottom: Platform.OS === 'ios' ? 28 : 16,
+		maxHeight: '70%',
+	},
+	activityModalBody: {
+		paddingHorizontal: 4,
+		paddingBottom: 8,
+	},
+	tabsRow: {
+		flexDirection: 'row',
+		gap: 8,
+		paddingHorizontal: 10,
+		paddingBottom: 10,
+	},
+	heatmapSkeleton: {
+		marginHorizontal: 10,
+		marginTop: 8,
+		marginBottom: 4,
+		paddingHorizontal: 12,
+		paddingTop: 12,
+		paddingBottom: 10,
+	},
+	heatmapSkeletonGrid: {
+		flexDirection: 'row',
+		gap: 3,
+		overflow: 'hidden',
+	},
+	heatmapSkeletonCol: {
+		width: 11,
+		gap: 3,
+	},
+	heatmapSkeletonLegend: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'flex-end',
+		gap: 4,
+		marginTop: 10,
+	},
+	tabBtn: {
+		flex: 1,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 6,
+		paddingVertical: 10,
+		borderRadius: 12,
+		backgroundColor: T.chipInactive,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+	},
+	tabBtnActive: {
+		backgroundColor: COLORS.primary,
+		borderColor: COLORS.primary,
+	},
+	tabText: {
+		fontSize: 14,
+		fontWeight: '600',
+		color: COLORS.textSecondary,
+	},
+	tabTextActive: {
+		color: '#fff',
 	},
 	title: {
 		fontSize: 22,
@@ -718,7 +932,24 @@ function makeStyles(
 	listContent: {
 		paddingHorizontal: 10,
 		paddingTop: 10,
-		paddingBottom: 10,
+		paddingBottom: 96,
+	},
+	addFab: {
+		position: 'absolute',
+		right: 18,
+		bottom: 18,
+		width: 58,
+		height: 58,
+		borderRadius: 29,
+		backgroundColor: COLORS.primary,
+		alignItems: 'center',
+		justifyContent: 'center',
+		zIndex: 20,
+		shadowColor: '#000',
+		shadowOpacity: 0.22,
+		shadowRadius: 10,
+		shadowOffset: { width: 0, height: 4 },
+		elevation: 6,
 	},
 	workoutCard: {
 		backgroundColor: COLORS.card,

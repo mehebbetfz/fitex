@@ -6,7 +6,14 @@ import React, {
 	useEffect,
 	useState,
 } from 'react'
-import { Language, Translations, translations } from '../locales'
+import { I18nManager } from 'react-native'
+import {
+	Language,
+	Translations,
+	isLanguage,
+	isRtlLanguage,
+	translations,
+} from '../locales'
 
 const STORAGE_KEY = 'app_language'
 
@@ -22,6 +29,14 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
+function applyRtl(lang: Language) {
+	const rtl = isRtlLanguage(lang)
+	if (I18nManager.isRTL !== rtl) {
+		I18nManager.allowRTL(rtl)
+		I18nManager.forceRTL(rtl)
+	}
+}
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
@@ -31,7 +46,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 	useEffect(() => {
 		AsyncStorage.getItem(STORAGE_KEY)
 			.then(saved => {
-				if (saved === 'ru' || saved === 'en' || saved === 'az') {
+				if (isLanguage(saved)) {
+					applyRtl(saved)
 					setLanguageState(saved)
 				}
 			})
@@ -40,6 +56,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 
 	const setLanguage = useCallback(async (lang: Language) => {
 		await AsyncStorage.setItem(STORAGE_KEY, lang)
+		applyRtl(lang)
 		setLanguageState(lang)
 	}, [])
 
@@ -50,12 +67,17 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 		): string => {
 			try {
 				const lang = language ?? 'ru'
-				const pack = translations[lang] ?? translations.ru
+				const pack = translations[lang] ?? translations.en ?? translations.ru
 				const section_translations = pack?.[section] as
 					| Record<string, string>
 					| undefined
 				const value = section_translations?.[key as string]
-				return typeof value === 'string' ? value : String(key)
+				if (typeof value === 'string') return value
+				const enSection = translations.en?.[section] as
+					| Record<string, string>
+					| undefined
+				const fallback = enSection?.[key as string]
+				return typeof fallback === 'string' ? fallback : String(key)
 			} catch {
 				return String(key)
 			}

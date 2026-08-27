@@ -1,6 +1,9 @@
+import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
+import { useAppTheme } from '@/contexts/theme-context'
 import { PageListSkeleton } from '@/components/ui/skeleton'
 import {
+	adminAdjustMealPhotos,
 	adminGrantPremium,
 	adminSearchUsers,
 	type AdminUser,
@@ -8,7 +11,7 @@ import {
 } from '@/services/admin'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
@@ -21,18 +24,6 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-const COLORS = {
-	bg: '#121212',
-	card: '#1C1C1E',
-	border: '#2C2C2E',
-	text: '#FFF',
-	muted: '#8E8E93',
-	green: '#34C759',
-	red: '#FF3B30',
-	orange: '#FF9500',
-	blue: '#5AC8FA',
-} as const
-
 const PRESETS: { id: PremiumDuration; label: string }[] = [
 	{ id: '7d', label: '7д' },
 	{ id: '30d', label: '30д' },
@@ -43,14 +34,19 @@ const PRESETS: { id: PremiumDuration; label: string }[] = [
 	{ id: 'revoke', label: 'Снять' },
 ]
 
+const PHOTO_ADD_PRESETS = [10, 50, 100, 240]
+
 export default function AdminScreen() {
 	const router = useRouter()
 	const { t } = useLanguage()
+	const { colors: C } = useAppTheme()
+	const styles = useMemo(() => makeStyles(C), [C])
 	const [q, setQ] = useState('')
 	const [loading, setLoading] = useState(false)
 	const [busyId, setBusyId] = useState<string | null>(null)
 	const [users, setUsers] = useState<AdminUser[]>([])
 	const [customDays, setCustomDays] = useState<Record<string, string>>({})
+	const [photoAmount, setPhotoAmount] = useState<Record<string, string>>({})
 
 	const search = useCallback(async () => {
 		setLoading(true)
@@ -78,6 +74,22 @@ export default function AdminScreen() {
 		}
 	}
 
+	const adjustPhotos = async (
+		userId: string,
+		body: { add?: number; set?: number },
+	) => {
+		setBusyId(userId)
+		try {
+			const updated = await adminAdjustMealPhotos(userId, body)
+			setUsers(prev => prev.map(u => (u.id === userId ? updated : u)))
+			setPhotoAmount(prev => ({ ...prev, [userId]: '' }))
+		} catch (e) {
+			Alert.alert(t('common', 'error'), e instanceof Error ? e.message : String(e))
+		} finally {
+			setBusyId(null)
+		}
+	}
+
 	const renderUser = ({ item }: { item: AdminUser }) => {
 		const name = [item.firstName, item.lastName].filter(Boolean).join(' ') || '—'
 		const expires = item.premiumLifetime
@@ -85,6 +97,8 @@ export default function AdminScreen() {
 			: item.premiumExpiresAt
 				? new Date(item.premiumExpiresAt).toLocaleDateString()
 				: '—'
+		const photosLeft =
+			item.mealPhotoRemaining != null ? String(item.mealPhotoRemaining) : '—'
 		return (
 			<View style={styles.card}>
 				<Text style={styles.email}>{item.email}</Text>
@@ -101,7 +115,7 @@ export default function AdminScreen() {
 						<Text
 							style={[
 								styles.pillText,
-								{ color: item.premiumActive ? COLORS.green : COLORS.muted },
+								{ color: item.premiumActive ? C.primary : C.textSecondary },
 							]}
 						>
 							{item.premiumActive ? 'Premium' : 'Free'}
@@ -109,21 +123,28 @@ export default function AdminScreen() {
 					</View>
 					{item.premiumLifetime ? (
 						<View style={[styles.pill, styles.pillLife]}>
-							<Text style={[styles.pillText, { color: COLORS.blue }]}>∞</Text>
+							<Text style={[styles.pillText, { color: C.info }]}>∞</Text>
 						</View>
 					) : null}
 					{item.role === 'admin' ? (
 						<View style={[styles.pill, styles.pillAdmin]}>
-							<Text style={[styles.pillText, { color: COLORS.orange }]}>
-								admin
-							</Text>
+							<Text style={[styles.pillText, { color: C.accent }]}>admin</Text>
 						</View>
 					) : null}
+					<View style={[styles.pill, styles.pillPhotos]}>
+						<Ionicons name='camera-outline' size={12} color={C.primary} />
+						<Text style={[styles.pillText, { color: C.primary }]}>
+							{photosLeft}
+						</Text>
+					</View>
 				</View>
-				<Text style={styles.expires}>до: {expires}</Text>
+				<Text style={styles.expires}>
+					до: {expires} · {t('admin', 'mealPhotos')}: {photosLeft}{' '}
+					{t('admin', 'mealPhotosHint')}
+				</Text>
 
 				{busyId === item.id ? (
-					<ActivityIndicator color={COLORS.green} style={{ marginTop: 12 }} />
+					<ActivityIndicator color={C.primary} style={{ marginTop: 12 }} />
 				) : (
 					<>
 						<View style={styles.chips}>
@@ -140,7 +161,7 @@ export default function AdminScreen() {
 									<Text
 										style={[
 											styles.chipText,
-											p.id === 'revoke' && { color: COLORS.red },
+											p.id === 'revoke' && { color: C.error },
 										]}
 									>
 										{p.label}
@@ -153,7 +174,7 @@ export default function AdminScreen() {
 								style={styles.customInput}
 								keyboardType='number-pad'
 								placeholder='дней'
-								placeholderTextColor={COLORS.muted}
+								placeholderTextColor={C.textSecondary}
 								value={customDays[item.id] || ''}
 								onChangeText={v =>
 									setCustomDays(prev => ({ ...prev, [item.id]: v }))
@@ -170,6 +191,53 @@ export default function AdminScreen() {
 								<Text style={styles.customBtnText}>OK</Text>
 							</TouchableOpacity>
 						</View>
+
+						<Text style={styles.sectionLabel}>{t('admin', 'mealPhotos')}</Text>
+						<View style={styles.chips}>
+							{PHOTO_ADD_PRESETS.map(n => (
+								<TouchableOpacity
+									key={n}
+									style={styles.chip}
+									onPress={() => void adjustPhotos(item.id, { add: n })}
+								>
+									<Text style={styles.chipText}>+{n}</Text>
+								</TouchableOpacity>
+							))}
+						</View>
+						<View style={styles.customRow}>
+							<TextInput
+								style={styles.customInput}
+								keyboardType='number-pad'
+								placeholder='N'
+								placeholderTextColor={C.textSecondary}
+								value={photoAmount[item.id] || ''}
+								onChangeText={v =>
+									setPhotoAmount(prev => ({ ...prev, [item.id]: v }))
+								}
+							/>
+							<TouchableOpacity
+								style={styles.customBtn}
+								onPress={() => {
+									const n = parseInt(photoAmount[item.id] || '', 10)
+									if (!Number.isFinite(n) || n === 0) return
+									void adjustPhotos(item.id, { add: n })
+								}}
+							>
+								<Text style={styles.customBtnText}>{t('admin', 'mealPhotosAdd')}</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={[styles.customBtn, styles.customBtnSecondary]}
+								onPress={() => {
+									const n = parseInt(photoAmount[item.id] || '', 10)
+									if (!Number.isFinite(n) || n < 0) return
+									void adjustPhotos(item.id, { set: n })
+								}}
+							>
+								<Text style={styles.customBtnTextSecondary}>
+									{t('admin', 'mealPhotosSet')}
+								</Text>
+							</TouchableOpacity>
+						</View>
 					</>
 				)}
 			</View>
@@ -180,7 +248,7 @@ export default function AdminScreen() {
 		<SafeAreaView style={styles.safe} edges={['top']}>
 			<View style={styles.header}>
 				<TouchableOpacity onPress={() => router.back()} hitSlop={10}>
-					<Ionicons name='arrow-back' size={24} color={COLORS.text} />
+					<Ionicons name='arrow-back' size={24} color={C.text} />
 				</TouchableOpacity>
 				<Text style={styles.title}>{t('admin', 'title')}</Text>
 				<View style={{ width: 24 }} />
@@ -192,7 +260,7 @@ export default function AdminScreen() {
 					value={q}
 					onChangeText={setQ}
 					placeholder={t('admin', 'searchPlaceholder')}
-					placeholderTextColor={COLORS.muted}
+					placeholderTextColor={C.textSecondary}
 					autoCapitalize='none'
 					onSubmitEditing={() => void search()}
 					returnKeyType='search'
@@ -225,97 +293,120 @@ export default function AdminScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
-	safe: { flex: 1, backgroundColor: COLORS.bg },
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 16,
-		paddingVertical: 12,
-	},
-	title: { fontSize: 18, fontWeight: '700', color: COLORS.text },
-	searchRow: {
-		flexDirection: 'row',
-		gap: 10,
-		paddingHorizontal: 16,
-		marginBottom: 8,
-	},
-	search: {
-		flex: 1,
-		backgroundColor: COLORS.card,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		color: COLORS.text,
-		fontSize: 15,
-	},
-	searchBtn: {
-		backgroundColor: COLORS.green,
-		borderRadius: 12,
-		paddingHorizontal: 16,
-		justifyContent: 'center',
-		minWidth: 72,
-		alignItems: 'center',
-	},
-	searchBtnText: { fontWeight: '700', color: '#000' },
-	list: { padding: 16, paddingBottom: 40, gap: 12 },
-	empty: {
-		textAlign: 'center',
-		color: COLORS.muted,
-		marginTop: 40,
-		fontSize: 14,
-	},
-	card: {
-		backgroundColor: COLORS.card,
-		borderRadius: 16,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		padding: 16,
-		marginBottom: 12,
-	},
-	email: { fontSize: 16, fontWeight: '700', color: COLORS.text },
-	meta: { fontSize: 13, color: COLORS.muted, marginTop: 4 },
-	pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-	pill: {
-		paddingHorizontal: 8,
-		paddingVertical: 3,
-		borderRadius: 999,
-	},
-	pillOk: { backgroundColor: 'rgba(52,199,89,0.15)' },
-	pillOff: { backgroundColor: 'rgba(142,142,147,0.15)' },
-	pillLife: { backgroundColor: 'rgba(90,200,250,0.15)' },
-	pillAdmin: { backgroundColor: 'rgba(255,149,0,0.15)' },
-	pillText: { fontSize: 11, fontWeight: '700' },
-	expires: { marginTop: 8, fontSize: 12, color: COLORS.muted },
-	chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-	chip: {
-		backgroundColor: '#2C2C2E',
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 10,
-	},
-	chipDanger: { backgroundColor: 'rgba(255,59,48,0.12)' },
-	chipLife: { backgroundColor: 'rgba(90,200,250,0.12)' },
-	chipText: { color: COLORS.text, fontWeight: '600', fontSize: 13 },
-	customRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-	customInput: {
-		flex: 1,
-		backgroundColor: '#111',
-		borderRadius: 10,
-		borderWidth: 1,
-		borderColor: COLORS.border,
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-		color: COLORS.text,
-	},
-	customBtn: {
-		backgroundColor: COLORS.green,
-		borderRadius: 10,
-		paddingHorizontal: 16,
-		justifyContent: 'center',
-	},
-	customBtnText: { fontWeight: '700', color: '#000' },
-})
+function makeStyles(C: AppColors) {
+	return StyleSheet.create({
+		safe: { flex: 1, backgroundColor: C.background },
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 16,
+			paddingVertical: 12,
+		},
+		title: { fontSize: 18, fontWeight: '700', color: C.text },
+		searchRow: {
+			flexDirection: 'row',
+			gap: 10,
+			paddingHorizontal: 16,
+			marginBottom: 8,
+		},
+		search: {
+			flex: 1,
+			backgroundColor: C.card,
+			borderRadius: 12,
+			borderWidth: 1,
+			borderColor: C.border,
+			paddingHorizontal: 14,
+			paddingVertical: 12,
+			color: C.text,
+			fontSize: 15,
+		},
+		searchBtn: {
+			backgroundColor: C.primary,
+			borderRadius: 12,
+			paddingHorizontal: 16,
+			justifyContent: 'center',
+			minWidth: 72,
+			alignItems: 'center',
+		},
+		searchBtnText: { fontWeight: '700', color: '#000' },
+		list: { padding: 16, paddingBottom: 40, gap: 12 },
+		empty: {
+			textAlign: 'center',
+			color: C.textSecondary,
+			marginTop: 40,
+			fontSize: 14,
+		},
+		card: {
+			backgroundColor: C.card,
+			borderRadius: 16,
+			borderWidth: 1,
+			borderColor: C.border,
+			padding: 16,
+			marginBottom: 12,
+		},
+		email: { fontSize: 16, fontWeight: '700', color: C.text },
+		meta: { fontSize: 13, color: C.textSecondary, marginTop: 4 },
+		pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+		pill: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			paddingHorizontal: 8,
+			paddingVertical: 3,
+			borderRadius: 999,
+		},
+		pillOk: { backgroundColor: `${C.primary}26` },
+		pillOff: { backgroundColor: `${C.textSecondary}26` },
+		pillLife: { backgroundColor: `${C.info}26` },
+		pillAdmin: { backgroundColor: `${C.accent}26` },
+		pillPhotos: { backgroundColor: `${C.primary}1A` },
+		pillText: { fontSize: 11, fontWeight: '700' },
+		expires: { marginTop: 8, fontSize: 12, color: C.textSecondary },
+		sectionLabel: {
+			marginTop: 14,
+			marginBottom: 2,
+			fontSize: 12,
+			fontWeight: '700',
+			color: C.textSecondary,
+			textTransform: 'uppercase',
+			letterSpacing: 0.4,
+		},
+		chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+		chip: {
+			backgroundColor: C.cardLight,
+			paddingHorizontal: 12,
+			paddingVertical: 8,
+			borderRadius: 10,
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		chipDanger: { backgroundColor: `${C.error}1F`, borderColor: `${C.error}40` },
+		chipLife: { backgroundColor: `${C.info}1F`, borderColor: `${C.info}40` },
+		chipText: { color: C.text, fontWeight: '600', fontSize: 13 },
+		customRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+		customInput: {
+			flex: 1,
+			backgroundColor: C.inputBg,
+			borderRadius: 10,
+			borderWidth: 1,
+			borderColor: C.border,
+			paddingHorizontal: 12,
+			paddingVertical: 10,
+			color: C.text,
+		},
+		customBtn: {
+			backgroundColor: C.primary,
+			borderRadius: 10,
+			paddingHorizontal: 14,
+			justifyContent: 'center',
+		},
+		customBtnSecondary: {
+			backgroundColor: C.cardLight,
+			borderWidth: 1,
+			borderColor: C.border,
+		},
+		customBtnText: { fontWeight: '700', color: '#000' },
+		customBtnTextSecondary: { fontWeight: '700', color: C.text },
+	})
+}

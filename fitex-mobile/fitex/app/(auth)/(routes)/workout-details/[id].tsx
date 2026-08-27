@@ -1,3 +1,4 @@
+import { dateLocaleFor } from '@/locales'
 import { STATS_HISTORY_COLORS as ThemeColors, STATS_HISTORY_THEME as Theme } from '@/constants/stats-history-theme'
 import { DetailPageSkeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/contexts/language-context'
@@ -86,7 +87,7 @@ export default function WorkoutDetailScreen() {
 	const formatDate = (dateStr: string) => {
 		try {
 			const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', az: 'az-AZ' }
-			const locale = localeMap[language] ?? 'ru-RU'
+			const locale = dateLocaleFor(language)
 			const d = new Date(dateStr)
 			return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
 		} catch {
@@ -134,8 +135,14 @@ export default function WorkoutDetailScreen() {
 		<SafeAreaView style={s.container}>
 			{/* ── Header ── */}
 			<View style={s.header}>
-				<TouchableOpacity onPress={() => router.back()} style={s.headerBack}>
-					<Ionicons name='arrow-back' size={22} color={C.text} />
+				<TouchableOpacity
+					onPress={() => router.back()}
+					style={s.headerBack}
+					hitSlop={14}
+					accessibilityRole='button'
+					accessibilityLabel='Back'
+				>
+					<Ionicons name='chevron-back' size={26} color={C.text} />
 				</TouchableOpacity>
 				<View style={s.headerCenter}>
 					<Text style={s.headerTitle} numberOfLines={1}>
@@ -143,7 +150,7 @@ export default function WorkoutDetailScreen() {
 					</Text>
 					<Text style={s.headerSub}>{formatDate(workout.date)}</Text>
 				</View>
-				<TouchableOpacity onPress={handleDelete} style={s.headerDelete}>
+				<TouchableOpacity onPress={handleDelete} style={s.headerDelete} hitSlop={10}>
 					<Ionicons name='trash-outline' size={20} color={C.error} />
 				</TouchableOpacity>
 			</View>
@@ -348,11 +355,25 @@ const s = StyleSheet.create({
 		borderBottomWidth: 1,
 		borderBottomColor: C.border,
 	},
-	headerBack: { padding: 4, marginRight: 10 },
+	headerBack: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginRight: 8,
+		backgroundColor: C.cardLight,
+	},
 	headerCenter: { flex: 1 },
 	headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
 	headerSub: { fontSize: 13, color: C.subtext, marginTop: 2 },
-	headerDelete: { padding: 8 },
+	headerDelete: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
 
 	// Stats row
 	statsRow: {

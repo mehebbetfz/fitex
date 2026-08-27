@@ -2,6 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 import type { RecoveryData } from '@/scripts/database'
+import {
+	getRecoveryHoursForGroup,
+	loadRecoverySettings,
+} from '@/services/recovery-settings'
 
 const KEY_WORKOUT_ENABLED = 'notification_reminder_enabled'
 const KEY_WORKOUT_HOUR = 'notification_reminder_hour'
@@ -202,37 +206,47 @@ export const toggleWorkoutReminders = async (
 	return true
 }
 
-/** Hours until recovery >= 95 given fatigue and last_trained. */
+/** Hours until recovery >= 95 given fatigue, last_trained and group recovery window. */
 export function hoursUntilRecovered(
 	fatigue: number,
 	lastTrainedDate: string | null,
+	recoveryHours: number = 72,
 ): number | null {
 	if (!lastTrainedDate) return null
 	const last = new Date(lastTrainedDate).getTime()
 	if (!Number.isFinite(last)) return null
 
-	const hoursElapsed = (Date.now() - last) / 3_600_000
-	const recoveryFromTime = Math.min(100, (hoursElapsed / 72) * 100)
-	const totalRecovery = Math.max(0, Math.min(100, recoveryFromTime - fatigue))
-	if (totalRecovery >= 95) return 0
+	const hoursElapsed = Math.max(0, (Date.now() - last) / 3_600_000)
+	const severity = Math.max(0, Math.min(100, fatigue || 0))
+	const hoursNeeded = Math.max(
+		12,
+		recoveryHours * (0.75 + 0.75 * (severity / 100)),
+	)
+	const recoveryPct = Math.min(100, (hoursElapsed / hoursNeeded) * 100)
+	if (recoveryPct >= 95) return 0
 
-	const hoursNeeded = ((95 + fatigue) * 72) / 100
-	return Math.max(0, hoursNeeded - hoursElapsed)
+	return Math.max(0, hoursNeeded * 0.95 - hoursElapsed)
 }
 
 /**
  * Per group_name: when the slowest muscle in the group reaches recovered.
  * Skips groups already fully recovered.
  */
-export function computeGroupReadyTimes(
+export async function computeGroupReadyTimes(
 	rows: RecoveryData[],
-): { groupName: string; readyAt: Date }[] {
+): Promise<{ groupName: string; readyAt: Date }[]> {
+	const settings = await loadRecoverySettings()
 	const byGroup = new Map<string, number>() // group -> max ready timestamp ms
 
 	for (const row of rows) {
 		const group = (row.group_name || row.muscle_name || '').trim()
 		if (!group) continue
-		const hoursLeft = hoursUntilRecovered(row.fatigue ?? 0, row.last_trained)
+		const hours = getRecoveryHoursForGroup(group, settings)
+		const hoursLeft = hoursUntilRecovered(
+			row.fatigue ?? 0,
+			row.last_trained,
+			hours,
+		)
 		if (hoursLeft == null) continue
 		if (hoursLeft <= 0) continue // already recovered
 		const readyMs = Date.now() + hoursLeft * 3_600_000
@@ -332,7 +346,7 @@ export const rescheduleRecoveryNotifications = async (
 	const granted = await requestNotificationPermissions()
 	if (!granted) return
 
-	const times = computeGroupReadyTimes(rows)
+	const times = await computeGroupReadyTimes(rows)
 	await scheduleRecoveryNotifications(
 		times.map(t => ({
 			groupName: t.groupName,

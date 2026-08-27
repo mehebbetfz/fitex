@@ -1,5 +1,6 @@
 import { requireOptionalNativeModule } from 'expo-modules-core'
 import type * as ImagePickerTypes from 'expo-image-picker'
+import { prepareMealPhoto } from '@/services/meal-camera'
 
 export type MealPickSource = 'camera' | 'library'
 
@@ -14,10 +15,6 @@ export type MealPickResult =
  */
 export function isMealPhotoSupported(): boolean {
 	return requireOptionalNativeModule('ExponentImagePicker') != null
-}
-
-function isManipulatorSupported(): boolean {
-	return requireOptionalNativeModule('ExpoImageManipulator') != null
 }
 
 export async function pickMealJpeg(
@@ -48,21 +45,6 @@ export async function pickMealJpeg(
 		return { ok: false, reason: 'cancel' }
 	}
 
-	let uri = result.assets[0].uri
-	if (isManipulatorSupported()) {
-		try {
-			const { manipulateAsync, SaveFormat } = await import(
-				'expo-image-manipulator'
-			)
-			const processed = await manipulateAsync(
-				uri,
-				[{ resize: { width: 1280 } }],
-				{ compress: 0.8, format: SaveFormat.JPEG },
-			)
-			uri = processed.uri
-		} catch {
-			/* keep original */
-		}
-	}
+	const uri = await prepareMealPhoto(result.assets[0].uri)
 	return { ok: true, uri }
 }
