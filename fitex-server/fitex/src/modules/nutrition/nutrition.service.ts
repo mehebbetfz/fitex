@@ -75,31 +75,27 @@ export class NutritionService {
 	}
 
 	/** Persist mealPhotoRemaining if missing (one-time migration for older accounts). */
-	private async ensureMealPhotoRemaining(
-		user: UserDocument,
-	): Promise<UserDocument> {
-		if (!this.isPremiumActive(user)) return user
+	private async ensureMealPhotoRemaining(user: UserDocument): Promise<void> {
+		if (!this.isPremiumActive(user)) return
 		if (
 			user.mealPhotoRemaining != null &&
 			Number.isFinite(Number(user.mealPhotoRemaining))
 		) {
-			return user
+			return
 		}
-		const remaining = this.resolveRemaining(user)
-		user.mealPhotoRemaining = remaining
+		user.mealPhotoRemaining = this.resolveRemaining(user)
 		await user.save()
-		return user
 	}
 
 	private async assertAndConsumePhotoQuota(userId: string) {
-		let user = await this.userModel.findById(userId)
+		const user = await this.userModel.findById(userId)
 		if (!user) throw new NotFoundException('User not found')
 
 		if (!this.isPremiumActive(user)) {
 			throw new ForbiddenException('Meal photos require Premium')
 		}
 
-		user = await this.ensureMealPhotoRemaining(user)
+		await this.ensureMealPhotoRemaining(user)
 
 		const remainingNow = Number(user.mealPhotoRemaining || 0)
 		if (remainingNow <= 0) {
@@ -249,9 +245,9 @@ export class NutritionService {
 		)
 
 		const targets = await this.getTargets(userId)
-		let user = await this.userModel.findById(userId)
+		const user = await this.userModel.findById(userId)
 		if (user) {
-			user = await this.ensureMealPhotoRemaining(user)
+			await this.ensureMealPhotoRemaining(user)
 		}
 		const photoQuota = user
 			? this.photoQuotaSnapshot(user)
@@ -320,9 +316,9 @@ export class NutritionService {
 		}
 
 		// Pre-check without consuming (consume after successful vision)
-		let userPre = await this.userModel.findById(userId)
+		const userPre = await this.userModel.findById(userId)
 		if (!userPre) throw new NotFoundException('User not found')
-		userPre = await this.ensureMealPhotoRemaining(userPre)
+		await this.ensureMealPhotoRemaining(userPre)
 		const preQuota = this.photoQuotaSnapshot(userPre)
 		if (preQuota.limit <= 0) {
 			throw new ForbiddenException('Meal photos require Premium')
