@@ -48,6 +48,8 @@ import {
 	View,
 } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
+import { SafeAreaView } from 'react-native-safe-area-context'
+
 const PORTION_SCALES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const
 
 function scaleMacro(value: number, scale: number) {
