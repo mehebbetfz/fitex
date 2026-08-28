@@ -33,6 +33,11 @@ export type PhotoQuota = {
 	remaining: number
 }
 
+export type MealAnalysisItem = {
+	name: string
+	grams: number
+}
+
 export type NutritionDay = {
 	date: string
 	targets: NutritionTargets
@@ -156,7 +161,7 @@ export async function analyzeMealPhoto(
 	opts?: { date?: string; note?: string; language?: string },
 ): Promise<{
 	entry: FoodEntry
-	analysis: { confidence: number }
+	analysis: { confidence: number; items?: MealAnalysisItem[] }
 	photoQuota?: PhotoQuota
 }> {
 	const token = await SecureStore.getItemAsync('access_token')
@@ -193,7 +198,7 @@ export async function analyzeMealPhoto(
 		}
 		return (await res.json()) as {
 			entry: FoodEntry
-			analysis: { confidence: number }
+			analysis: { confidence: number; items?: MealAnalysisItem[] }
 			photoQuota?: PhotoQuota
 		}
 	} catch (e) {

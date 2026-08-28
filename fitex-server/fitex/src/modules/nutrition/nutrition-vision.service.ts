@@ -51,7 +51,7 @@ export class NutritionVisionService {
 		const b64 = jpegBuffer.toString('base64')
 		const noteLine = note?.trim()
 			? `User note (treat as ground truth for ingredients/amounts when possible): ${note.trim()}`
-			: 'No extra note from the user.'
+			: 'No extra note from the user. If weight is ambiguous, state your best estimate and use confidence accordingly.'
 
 		const system = `You are a precise nutrition analyst for meal photos.
 Your job is to estimate TOTAL macros for EVERYTHING visible on the plate / in the frame — not a "typical small serving".
@@ -62,10 +62,16 @@ METHOD (follow strictly):
    - plate diameter ~22–26 cm for a dinner plate; bowl volume; fork/spoon size; hand if visible
    - whole fruits: medium banana edible part ≈ 100–120 g each; large ≈ 130–150 g
    - mounds of soft food (cottage cheese, yogurt, oatmeal): compare height/spread to plate; a heaping pile covering most of a dinner plate is often 300–500 g, NOT 100 g
+   - packaged foods: read label weight if visible; otherwise estimate from package size
 3) Apply realistic per-100g nutrition, then multiply by grams/100.
 4) SUM all items → final calories / proteinG / carbsG / fatG.
 
-CRITICAL ant-bias rules:
+Photo quality:
+- If no scale reference (plate edge, fork, hand) is visible, still estimate but lower confidence.
+- Top-down photos: use plate coverage % to estimate volume.
+- Mixed dishes: split into components when possible (rice, meat, sauce separately).
+
+CRITICAL anti-bias rules:
 - Do NOT default to restaurant "small portion" or snack sizes when the photo shows a large mound or multiple whole fruits.
 - If you see TWO whole bananas, count BOTH (≈ 200–280 g edible total), not one.
 - Cottage cheese (творог): dense white curds. Typical large home portion on a plate is often 250–450 g. Per 100 g approx:

@@ -60,6 +60,7 @@ import {
 	savePreferFocusMode,
 } from '@/services/workout-ui-prefs'
 import { CachedVideo } from '@/components/cached-video'
+import AppBottomSheet from '@/components/ui/app-bottom-sheet'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
@@ -2552,54 +2553,27 @@ export default function CreateWorkoutScreen() {
 				/>
 			) : null}
 
-			<Modal
+			<AppBottomSheet
 				visible={showNotesModal}
-				animationType='slide'
-				transparent
-				onRequestClose={() => setShowNotesModal(false)}
+				onClose={() => {
+					Keyboard.dismiss()
+					setShowNotesModal(false)
+				}}
+				title={t('workout', 'notes')}
+				bottomInset={notesKeyboardHeight}
+				maxHeight={SCREEN_HEIGHT * 0.75}
 			>
-				<View style={styles.notesModalAvoid}>
-					<Pressable
-						style={styles.notesModalBackdrop}
-						onPress={() => {
-							Keyboard.dismiss()
-							setShowNotesModal(false)
-						}}
-					>
-						<Pressable
-							style={[
-								styles.notesModalSheet,
-								{ marginBottom: notesKeyboardHeight },
-							]}
-							onPress={e => e.stopPropagation()}
-						>
-							<View style={styles.notesModalHeader}>
-								<Text style={styles.notesModalTitle}>{t('workout', 'notes')}</Text>
-								<TouchableOpacity
-									onPress={() => {
-										Keyboard.dismiss()
-										setShowNotesModal(false)
-									}}
-									style={styles.headerButton}
-									activeOpacity={0.7}
-								>
-									<Ionicons name='close' size={22} color={COLORS.text} />
-								</TouchableOpacity>
-							</View>
-							<TextInput
-								style={styles.notesModalInput}
-								placeholder={t('workout', 'notesPlaceholder')}
-								placeholderTextColor={COLORS.textSecondary}
-								multiline
-								textAlignVertical='top'
-								value={notes}
-								onChangeText={setNotes}
-								autoFocus
-							/>
-						</Pressable>
-					</Pressable>
-				</View>
-			</Modal>
+				<TextInput
+					style={styles.notesModalInput}
+					placeholder={t('workout', 'notesPlaceholder')}
+					placeholderTextColor={COLORS.textSecondary}
+					multiline
+					textAlignVertical='top'
+					value={notes}
+					onChangeText={setNotes}
+					autoFocus
+				/>
+			</AppBottomSheet>
 
 			<ExerciseSelectionModal
 				visible={showExerciseSelection}
@@ -3269,37 +3243,6 @@ function makeStyles(C: AppColors) {
 		fontSize: 16,
 		fontWeight: '700',
 		color: '#000',
-	},
-	notesModalAvoid: {
-		flex: 1,
-	},
-	notesModalBackdrop: {
-		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.45)',
-		justifyContent: 'flex-end',
-	},
-	notesModalSheet: {
-		backgroundColor: C.card,
-		borderTopLeftRadius: 16,
-		borderTopRightRadius: 16,
-		paddingHorizontal: 16,
-		paddingTop: 12,
-		paddingBottom: 28,
-		minHeight: 280,
-		maxHeight: SCREEN_HEIGHT * 0.75,
-		borderWidth: 1,
-		borderColor: C.border,
-	},
-	notesModalHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		marginBottom: 8,
-	},
-	notesModalTitle: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: C.text,
 	},
 	notesModalInput: {
 		borderWidth: 1,

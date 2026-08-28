@@ -1,6 +1,6 @@
 import { useDatabase } from '@/app/contexts/database-context'
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
-import SheetModalHeader from '@/components/ui/sheet-modal-header'
+import AppBottomSheet from '@/components/ui/app-bottom-sheet'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import type { AppColors, ThemePreference } from '@/constants/app-theme'
@@ -45,7 +45,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
 	Alert,
-	Modal,
 	ScrollView,
 	StyleSheet,
 	Switch,
@@ -122,33 +121,6 @@ function makeStyles(C: AppColors) {
 		langCheckBoxSelected: {
 			backgroundColor: C.primary,
 			borderColor: C.primary,
-		},
-		langSheetBackdrop: {
-			flex: 1,
-			backgroundColor: C.overlay,
-			justifyContent: 'flex-end',
-		},
-		langSheet: {
-			backgroundColor: C.modalSurface,
-			borderTopLeftRadius: 20,
-			borderTopRightRadius: 20,
-			paddingHorizontal: 20,
-			paddingTop: 12,
-			paddingBottom: 28,
-		},
-		langSheetHandle: {
-			alignSelf: 'center',
-			width: 36,
-			height: 4,
-			borderRadius: 2,
-			backgroundColor: C.border,
-			marginBottom: 14,
-		},
-		langSheetTitle: {
-			fontSize: 18,
-			fontWeight: '700',
-			color: C.text,
-			marginBottom: 12,
 		},
 		langOption: {
 			flexDirection: 'row',
@@ -349,80 +321,75 @@ function TimePickerModal({
 	}, [visible, hour, minute])
 
 	return (
-		<Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
-			<TouchableOpacity style={pickerStyles.overlay} activeOpacity={1} onPress={onClose}>
-				<TouchableOpacity activeOpacity={1}>
-						<View style={pickerStyles.container}>
-							<SheetModalHeader
-								title={t('settings', 'notifTimeLabel')}
-								onClose={onClose}
-								showHandle={false}
-							/>
-							<View style={pickerStyles.pickers}>
-							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>{t('profile', 'hours')}</Text>
-								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
-									{HOURS.map(h => (
-										<TouchableOpacity
-											key={h}
-											style={[
-												pickerStyles.option,
-												selectedHour === h && pickerStyles.optionSelected,
-											]}
-											onPress={() => setSelectedHour(h)}
-										>
-											<Text
-												style={[
-													pickerStyles.optionText,
-													selectedHour === h && pickerStyles.optionTextSelected,
-												]}
-											>
-												{String(h).padStart(2, '0')}
-											</Text>
-										</TouchableOpacity>
-									))}
-								</ScrollView>
-							</View>
-							<View style={pickerStyles.pickerCol}>
-								<Text style={pickerStyles.pickerLabel}>{t('profile', 'minutes')}</Text>
-								<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
-									{MINUTES.map(m => (
-										<TouchableOpacity
-											key={m}
-											style={[
-												pickerStyles.option,
-												selectedMinute === m && pickerStyles.optionSelected,
-											]}
-											onPress={() => setSelectedMinute(m)}
-										>
-											<Text
-												style={[
-													pickerStyles.optionText,
-													selectedMinute === m && pickerStyles.optionTextSelected,
-												]}
-											>
-												{m.toString().padStart(2, '0')}
-											</Text>
-										</TouchableOpacity>
-									))}
-								</ScrollView>
-							</View>
-						</View>
-						<View style={pickerStyles.actions}>
-							<TouchableOpacity style={pickerStyles.cancelBtn} onPress={onClose}>
-								<Text style={pickerStyles.cancelText}>{t('common', 'cancel')}</Text>
-							</TouchableOpacity>
+		<AppBottomSheet
+			visible={visible}
+			onClose={onClose}
+			title={t('settings', 'notifTimeLabel')}
+			showHandle={false}
+			maxHeight={360}
+		>
+			<View style={pickerStyles.pickers}>
+				<View style={pickerStyles.pickerCol}>
+					<Text style={pickerStyles.pickerLabel}>{t('profile', 'hours')}</Text>
+					<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
+						{HOURS.map(h => (
 							<TouchableOpacity
-								style={pickerStyles.saveBtn}
-								onPress={() => onConfirm(selectedHour, selectedMinute)}
+								key={h}
+								style={[
+									pickerStyles.option,
+									selectedHour === h && pickerStyles.optionSelected,
+								]}
+								onPress={() => setSelectedHour(h)}
 							>
-								<Text style={pickerStyles.saveText}>{t('common', 'save')}</Text>
+								<Text
+									style={[
+										pickerStyles.optionText,
+										selectedHour === h && pickerStyles.optionTextSelected,
+									]}
+								>
+									{String(h).padStart(2, '0')}
+								</Text>
 							</TouchableOpacity>
-						</View>
-					</View>
+						))}
+					</ScrollView>
+				</View>
+				<View style={pickerStyles.pickerCol}>
+					<Text style={pickerStyles.pickerLabel}>{t('profile', 'minutes')}</Text>
+					<ScrollView style={pickerStyles.scroll} showsVerticalScrollIndicator={false}>
+						{MINUTES.map(m => (
+							<TouchableOpacity
+								key={m}
+								style={[
+									pickerStyles.option,
+									selectedMinute === m && pickerStyles.optionSelected,
+								]}
+								onPress={() => setSelectedMinute(m)}
+							>
+								<Text
+									style={[
+										pickerStyles.optionText,
+										selectedMinute === m && pickerStyles.optionTextSelected,
+									]}
+								>
+									{m.toString().padStart(2, '0')}
+								</Text>
+							</TouchableOpacity>
+						))}
+					</ScrollView>
+				</View>
+			</View>
+			<View style={pickerStyles.actions}>
+				<TouchableOpacity style={pickerStyles.cancelBtn} onPress={onClose}>
+					<Text style={pickerStyles.cancelText}>{t('common', 'cancel')}</Text>
 				</TouchableOpacity>
-			</TouchableOpacity>
-		</Modal>
+				<TouchableOpacity
+					style={pickerStyles.saveBtn}
+					onPress={() => onConfirm(selectedHour, selectedMinute)}
+				>
+					<Text style={pickerStyles.saveText}>{t('common', 'save')}</Text>
+				</TouchableOpacity>
+			</View>
+		</AppBottomSheet>
 	)
 }
 
@@ -891,61 +858,44 @@ export default function SettingsScreen() {
 				</View>
 			</ScrollView>
 
-			<Modal
+			<AppBottomSheet
 				visible={showLanguageModal}
-				transparent
-				animationType='slide'
-				onRequestClose={() => setShowLanguageModal(false)}
+				onClose={() => setShowLanguageModal(false)}
+				title={t('settings', 'language')}
+				maxHeight={520}
+				scroll
 			>
-				<View style={styles.langSheetBackdrop}>
-					<TouchableOpacity
-						style={StyleSheet.absoluteFill}
-						activeOpacity={1}
-						onPress={() => setShowLanguageModal(false)}
-					/>
-					<View style={styles.langSheet}>
-						<SheetModalHeader
-							title={t('settings', 'language')}
-							onClose={() => setShowLanguageModal(false)}
-						/>
-						<ScrollView
-							style={{ maxHeight: 420 }}
-							showsVerticalScrollIndicator={false}
+				{LANGUAGE_CODES.map((lang, index, arr) => {
+					const selected = lang === language
+					return (
+						<TouchableOpacity
+							key={lang}
+							style={[
+								styles.langOption,
+								index === arr.length - 1 && styles.langOptionLast,
+							]}
+							onPress={() => void handleLanguageChange(lang)}
+							activeOpacity={0.7}
 						>
-							{LANGUAGE_CODES.map((lang, index, arr) => {
-								const selected = lang === language
-								return (
-									<TouchableOpacity
-										key={lang}
-										style={[
-											styles.langOption,
-											index === arr.length - 1 && styles.langOptionLast,
-										]}
-										onPress={() => void handleLanguageChange(lang)}
-										activeOpacity={0.7}
-									>
-										<Text style={{ fontSize: 18, marginRight: 10 }}>
-											{LANGUAGE_FLAGS[lang]}
-										</Text>
-										<Text
-											style={[
-												styles.langOptionText,
-												selected && styles.langOptionTextSelected,
-												{ flex: 1 },
-											]}
-										>
-											{LANGUAGE_NAMES[lang]}
-										</Text>
-										{selected ? (
-											<Ionicons name='checkmark' size={20} color={colors.primary} />
-										) : null}
-									</TouchableOpacity>
-								)
-							})}
-						</ScrollView>
-					</View>
-				</View>
-			</Modal>
+							<Text style={{ fontSize: 18, marginRight: 10 }}>
+								{LANGUAGE_FLAGS[lang]}
+							</Text>
+							<Text
+								style={[
+									styles.langOptionText,
+									selected && styles.langOptionTextSelected,
+									{ flex: 1 },
+								]}
+							>
+								{LANGUAGE_NAMES[lang]}
+							</Text>
+							{selected ? (
+								<Ionicons name='checkmark' size={20} color={colors.primary} />
+							) : null}
+						</TouchableOpacity>
+					)
+				})}
+			</AppBottomSheet>
 		</SafeAreaView>
 	)
 }

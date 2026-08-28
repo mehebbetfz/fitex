@@ -390,6 +390,7 @@ export class NutritionService {
 			entry: this.toPublic(doc.toObject()),
 			analysis: {
 				confidence: analysis.confidence,
+				items: this.extractItems(analysis.raw),
 			},
 			photoQuota,
 		}
@@ -452,5 +453,24 @@ export class NutritionService {
 			source: e.source,
 			createdAt: e.createdAt ? new Date(e.createdAt).toISOString() : undefined,
 		}
+	}
+
+	private extractItems(raw: Record<string, unknown>) {
+		const itemsRaw = Array.isArray(raw.items) ? raw.items : []
+		const items: { name: string; grams: number }[] = []
+		for (const it of itemsRaw) {
+			if (!it || typeof it !== 'object') continue
+			const row = it as Record<string, unknown>
+			const grams =
+				typeof row.grams === 'number'
+					? row.grams
+					: parseFloat(String(row.grams ?? ''))
+			if (!Number.isFinite(grams) || grams <= 0) continue
+			items.push({
+				name: String(row.name || 'Item').slice(0, 80),
+				grams: Math.round(grams),
+			})
+		}
+		return items
 	}
 }

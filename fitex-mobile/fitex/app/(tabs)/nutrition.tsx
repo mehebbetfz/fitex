@@ -9,6 +9,7 @@ import {
 	fetchNutritionDay,
 	localTodayKey,
 	type FoodEntry,
+	type MealAnalysisItem,
 	type NutritionDay,
 	type PhotoQuota,
 	updateFoodEntry,
@@ -47,7 +48,18 @@ import {
 	View,
 } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
-import { SafeAreaView } from 'react-native-safe-area-context'
+const PORTION_SCALES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const
+
+function scaleMacro(value: number, scale: number) {
+	if (scale === 1) return value
+	return Math.round(value * scale * 10) / 10
+}
+
+function scaleKcal(value: number, scale: number) {
+	if (scale === 1) return Math.round(value)
+	return Math.round(value * scale)
+}
+
 
 const MACRO_COLORS = {
 	protein: '#FF6B6B',
@@ -475,6 +487,7 @@ function NutritionTabInner() {
 	const [targetF, setTargetF] = useState('')
 	const [savingTargets, setSavingTargets] = useState(false)
 	const [pickSourceOpen, setPickSourceOpen] = useState(false)
+	const [mealNote, setMealNote] = useState('')
 	const [cameraOpen, setCameraOpen] = useState(false)
 	const [premiumGateOpen, setPremiumGateOpen] = useState(false)
 	const [keyboardPad, setKeyboardPad] = useState(0)
@@ -482,6 +495,8 @@ function NutritionTabInner() {
 		entry: FoodEntry
 		localUri: string
 		confidence: number
+		items: MealAnalysisItem[]
+		portionScale: number
 	} | null>(null)
 	const [confirmingMeal, setConfirmingMeal] = useState(false)
 	const pendingAnim = useRef(new Animated.Value(0)).current
@@ -579,9 +594,11 @@ function NutritionTabInner() {
 
 	const runAnalyze = async (uri: string) => {
 		setAnalyzing(true)
+		const note = mealNote.trim()
 		try {
 			const result = await analyzeMealPhoto(uri, {
 				language: language || 'ru',
+				note: note || undefined,
 			})
 			if (result.photoQuota) {
 				setDay(prev => {
@@ -603,7 +620,10 @@ function NutritionTabInner() {
 				entry: result.entry,
 				localUri: uri,
 				confidence: n(result.analysis?.confidence, 0),
+				items: result.analysis?.items ?? [],
+				portionScale: 1,
 			})
+			setMealNote('')
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e)
 			if (/premium/i.test(msg)) {
@@ -628,7 +648,16 @@ function NutritionTabInner() {
 	const confirmPendingMeal = async () => {
 		if (!pendingMeal || confirmingMeal) return
 		setConfirmingMeal(true)
+		const { entry, portionScale } = pendingMeal
 		try {
+			if (portionScale !== 1) {
+				await updateFoodEntry(entry.id, {
+					calories: scaleKcal(n(entry.calories), portionScale),
+					proteinG: scaleMacro(n(entry.proteinG), portionScale),
+					carbsG: scaleMacro(n(entry.carbsG), portionScale),
+					fatG: scaleMacro(n(entry.fatG), portionScale),
+				})
+			}
 			setPendingMeal(null)
 			await load()
 		} finally {
@@ -1188,6 +1217,16 @@ function NutritionTabInner() {
 							closeAccessibilityLabel={t('common', 'cancel')}
 						/>
 						<Text style={styles.pickHint}>{t('nutrition', 'addMealHint')}</Text>
+						<Text style={styles.pickNoteLabel}>{t('nutrition', 'mealNote')}</Text>
+						<TextInput
+							style={styles.pickNoteInput}
+							placeholder={t('nutrition', 'mealNotePlaceholder')}
+							placeholderTextColor={T.textSecondary}
+							value={mealNote}
+							onChangeText={setMealNote}
+							multiline
+							maxLength={200}
+						/>
 						<TouchableOpacity
 							style={styles.pickOption}
 							onPress={() => void pickAndAnalyze('camera')}
@@ -1295,10 +1334,65 @@ function NutritionTabInner() {
 									</Text>
 								) : null}
 
+								{pendingMeal.items.length > 0 ? (
+									<View style={styles.itemsBlock}>
+										<Text style={styles.itemsTitle}>
+											{t('nutrition', 'itemsBreakdown')}
+										</Text>
+										{pendingMeal.items.map((item, idx) => (
+											<View key={`${item.name}-${idx}`} style={styles.itemRow}>
+												<Text style={styles.itemName} numberOfLines={1}>
+													{item.name}
+												</Text>
+												<Text style={styles.itemGrams}>
+													{Math.round(item.grams * pendingMeal.portionScale)}{' '}
+													{t('nutrition', 'g')}
+												</Text>
+											</View>
+										))}
+									</View>
+								) : null}
+
+								<Text style={styles.portionLabel}>
+									{t('nutrition', 'portionSize')}
+								</Text>
+								<View style={styles.portionRow}>
+									{PORTION_SCALES.map(scale => {
+										const on = pendingMeal.portionScale === scale
+										return (
+											<TouchableOpacity
+												key={scale}
+												style={[
+													styles.portionChip,
+													on && styles.portionChipOn,
+												]}
+												onPress={() =>
+													setPendingMeal(prev =>
+														prev ? { ...prev, portionScale: scale } : prev,
+													)
+												}
+												activeOpacity={0.8}
+											>
+												<Text
+													style={[
+														styles.portionChipText,
+														on && styles.portionChipTextOn,
+													]}
+												>
+													{scale === 1 ? '100%' : `${Math.round(scale * 100)}%`}
+												</Text>
+											</TouchableOpacity>
+										)
+									})}
+								</View>
+
 								<View style={styles.detailMacroRow}>
 									<View style={styles.detailMacroCard}>
 										<Text style={styles.detailMacroVal}>
-											{Math.round(n(pendingMeal.entry.calories))}
+											{scaleKcal(
+												n(pendingMeal.entry.calories),
+												pendingMeal.portionScale,
+											)}
 										</Text>
 										<Text style={styles.detailMacroLbl}>
 											{t('nutrition', 'kcal')}
@@ -1306,7 +1400,12 @@ function NutritionTabInner() {
 									</View>
 									<View style={styles.detailMacroCard}>
 										<Text style={[styles.detailMacroVal, { color: '#FF6B6B' }]}>
-											{Math.round(n(pendingMeal.entry.proteinG))}
+											{Math.round(
+												scaleMacro(
+													n(pendingMeal.entry.proteinG),
+													pendingMeal.portionScale,
+												),
+											)}
 										</Text>
 										<Text style={styles.detailMacroLbl}>
 											{t('nutrition', 'protein')}
@@ -1314,7 +1413,12 @@ function NutritionTabInner() {
 									</View>
 									<View style={styles.detailMacroCard}>
 										<Text style={[styles.detailMacroVal, { color: '#5AC8FA' }]}>
-											{Math.round(n(pendingMeal.entry.carbsG))}
+											{Math.round(
+												scaleMacro(
+													n(pendingMeal.entry.carbsG),
+													pendingMeal.portionScale,
+												),
+											)}
 										</Text>
 										<Text style={styles.detailMacroLbl}>
 											{t('nutrition', 'carbs')}
@@ -1322,7 +1426,12 @@ function NutritionTabInner() {
 									</View>
 									<View style={styles.detailMacroCard}>
 										<Text style={[styles.detailMacroVal, { color: '#FFD60A' }]}>
-											{Math.round(n(pendingMeal.entry.fatG))}
+											{Math.round(
+												scaleMacro(
+													n(pendingMeal.entry.fatG),
+													pendingMeal.portionScale,
+												),
+											)}
 										</Text>
 										<Text style={styles.detailMacroLbl}>
 											{t('nutrition', 'fat')}
@@ -2080,6 +2189,75 @@ function makeNutritionStyles(T: AppColors) {
 		marginBottom: 12,
 		fontWeight: '600',
 	},
+	itemsBlock: {
+		width: '100%',
+		marginBottom: 12,
+		gap: 6,
+	},
+	itemsTitle: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: T.textSecondary,
+		textTransform: 'uppercase',
+		letterSpacing: 0.3,
+	},
+	itemRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		gap: 8,
+		paddingVertical: 8,
+		paddingHorizontal: 10,
+		borderRadius: 10,
+		backgroundColor: T.card,
+		borderWidth: 1,
+		borderColor: T.border,
+	},
+	itemName: {
+		flex: 1,
+		fontSize: 13,
+		fontWeight: '600',
+		color: T.text,
+	},
+	itemGrams: {
+		fontSize: 13,
+		fontWeight: '700',
+		color: T.primary,
+	},
+	portionLabel: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: T.textSecondary,
+		marginBottom: 8,
+		textTransform: 'uppercase',
+		letterSpacing: 0.3,
+	},
+	portionRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 8,
+		marginBottom: 14,
+	},
+	portionChip: {
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderRadius: 999,
+		borderWidth: 1,
+		borderColor: T.border,
+		backgroundColor: T.card,
+	},
+	portionChipOn: {
+		borderColor: T.primary,
+		backgroundColor: `${T.primary}22`,
+	},
+	portionChipText: {
+		fontSize: 12,
+		fontWeight: '600',
+		color: T.textSecondary,
+	},
+	portionChipTextOn: {
+		color: T.primary,
+	},
 	confirmBtn: {
 		marginTop: 8,
 		backgroundColor: T.primary,
@@ -2188,6 +2366,24 @@ function makeNutritionStyles(T: AppColors) {
 		color: T.textSecondary,
 		marginBottom: 12,
 		lineHeight: 18,
+	},
+	pickNoteLabel: {
+		fontSize: 12,
+		fontWeight: '600',
+		color: T.textSecondary,
+		marginBottom: 6,
+	},
+	pickNoteInput: {
+		borderWidth: 1,
+		borderColor: T.border,
+		borderRadius: 12,
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+		fontSize: 14,
+		color: T.text,
+		backgroundColor: T.card,
+		minHeight: 44,
+		marginBottom: 12,
 	},
 	pickOption: {
 		flexDirection: 'row',

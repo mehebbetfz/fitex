@@ -892,6 +892,10 @@ export interface Translations {
 		analyzing: string
 		analyzeError: string
 		analysisResult: string
+		mealNote: string
+		mealNotePlaceholder: string
+		itemsBreakdown: string
+		portionSize: string
 		confirmMeal: string
 		discardMeal: string
 		loadError: string
@@ -1954,6 +1958,10 @@ export const ru: Translations = {
 		analyzing: 'Анализируем фото…',
 		analyzeError: 'Не удалось разобрать фото',
 		analysisResult: 'Результат анализа',
+		mealNote: 'Подсказка для AI',
+		mealNotePlaceholder: 'например: творог 300 г, 2 банана',
+		itemsBreakdown: 'Состав',
+		portionSize: 'Размер порции',
 		confirmMeal: 'Подтвердить',
 		discardMeal: 'Отклонить',
 		loadError: 'Не удалось загрузить день',
@@ -3019,6 +3027,10 @@ export const en: Translations = {
 		analyzing: 'Analyzing photo…',
 		analyzeError: 'Could not analyze photo',
 		analysisResult: 'Analysis result',
+		mealNote: 'Hint for AI',
+		mealNotePlaceholder: 'e.g. cottage cheese 300 g, 2 bananas',
+		itemsBreakdown: 'Breakdown',
+		portionSize: 'Portion size',
 		confirmMeal: 'Confirm',
 		discardMeal: 'Discard',
 		loadError: 'Could not load today',
@@ -4085,6 +4097,10 @@ export const az: Translations = {
 		analyzing: 'Foto təhlil olunur…',
 		analyzeError: 'Fotonu təhlil etmək mümkün olmadı',
 		analysisResult: 'Təhlil nəticəsi',
+		mealNote: 'AI üçün ipucu',
+		mealNotePlaceholder: 'məs: qatıq 300 q, 2 banan',
+		itemsBreakdown: 'Tərkib',
+		portionSize: 'Porsiya ölçüsü',
 		confirmMeal: 'Təsdiqlə',
 		discardMeal: 'Rədd et',
 		loadError: 'Günü yükləmək mümkün olmadı',

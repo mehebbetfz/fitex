@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
 import { translateGroupName, translateWorkoutType } from '@/constants/exercise-i18n'
 import ActivityHeatmap from '@/components/activity-heatmap'
+import AppBottomSheet from '@/components/ui/app-bottom-sheet'
 import FoodHistoryPanel from '@/components/food-history-panel'
 import {
 	aggregateSetsByDay,
@@ -21,7 +22,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Animated,
 	FlatList,
-	Modal,
 	Platform,
 	RefreshControl,
 	StyleSheet,
@@ -30,7 +30,6 @@ import {
 	View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { useDatabase } from '../contexts/database-context'
 
 // Количество тренировок для загрузки за раз
@@ -735,37 +734,24 @@ export default function FullHistoryScreen() {
 				<Ionicons name='add' size={32} color={T.background} />
 			</TouchableOpacity>
 
-			<Modal
+			<AppBottomSheet
 				visible={showActivityModal}
-				animationType='slide'
-				transparent
-				onRequestClose={() => setShowActivityModal(false)}
+				onClose={() => setShowActivityModal(false)}
+				title={t('history', 'activityTitle')}
+				maxHeight={520}
 			>
-				<View style={styles.activityModalRoot}>
-					<TouchableOpacity
-						style={styles.activityModalBackdrop}
-						activeOpacity={1}
-						onPress={() => setShowActivityModal(false)}
+				<View style={styles.activityModalBody}>
+					<ActivityHeatmap
+						weeks={heatmapWeeks}
+						locale={heatmapLocale}
+						title=''
+						lessLabel={t('history', 'less')}
+						moreLabel={t('history', 'more')}
+						daySetsTemplate={t('history', 'daySets')}
+						formatDate={formatHeatmapDate}
 					/>
-					<View style={styles.activityModalSheet}>
-						<SheetModalHeader
-							title={t('history', 'activityTitle')}
-							onClose={() => setShowActivityModal(false)}
-						/>
-						<View style={styles.activityModalBody}>
-							<ActivityHeatmap
-								weeks={heatmapWeeks}
-								locale={heatmapLocale}
-								title=''
-								lessLabel={t('history', 'less')}
-								moreLabel={t('history', 'more')}
-								daySetsTemplate={t('history', 'daySets')}
-								formatDate={formatHeatmapDate}
-							/>
-						</View>
-					</View>
 				</View>
-			</Modal>
+			</AppBottomSheet>
 		</SafeAreaView>
 	)
 }
@@ -803,21 +789,6 @@ function makeStyles(
 		backgroundColor: T.chipInactive,
 		borderWidth: 1,
 		borderColor: COLORS.border,
-	},
-	activityModalRoot: {
-		flex: 1,
-		justifyContent: 'flex-end',
-		backgroundColor: 'rgba(0,0,0,0.45)',
-	},
-	activityModalBackdrop: {
-		...StyleSheet.absoluteFillObject,
-	},
-	activityModalSheet: {
-		backgroundColor: T.background,
-		borderTopLeftRadius: 20,
-		borderTopRightRadius: 20,
-		paddingBottom: Platform.OS === 'ios' ? 28 : 16,
-		maxHeight: '70%',
 	},
 	activityModalBody: {
 		paddingHorizontal: 4,

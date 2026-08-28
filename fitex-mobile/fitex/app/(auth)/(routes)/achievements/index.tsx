@@ -1,10 +1,10 @@
 import { hasActivePremium, useAuth } from '@/app/contexts/auth-context'
 import PremiumGate from '@/app/components/premium-gate'
+import AppBottomSheet from '@/components/ui/app-bottom-sheet'
 import { AchievementsSkeleton } from '@/components/ui/skeleton'
 import type { AppColors } from '@/constants/app-theme'
 import { useLanguage } from '@/contexts/language-context'
 import { useAppTheme } from '@/contexts/theme-context'
-import SheetModalHeader from '@/components/ui/sheet-modal-header'
 import { getMilestoneAchievementCopy } from '@/services/achievement-milestones-extra'
 import { Achievement, computeRating } from '@/services/rating'
 import { Ionicons } from '@expo/vector-icons'
@@ -13,7 +13,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Animated,
 	FlatList,
-	Modal,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -136,62 +135,62 @@ const DetailModal = ({
 	const desc = milestone?.desc ?? t('rating', descKey)
 
 	return (
-		<Modal visible={visible} transparent animationType='slide' onRequestClose={onClose}>
-			<View style={s.sheetBackdrop}>
-				<TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-				<View style={s.sheet}>
-					<SheetModalHeader title={title} onClose={onClose} />
-					<View
-						style={[
-							s.modalIconWrap,
-							{
-								backgroundColor: item.earned ? `${item.iconColor}20` : C.cardLight,
-								borderColor: item.earned ? `${item.iconColor}50` : C.border,
-							},
-						]}
-					>
-						<Ionicons
-							name={item.icon as any}
-							size={52}
-							color={item.earned ? item.iconColor : C.textTertiary}
+		<AppBottomSheet
+			visible={visible}
+			onClose={onClose}
+			title={title}
+			maxHeight={480}
+			contentStyle={{ alignItems: 'center' }}
+		>
+			<View
+				style={[
+					s.modalIconWrap,
+					{
+						backgroundColor: item.earned ? `${item.iconColor}20` : C.cardLight,
+						borderColor: item.earned ? `${item.iconColor}50` : C.border,
+					},
+				]}
+			>
+				<Ionicons
+					name={item.icon as any}
+					size={52}
+					color={item.earned ? item.iconColor : C.textTertiary}
+				/>
+			</View>
+
+			<Text style={s.modalDesc}>{desc}</Text>
+
+			{item.earned ? (
+				<View style={[s.earnedTag, { backgroundColor: `${C.primary}15` }]}>
+					<Ionicons name='checkmark-circle' size={16} color={C.primary} />
+					<Text style={[s.earnedTagText, { color: C.primary }]}>
+						{t('rating', 'earned')}
+						{item.earnedAt ? ` • ${new Date(item.earnedAt).toLocaleDateString()}` : ''}
+					</Text>
+				</View>
+			) : (
+				<View style={s.modalProgress}>
+					<View style={s.modalProgressRow}>
+						<Text style={s.modalProgressLabel}>{t('rating', 'progress')}</Text>
+						<Text style={[s.modalProgressPct, { color: item.iconColor }]}>
+							{item.progressCurrent.toLocaleString()} / {item.progressTarget.toLocaleString()}
+						</Text>
+					</View>
+					<View style={s.modalProgressBg}>
+						<View
+							style={[
+								s.modalProgressFill,
+								{
+									width: `${item.progressPercent}%` as any,
+									backgroundColor: item.iconColor,
+								},
+							]}
 						/>
 					</View>
-
-					<Text style={s.modalDesc}>{desc}</Text>
-
-					{item.earned ? (
-						<View style={[s.earnedTag, { backgroundColor: `${C.primary}15` }]}>
-							<Ionicons name='checkmark-circle' size={16} color={C.primary} />
-							<Text style={[s.earnedTagText, { color: C.primary }]}>
-								{t('rating', 'earned')}
-								{item.earnedAt ? ` • ${new Date(item.earnedAt).toLocaleDateString()}` : ''}
-							</Text>
-						</View>
-					) : (
-						<View style={s.modalProgress}>
-							<View style={s.modalProgressRow}>
-								<Text style={s.modalProgressLabel}>{t('rating', 'progress')}</Text>
-								<Text style={[s.modalProgressPct, { color: item.iconColor }]}>
-									{item.progressCurrent.toLocaleString()} / {item.progressTarget.toLocaleString()}
-								</Text>
-							</View>
-							<View style={s.modalProgressBg}>
-								<View
-									style={[
-										s.modalProgressFill,
-										{
-											width: `${item.progressPercent}%` as any,
-											backgroundColor: item.iconColor,
-										},
-									]}
-								/>
-							</View>
-							<Text style={s.modalProgressPctSmall}>{item.progressPercent}%</Text>
-						</View>
-					)}
+					<Text style={s.modalProgressPctSmall}>{item.progressPercent}%</Text>
 				</View>
-			</View>
-		</Modal>
+			)}
+		</AppBottomSheet>
 	)
 }
 
@@ -438,27 +437,6 @@ function makeStyles(C: AppColors) {
 		},
 		emptyText: { color: C.textSecondary, fontSize: 14 },
 
-		sheetBackdrop: {
-			flex: 1,
-			backgroundColor: C.overlay,
-			justifyContent: 'flex-end',
-		},
-		sheet: {
-			backgroundColor: C.modalSurface,
-			borderTopLeftRadius: 20,
-			borderTopRightRadius: 20,
-			padding: 22,
-			paddingBottom: 36,
-			alignItems: 'center',
-		},
-		sheetHandle: {
-			alignSelf: 'center',
-			width: 36,
-			height: 4,
-			borderRadius: 2,
-			backgroundColor: C.border,
-			marginBottom: 14,
-		},
 		modalIconWrap: {
 			width: 88,
 			height: 88,
